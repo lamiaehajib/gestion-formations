@@ -217,7 +217,7 @@ class PermissionseSeeder extends Seeder
             ['email' => $consultantEmail],
             [
                 'name' => 'Consultant User',
-                'password' => Hash::make('passwordd'),
+                'password' => Hash::make('password'),
                 'status' => 'active',
             ]
         );
