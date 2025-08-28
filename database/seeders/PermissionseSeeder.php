@@ -194,6 +194,7 @@ class PermissionseSeeder extends Seeder
             [
                 'name' => 'Admin User',
                 'password' => Hash::make('123456'),
+                'status' => 'active',
             ]
         );
         $adminUser->assignRole('Admin');
@@ -205,6 +206,7 @@ class PermissionseSeeder extends Seeder
             [
                 'name' => 'Etudiant User',
                 'password' => Hash::make('password'),
+                'status' => 'active',
             ]
         );
         $etudiantUser->assignRole('Etudiant');
@@ -216,6 +218,7 @@ class PermissionseSeeder extends Seeder
             [
                 'name' => 'Consultant User',
                 'password' => Hash::make('password'),
+                'status' => 'active',
             ]
         );
         $consultantUser->assignRole('Consultant');
