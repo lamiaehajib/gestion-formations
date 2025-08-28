@@ -211,13 +211,13 @@ class PermissionseSeeder extends Seeder
         );
         $etudiantUser->assignRole('Etudiant');
 
-        // Consultant User
+        
         $consultantEmail = 'consultant@gmail.com';
         $consultantUser = User::firstOrCreate(
             ['email' => $consultantEmail],
             [
                 'name' => 'Consultant User',
-                'password' => Hash::make('password'),
+                'password' => Hash::make('passwordd'),
                 'status' => 'active',
             ]
         );
