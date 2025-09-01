@@ -588,22 +588,24 @@
                         </div>
 
                         {{-- Initial Payment Amount --}}
-                        <div class="mb-4">
-                            <label for="initial_paid_amount_display" class="form-label-modern">
-                                <i class="fas fa-calculator me-2"></i>
-                                {{ __('Montant Initial Payé :') }}
-                            </label>
-                            <input type="number" step="0.01" min="0" name="initial_paid_amount_display" 
-                                   id="initial_paid_amount_display" class="form-control-modern" value="0" readonly required>
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle me-1"></i>
-                                {{ __('Ce montant est calculé automatiquement selon votre modalité.') }}
-                                <span id="fixedFeeNote" class="text-primary fw-bold" style="display: none;"> (Inclut les frais d'inscription de 1600 DH)</span> {{-- ADD THIS LINE --}}
-                            </small>
-                            @error('initial_paid_amount_display')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
+                        
+<div class="mb-4">
+    <label for="initial_paid_amount" class="form-label-modern">
+        <i class="fas fa-calculator me-2"></i>
+        {{ __('Montant Initial Payé :') }}
+    </label>
+    <input type="number" step="0.01" min="0" name="initial_paid_amount" 
+           id="initial_paid_amount" class="form-control-modern" value="0" required>
+    <input type="hidden" name="min_initial_paid_amount" id="min_initial_paid_amount" value="0">
+    <small class="text-muted">
+        <i class="fas fa-info-circle me-1"></i>
+        {{ __('Veuillez payer au moins le montant minimum requis.') }}
+        <span id="fixedFeeNote" class="text-primary fw-bold" style="display: none;"> (Minimum requis : 1600 DH)</span>
+    </small>
+    @error('initial_paid_amount')
+        <div class="invalid-feedback d-block">{{ $message }}</div>
+    @enderror
+</div>
 
                         {{-- Payment Method --}}
                         <div class="mb-4">
@@ -787,43 +789,47 @@
             });
 
             function updateInitialPaymentAmount() {
-                const formationPrice = parseFloat($('#modalFormationPrice').val());
-                const selectedInstallments = parseInt($('#selected_payment_option').val());
-                const initialPaidAmountInput = $('#initial_paid_amount_display');
-                const fixedFeeNote = $('#fixedFeeNote');
+    const formationPrice = parseFloat($('#modalFormationPrice').val());
+    const selectedInstallments = parseInt($('#selected_payment_option').val());
+    const initialPaidAmountInput = $('#initial_paid_amount');
+    const minInitialPaidAmountInput = $('#min_initial_paid_amount');
+    const fixedFeeNote = $('#fixedFeeNote');
 
-                let calculatedAmount = 0;
-                let isFixedFeeApplied = false;
+    let calculatedAmount = 0;
+    let isFixedFeeApplied = false;
 
-                // Check if the current formation category has a fixed registration fee
-                if (fixedRegistrationFees[currentFormationCategoryName]) {
-                    let fixedFee = fixedRegistrationFees[currentFormationCategoryName];
-                    calculatedAmount = fixedFee;
-                    isFixedFeeApplied = true;
+    if (fixedRegistrationFees[currentFormationCategoryName]) {
+        let fixedFee = fixedRegistrationFees[currentFormationCategoryName];
+        calculatedAmount = fixedFee;
+        isFixedFeeApplied = true;
 
-                    // Ensure fixed fee doesn't exceed total price
-                    if (calculatedAmount > formationPrice) {
-                        calculatedAmount = formationPrice;
-                    }
-                } else if (!isNaN(formationPrice) && !isNaN(selectedInstallments) && selectedInstallments > 0) {
-                    // Standard installment calculation
-                    calculatedAmount = parseFloat((formationPrice / selectedInstallments).toFixed(2));
-                }
+        if (calculatedAmount > formationPrice) {
+            calculatedAmount = formationPrice;
+        }
+    } else if (!isNaN(formationPrice) && !isNaN(selectedInstallments) && selectedInstallments > 0) {
+        calculatedAmount = parseFloat((formationPrice / selectedInstallments).toFixed(2));
+    }
 
-                initialPaidAmountInput.val(calculatedAmount.toFixed(2)); // Display with 2 decimal places
+    // Set the value of the editable input only if it's currently 0 or empty
+    // This prevents overwriting a value the student has entered
+    if (initialPaidAmountInput.val() === '0' || initialPaidAmountInput.val() === '') {
+        initialPaidAmountInput.val(calculatedAmount.toFixed(2));
+    }
+    
+    // Set the hidden input for validation
+    minInitialPaidAmountInput.val(calculatedAmount.toFixed(2));
 
-                if (isFixedFeeApplied && calculatedAmount < formationPrice) {
-                    fixedFeeNote.show(); // Show the note
-                } else {
-                    fixedFeeNote.hide(); // Hide the note
-                }
-                
-                // Animate the input
-                initialPaidAmountInput.css('transform', 'scale(1.05)');
-                setTimeout(() => {
-                    initialPaidAmountInput.css('transform', 'scale(1)');
-                }, 200);
-            }
+    if (isFixedFeeApplied && calculatedAmount < formationPrice) {
+        fixedFeeNote.show();
+    } else {
+        fixedFeeNote.hide();
+    }
+
+    initialPaidAmountInput.css('transform', 'scale(1.05)');
+    setTimeout(() => {
+        initialPaidAmountInput.css('transform', 'scale(1)');
+    }, 200);
+}
 
             // Form submission with loading
             $('#inscriptionModal form').on('submit', function() {

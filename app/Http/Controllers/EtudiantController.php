@@ -86,143 +86,145 @@ public function showChooseFormationForm(Request $request)
      * This will create an inscription with 'pending' status and the initial payment record.
      */
    public function enrollFormation(Request $request)
-    {
-        $user = Auth::user();
+{
+    $user = Auth::user();
 
-        try {
-            $request->validate([
-                'formation_id' => 'required|exists:formations,id',
-                'selected_payment_option' => 'required|integer|min:1',
-                'proof_of_payment' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
-                'payment_method' => 'required|string|in:cash,bank_transfer',
-                'notes' => 'nullable|string',
-            ]);
+    try {
+        $request->validate([
+            'formation_id' => 'required|exists:formations,id',
+            'selected_payment_option' => 'required|integer|min:1',
+            // We need to validate the amount from the student input
+            'initial_paid_amount' => 'required|numeric|min:0.01', 
+            'proof_of_payment' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'payment_method' => 'required|string|in:cash,bank_transfer',
+            'notes' => 'nullable|string',
+        ]);
 
-            // ==================================================================================
-            // ✅ Ajout du code pour vérifier si l'étudiant a déjà une inscription en cours
-            // ==================================================================================
-            $existingActiveInscription = Inscription::where('user_id', $user->id)
-                                                    ->where('formation_id', $request->formation_id)
-                                                    ->whereIn('status', ['pending', 'active', 'suspended']) // Les statuts qui empêchent une nouvelle inscription
-                                                    ->first();
-                                                    
-            if ($existingActiveInscription) {
-                // Si une inscription existe et n'est pas "terminé" ou "annulé", on renvoie une erreur
-                return redirect()->back()->with('error', 'Vous avez déjà une inscription en cours ou en attente pour cette formation. Vous ne pouvez pas vous réinscrire. 🚫')->withInput();
-            }
-            // ==================================================================================
-            // Fin de l'ajout
-            // ==================================================================================
-            
-            $formation = Formation::with('category')->findOrFail($request->formation_id);
-            $chosenInstallments = (int) $request->input('selected_payment_option');
-    
-            $fixedRegistrationFees = [
-                'Licence Professionnelle' => 1600.00,
-                'Master Professionnelle' => 1600.00,
-            ];
-            $initialPaidAmount = 0;
-            $calculatedRemainingInstallments = $chosenInstallments; 
-            $categoryName = $formation->category->name ?? '';
-            $amountPerOriginalInstallment = ($chosenInstallments > 0) ? round($formation->price / $chosenInstallments, 2) : $formation->price;
-    
-            Log::info('Enrollment Attempt:');
-            Log::info('Formation ID: ' . $formation->id);
-            Log::info('Category Name from DB: "' . $categoryName . '"');
-            Log::info('Checking against Fixed Fees: ' . json_encode(array_keys($fixedRegistrationFees)));
-    
-            if (array_key_exists($categoryName, $fixedRegistrationFees)) {
-                Log::info('--- Fixed Registration Fee Logic Activated ---');
-                $initialPaidAmount = $fixedRegistrationFees[$categoryName];
-                if ($initialPaidAmount > $formation->price) {
-                    $initialPaidAmount = $formation->price;
-                }
-                if ($chosenInstallments > 0) {
-                    $calculatedRemainingInstallments = max(0, $chosenInstallments - 1);
-                } else {
-                    $calculatedRemainingInstallments = 0;
-                }
-                if (abs($formation->price - $initialPaidAmount) < 0.01) {
-                    $calculatedRemainingInstallments = 0;
-                }
-                Log::info('Calculated Remaining Installments (Fixed Fee Path): ' . $calculatedRemainingInstallments);
-            } else {
-                Log::info('--- Standard Payment Logic Activated ---');
-                $initialPaidAmount = $amountPerOriginalInstallment;
-                $calculatedRemainingInstallments = max(0, $chosenInstallments - 1);
-                Log::info('Calculated Remaining Installments (Standard Path): ' . $calculatedRemainingInstallments);
-            }
-    
-            Log::info('Final Calculated Remaining Installments before Inscription Create: ' . $calculatedRemainingInstallments);
-    
-            DB::beginTransaction();
-    
-            $receiptPath = null;
-            if ($request->hasFile('proof_of_payment')) {
-                $receiptPath = $request->file('proof_of_payment')->store('payment_receipts/' . $user->id, 'public');
-            }
-    
-            $nextInstallmentDueDate = null;
-            if ($chosenInstallments > 1 && $initialPaidAmount < $formation->price) {
-                $today = Carbon::today();
-                $targetDay = 5;
-                if ($today->day < $targetDay) {
-                    $nextInstallmentDueDate = $today->day($targetDay);
-                } else {
-                    $nextInstallmentDueDate = $today->addMonth()->day($targetDay);
-                }
-            }
-            
-            $inscription = Inscription::create([
-                'user_id' => $user->id,
-                'formation_id' => $request->formation_id,
-                'status' => 'pending',
-                'inscription_date' => now(),
-                'total_amount' => $formation->price,
-                'paid_amount' => 0,
-                'chosen_installments' => $chosenInstallments,
-                'amount_per_installment' => $amountPerOriginalInstallment,
-                'remaining_installments' => $calculatedRemainingInstallments,
-                'notes' => $request->notes,
-                'documents' => null, 
-                'access_restricted' => false,
-                'next_installment_due_date' => $nextInstallmentDueDate,
-            ]);
-    
-            Payment::create([
-                'inscription_id' => $inscription->id,
-                'amount' => $initialPaidAmount,
-                'due_date' => now(),
-                'paid_date' => now(),
-                'payment_method' => $request->payment_method,
-                'status' => 'pending',
-                'reference' => 'Paiement initial pour ' . $formation->title . 
-                               (array_key_exists($categoryName, $fixedRegistrationFees) ? ' (Frais fixes)' : ''), 
-                'transaction_id' => null,
-                'receipt_path' => $receiptPath,
-                'created_by_user_id' => Auth::id(),
-            ]);
-
-
-            $recipients = User::role(['Admin', 'Finance', 'Super Admin'])->get();
-            $inscription->load('formation', 'payments');
-
-            foreach ($recipients as $recipient) {
-                Mail::to($recipient->email)->send(new NewInscriptionNotification($inscription, $user));
-            }
-            
-            DB::commit();
-            return redirect()->route('etudiant.inscription.pending', ['inscription_id' => $inscription->id])
-                            ->with('success', 'Votre demande d\'inscription a été soumise avec succès et est en attente de validation par l\'administrateur.');
-        } catch (ValidationException $e) {
-            DB::rollBack();
-            return redirect()->back()->withErrors($e->errors())->withInput();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error during student enrollment: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
-            return redirect()->back()->with('error', 'Une erreur est survenue lors de votre demande d\'inscription. Veuillez réessayer.')->withInput();
+        $existingActiveInscription = Inscription::where('user_id', $user->id)
+            ->where('formation_id', $request->formation_id)
+            ->whereIn('status', ['pending', 'active', 'suspended'])
+            ->first();
+                        
+        if ($existingActiveInscription) {
+            return redirect()->back()->with('error', 'Vous avez déjà une inscription en cours ou en attente pour cette formation. Vous ne pouvez pas vous réinscrire. 🚫')->withInput();
         }
+        
+        $formation = Formation::with('category')->findOrFail($request->formation_id);
+        $chosenInstallments = (int) $request->input('selected_payment_option');
+        $initialPaidAmount = (float) $request->input('initial_paid_amount'); // The amount entered by the student
+    
+        $fixedRegistrationFees = [
+            'Licence Professionnelle' => 1600.00,
+            'Master Professionnelle' => 1600.00,
+        ];
+    
+        $amountPerInstallment = 0;
+        $remainingInstallmentsCount = $chosenInstallments; 
+        $categoryName = $formation->category->name ?? '';
+    
+        $isProfessional = array_key_exists($categoryName, $fixedRegistrationFees);
+
+        // --- NEW LOGIC TO HANDLE CUSTOM INITIAL PAYMENT ---
+        $amountToDivide = $formation->price; // Default to total price
+        $initialFee = 0;
+
+        if ($isProfessional) {
+            $initialFee = $fixedRegistrationFees[$categoryName];
+            $amountToDivide = $formation->price - $initialFee; // 18000 DH
+        } else {
+            // For other categories, the first installment is part of the total.
+            // For now, we'll assume the same logic for simplicity if needed.
+        }
+
+        // We calculate the amount of one standard installment (1800 DH)
+        $standardInstallmentAmount = ($chosenInstallments > 0) ? round($amountToDivide / $chosenInstallments, 2) : 0;
+        
+        // The student must pay at least the initial fee.
+        if ($initialPaidAmount < $initialFee) {
+            return redirect()->back()->with('error', 'Le montant initial payé doit être au moins de ' . number_format($initialFee, 2) . ' DH (frais d\'inscription).')->withInput();
+        }
+
+        // Calculate the amount paid that covers installments
+        $paidTowardsInstallments = $initialPaidAmount - $initialFee;
+        
+        // Calculate the number of installments covered by the extra payment.
+        $coveredInstallments = floor($paidTowardsInstallments / $standardInstallmentAmount);
+
+        // The remaining balance to be paid for installments
+        $remainingInstallmentBalance = $amountToDivide - ($coveredInstallments * $standardInstallmentAmount);
+        
+        // Remaining number of installments
+        $remainingInstallmentsCount = max(0, $chosenInstallments - $coveredInstallments);
+        
+        // The amount per installment is fixed at 1800 DH, regardless of the initial payment.
+        $amountPerInstallment = $standardInstallmentAmount;
+        // --- END OF NEW LOGIC ---
+
+        DB::beginTransaction();
+    
+        $receiptPath = null;
+        if ($request->hasFile('proof_of_payment')) {
+            $receiptPath = $request->file('proof_of_payment')->store('payment_receipts/' . $user->id, 'public');
+        }
+    
+        $nextInstallmentDueDate = null;
+        if ($remainingInstallmentsCount > 0) {
+            $today = Carbon::today();
+            $targetDay = 5;
+            if ($today->day < $targetDay) {
+                $nextInstallmentDueDate = $today->day($targetDay);
+            } else {
+                $nextInstallmentDueDate = $today->addMonth()->day($targetDay);
+            }
+        }
+        
+        $inscription = Inscription::create([
+            'user_id' => $user->id,
+            'formation_id' => $request->formation_id,
+            'status' => 'pending',
+            'inscription_date' => now(),
+            'total_amount' => $formation->price,
+            'paid_amount' => $initialPaidAmount, // Store the exact amount the student paid
+            'chosen_installments' => $chosenInstallments,
+            'amount_per_installment' => $amountPerInstallment,
+            'remaining_installments' => $remainingInstallmentsCount,
+            'notes' => $request->notes,
+            'documents' => null, 
+            'access_restricted' => false,
+            'next_installment_due_date' => $nextInstallmentDueDate,
+        ]);
+    
+        Payment::create([
+            'inscription_id' => $inscription->id,
+            'amount' => $initialPaidAmount,
+            'due_date' => now(),
+            'paid_date' => now(),
+            'payment_method' => $request->payment_method,
+            'status' => 'pending',
+            'reference' => 'Paiement initial pour ' . $formation->title,
+            'transaction_id' => null,
+            'receipt_path' => $receiptPath,
+            'created_by_user_id' => Auth::id(),
+        ]);
+
+        $recipients = User::role(['Admin', 'Finance', 'Super Admin'])->get();
+        $inscription->load('formation', 'payments');
+        foreach ($recipients as $recipient) {
+            Mail::to($recipient->email)->send(new NewInscriptionNotification($inscription, $user));
+        }
+        
+        DB::commit();
+        return redirect()->route('etudiant.inscription.pending', ['inscription_id' => $inscription->id])
+                        ->with('success', 'Votre demande d\'inscription a été soumise avec succès et est en attente de validation par l\'administrateur.');
+    } catch (ValidationException $e) {
+        DB::rollBack();
+        return redirect()->back()->withErrors($e->errors())->withInput();
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Error during student enrollment: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+        return redirect()->back()->with('error', 'Une erreur est survenue lors de votre demande d\'inscription. Veuillez réessayer.')->withInput();
     }
+}
 
     // ... (rest of your EtudiantController methods) ...
 
