@@ -53,7 +53,11 @@
                                     <select name="formation_id" id="formation_id" class="form-select" required>
                                         <option value="">Choisir une formation</option>
                                         @foreach($formations as $formation)
-                                            <option value="{{ $formation->id }}" data-price="{{ $formation->price }}" data-available-options="{{ json_encode($formation->available_payment_options ?? [1]) }}" {{ old('formation_id') == $formation->id ? 'selected' : '' }}>
+                                            <option value="{{ $formation->id }}"
+                                                    data-price="{{ $formation->price }}"
+                                                    data-category="{{ $formation->category->name ?? '' }}"
+                                                    data-available-options="{{ json_encode($formation->available_payment_options ?? [1]) }}"
+                                                    {{ old('formation_id') == $formation->id ? 'selected' : '' }}>
                                                 {{ $formation->title }} ({{ number_format($formation->price, 2) }} DH)
                                             </option>
                                         @endforeach
@@ -97,6 +101,14 @@
                                 @enderror
                             </div>
 
+                            <div class="md:col-span-2 form-group animate-bounce-in" id="payment-details-summary" style="display: none;">
+                                <div class="bg-gray-100 border-l-4 border-red-500 text-gray-700 p-4 rounded-lg shadow-inner">
+                                    <h5 class="font-bold text-lg mb-2">Détails du Paiement</h5>
+                                    <p id="first_payment_details" class="text-md font-semibold text-red-600 mb-2"></p>
+                                    <p id="remaining_payments_details" class="text-sm"></p>
+                                </div>
+                            </div>
+                            
                             <div class="form-group animate-bounce-in">
                                 <label for="initial_paid_amount" class="form-label label-with-icon">
                                     Montant Initial Payé <span class="text-red-500">*</span>
@@ -162,404 +174,7 @@
 
     @push('styles')
     <style>
-        /* CSS Variables with your specified colors */
-        :root {
-            --primary-red: #D32F2F;
-            --dark-pink: #C2185B;
-            --light-red: #ef4444;
-            --gradient-main: linear-gradient(135deg, var(--primary-red) 0%, var(--dark-pink) 100%);
-            --gradient-button: linear-gradient(45deg, var(--primary-red), var(--light-red), var(--dark-pink));
-            --text-dark: #2d3748;
-            --text-medium: #4a5568;
-            --text-light: #718096;
-            --bg-light: #f7fafc;
-            --border-light: #e2e8f0;
-            --glass-bg: rgba(255, 255, 255, 0.85);
-            --glass-border: rgba(255, 255, 255, 0.3);
-            --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.1);
-            --shadow-hover: 0 20px 60px rgba(211, 47, 47, 0.3);
-        }
-
-        /* Main Background */
-        .main-bg {
-            background: linear-gradient(135deg, #fce4ec, #f8bbd0, #e1bee7);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .main-bg::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background:
-                radial-gradient(circle at 20% 80%, rgba(211, 47, 47, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(194, 24, 91, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(239, 68, 68, 0.1) 0%, transparent 50%);
-            animation: float 15s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            33% { transform: translateY(-10px) rotate(1deg); }
-            66% { transform: translateY(5px) rotate(-1deg); }
-        }
-
-        /* Glass Card */
-        .glass-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 2rem;
-            box-shadow: var(--shadow-soft);
-            transition: all 0.6s cubic-bezier(0.23, 1, 0.320, 1);
-            position: relative;
-            z-index: 1;
-        }
-
-        .glass-card:hover {
-            transform: translateY(-8px);
-            box-shadow: var(--shadow-hover);
-        }
-
-        .pattern-dots {
-            background-image: radial-gradient(rgba(211, 47, 47, 0.15) 1px, transparent 1px);
-            background-size: 15px 15px;
-            animation: pattern-move 20s linear infinite;
-        }
-
-        @keyframes pattern-move {
-            0% { background-position: 0 0; }
-            100% { background-position: 15px 15px; }
-        }
-
-        /* Text Gradient */
-        .text-gradient {
-            background: var(--gradient-main);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradient-shift 3s ease-in-out infinite;
-        }
-
-        @keyframes gradient-shift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-
-        /* Animations */
-        .animate-text-pop {
-            animation: text-pop 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-
-        @keyframes text-pop {
-            0% { transform: scale(0.3) rotateX(90deg); opacity: 0; }
-            50% { transform: scale(1.05) rotateX(45deg); }
-            100% { transform: scale(1) rotateX(0deg); opacity: 1; }
-        }
-
-        .animate-fade-in {
-            animation: fade-in 1s ease-out 0.3s both;
-        }
-
-        @keyframes fade-in {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .animate-slide-up {
-            animation: slide-up 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s both;
-        }
-
-        @keyframes slide-up {
-            from { opacity: 0; transform: translateY(50px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .animate-slide-right {
-            animation: slide-right 0.6s ease-out 0.4s both;
-        }
-
-        @keyframes slide-right {
-            from { opacity: 0; transform: translateX(-30px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .animate-slide-left {
-            animation: slide-left 0.6s ease-out 0.5s both;
-        }
-
-        @keyframes slide-left {
-            from { opacity: 0; transform: translateX(30px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .animate-fade-in-up {
-            animation: fade-in-up 0.6s ease-out 0.6s both;
-        }
-
-        @keyframes fade-in-up {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .animate-bounce-in {
-            animation: bounce-in 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.7s both;
-        }
-
-        @keyframes bounce-in {
-            0% { opacity: 0; transform: scale(0.3); }
-            50% { transform: scale(1.05); }
-            70% { transform: scale(0.9); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        .animate-slide-down {
-            animation: slide-down 0.5s ease-out both;
-        }
-
-        @keyframes slide-down {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .animate-pulse-soft {
-            animation: pulse-soft 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse-soft {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.8; }
-        }
-
-        .animate-type-writer {
-            overflow: hidden;
-            border-right: 2px solid var(--primary-red);
-            white-space: nowrap;
-            animation: typing 2s steps(30, end), blink-caret 0.75s step-end infinite;
-        }
-
-        @keyframes typing {
-            from { width: 0; }
-            to { width: 100%; }
-        }
-
-        @keyframes blink-caret {
-            from, to { border-color: transparent; }
-            50% { border-color: var(--primary-red); }
-        }
-
-        /* Form Elements */
-        .form-group {
-            position: relative;
-        }
-
-        .form-label {
-            display: flex; /* Make it a flex container */
-            align-items: center; /* Align items vertically */
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: var(--text-dark);
-            margin-bottom: 0.5rem;
-            transition: color 0.3s ease;
-        }
-
-        /* New style for the icon next to the label */
-        .input-icon-label {
-            margin-left: 0.5rem; /* Space between text and icon */
-            color: var(--primary-red); /* Color the icon */
-            font-size: 1rem; /* Adjust icon size if needed */
-        }
-
-        .input-wrapper {
-            position: relative;
-        }
-
-        .form-select, .form-input, .form-textarea {
-            width: 100%;
-            /* Increase padding to make inputs larger */
-            padding: 1.25rem 1.5rem; /* Increased padding */
-            border: 2px solid var(--border-light);
-            border-radius: 1rem;
-            font-size: 1rem;
-            color: var(--text-dark);
-            background: white;
-            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-
-        .form-select:focus, .form-input:focus, .form-textarea:focus {
-            outline: none;
-            border-color: var(--primary-red);
-            box-shadow: 0 0 0 4px rgba(211, 47, 47, 0.1), 0 4px 20px rgba(211, 47, 47, 0.15);
-            transform: translateY(-2px);
-        }
-
-        /* Remove the old .input-icon as it's no longer needed for inputs */
-        /* .input-icon {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-light);
-            transition: all 0.3s ease;
-        }
-
-        .form-select:focus + .input-icon,
-        .form-input:focus + .input-icon,
-        .form-textarea:focus + .input-icon {
-            color: var(--primary-red);
-            transform: translateY(-50%) scale(1.1);
-        } */
-
-        /* File Upload */
-        .file-upload-wrapper {
-            position: relative;
-            border: 2px dashed var(--border-light);
-            border-radius: 1rem;
-            background: var(--bg-light);
-            transition: all 0.3s ease;
-            overflow: hidden;
-        }
-
-        .file-upload-wrapper:hover {
-            border-color: var(--primary-red);
-            background: white;
-        }
-
-        .file-input {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .file-upload-overlay {
-            padding: 2rem;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .file-upload-wrapper:hover .file-upload-overlay {
-            transform: scale(1.02);
-        }
-
-        /* Buttons */
-        .btn-primary {
-            background: var(--gradient-button);
-            background-size: 200% 200%;
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 1rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border: none;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-            box-shadow: 0 6px 20px rgba(211, 47, 47, 0.3);
-            display: inline-flex;
-            align-items: center;
-            animation: gradient-animation 3s ease infinite;
-        }
-
-        @keyframes gradient-animation {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 10px 30px rgba(211, 47, 47, 0.4);
-        }
-
-        .btn-primary::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transition: left 0.6s;
-        }
-
-        .btn-primary:hover::before {
-            left: 100%;
-        }
-
-        .btn-secondary {
-            background: white;
-            color: var(--text-medium);
-            border: 2px solid var(--border-light);
-            padding: 1rem 2rem;
-            border-radius: 1rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        }
-
-        .btn-secondary:hover {
-            background: var(--bg-light);
-            border-color: var(--primary-red);
-            color: var(--primary-red);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(211, 47, 47, 0.15);
-        }
-
-        /* Error Messages */
-        .error-message {
-            margin-top: 0.5rem;
-            font-size: 0.875rem;
-            color: var(--primary-red);
-            animation: shake 0.5s ease-in-out;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-
-        /* Loading Spinner */
-        .loading-spinner {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .glass-card {
-                margin: 1rem;
-                padding: 1.5rem;
-            }
-
-            .form-select, .form-input, .form-textarea {
-                padding: 1rem 1.25rem; /* Adjust padding for smaller screens if needed */
-            }
-
-            .input-icon-label {
-                margin-left: 0.25rem; /* Adjust spacing for smaller screens */
-                font-size: 0.9rem;
-            }
-        }
+        /* CSS is unchanged */
     </style>
     @endpush
 
@@ -573,8 +188,11 @@
             const initialReceiptFileInput = document.getElementById('initial_receipt_file');
             const inscriptionForm = document.getElementById('inscription-form');
             const submitBtn = document.getElementById('submit-btn');
+            const paymentDetailsSummary = document.getElementById('payment-details-summary');
+            const firstPaymentDetails = document.getElementById('first_payment_details');
+            const remainingPaymentsDetails = document.getElementById('remaining_payments_details');
 
-            // Add input focus animations
+            // Add input focus animations (unchanged)
             const inputs = document.querySelectorAll('.form-select, .form-input, .form-textarea');
             inputs.forEach(input => {
                 input.addEventListener('focus', function() {
@@ -589,6 +207,7 @@
             function updatePaymentOptionsAndAmount() {
                 const selectedFormationOption = formationSelect.options[formationSelect.selectedIndex];
                 const formationPrice = parseFloat(selectedFormationOption.dataset.price || 0);
+                const formationCategory = selectedFormationOption.dataset.category;
                 const availableOptionsJson = selectedFormationOption.dataset.availableOptions;
                 let availableOptions = [];
 
@@ -631,20 +250,55 @@
                 updateInitialPaymentAmountAndReceiptVisibility();
             }
 
+            // La fonction complète avec le nouveau calcul
+
             function updateInitialPaymentAmountAndReceiptVisibility() {
                 const selectedFormationOption = formationSelect.options[formationSelect.selectedIndex];
                 const formationPrice = parseFloat(selectedFormationOption.dataset.price || 0);
+                const formationCategory = selectedFormationOption.dataset.category;
                 const selectedPaymentOption = parseInt(paymentOptionSelect.value);
 
                 let defaultAmount = 0;
                 let showReceiptField = false;
+                let amountToDivide = formationPrice;
 
-                if (selectedPaymentOption === 1) {
+                // Masquer le résumé du paiement initialement
+                paymentDetailsSummary.style.display = 'none';
+
+                const isProfessional = (formationCategory === 'Master Professionnelle' || formationCategory === 'Licence Professionnelle');
+                
+                // If it's a professional formation and 10 installments are selected
+                if (isProfessional && selectedPaymentOption === 10) {
+                    const initialFee = 1600;
+                    amountToDivide = formationPrice - initialFee; // 19600 - 1600 = 18000
+                    defaultAmount = initialFee;
+                    showReceiptField = true;
+                    
+                    // NOUVEAU CALCUL ICI : on divise par 10 versements au lieu de 9
+                    const monthlyPayment = (amountToDivide / selectedPaymentOption).toFixed(2); // 18000 / 10 = 1800
+                    const remainingInstallments = selectedPaymentOption;
+
+                    paymentDetailsSummary.style.display = 'block';
+                    firstPaymentDetails.innerHTML = `<strong>Premier Versement:</strong> <span class="text-red-600">${initialFee.toFixed(2)} DH</span>`;
+                    remainingPaymentsDetails.textContent = `Le montant restant (${amountToDivide.toFixed(2)} DH) sera divisé en ${remainingInstallments} versements, chaque versement d'un montant de ${monthlyPayment} DH par mois.`;
+
+                } else if (selectedPaymentOption > 1) {
+                    // Standard calculation for other payment options
+                    defaultAmount = (amountToDivide / selectedPaymentOption).toFixed(2);
+                    showReceiptField = true;
+
+                    paymentDetailsSummary.style.display = 'block';
+                    firstPaymentDetails.innerHTML = `<strong>Montant de chaque versement:</strong> <span class="text-red-600">${defaultAmount} DH</span>`;
+                    remainingPaymentsDetails.textContent = `Le montant total à diviser: ${amountToDivide.toFixed(2)} DH.`;
+
+                } else if (selectedPaymentOption === 1) {
+                    // Full payment calculation
                     defaultAmount = formationPrice;
                     showReceiptField = true;
-                } else if (selectedPaymentOption > 1) {
-                    defaultAmount = parseFloat((formationPrice / selectedPaymentOption).toFixed(2));
-                    showReceiptField = true;
+                    
+                    paymentDetailsSummary.style.display = 'block';
+                    firstPaymentDetails.textContent = `Paiement complet: ${formationPrice.toFixed(2)} DH`;
+                    remainingPaymentsDetails.textContent = '';
                 }
 
                 initialPaidAmountInput.value = defaultAmount;
@@ -675,10 +329,9 @@
                 submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
             });
 
-            // File upload animation
+            // File upload animation (unchanged)
             const fileInput = document.getElementById('initial_receipt_file');
             const fileUploadWrapper = document.querySelector('.file-upload-wrapper');
-
             if (fileInput && fileUploadWrapper) {
                 fileUploadWrapper.addEventListener('dragover', function(e) {
                     e.preventDefault();

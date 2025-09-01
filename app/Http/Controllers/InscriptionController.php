@@ -77,15 +77,17 @@ class InscriptionController extends Controller
 
     // ... Le reste de votre code de contrôleur reste le même que précédemment ...
 
-    public function create(Request $request)
-    {
-        $users = Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) ? User::role('etudiant')->get() : collect();
-        $formations = Formation::where('status', 'published')->get();
+ // F'InscriptionController.php
 
-        return view('inscriptions.create', compact('users', 'formations'));
-    }
+public function create(Request $request)
+{
+    $users = Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) ? User::role('etudiant')->get() : collect();
+    // Zid with('category') bach t'charger l'category m3a kol formation
+    $formations = Formation::where('status', 'published')->with('category')->get(); 
+    return view('inscriptions.create', compact('users', 'formations'));
+}
 
-    public function store(Request $request)
+     public function store(Request $request)
     {
         $user = Auth::user();
         $isAdminOrFinanceOrSuperAdmin = $user->hasAnyRole(['Admin', 'Finance', 'Super Admin']);
@@ -107,9 +109,6 @@ class InscriptionController extends Controller
                 $rules['initial_receipt_file'] = 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048';
             }
         } else {
-            // Cette partie est pour un étudiant qui s'inscrit lui-même.
-            // Il ne fournit pas de montant initial payé ou de reçu ici,
-            // car cela est géré dans `EtudiantController@enrollFormation`.
             $rules['documents'] = 'nullable|array';
             $rules['documents.*'] = 'file|mimes:pdf,jpg,jpeg,png|max:2048';
         }
@@ -141,34 +140,38 @@ class InscriptionController extends Controller
             $chosenInstallments = $request->selected_payment_option;
             $totalAmount = $formation->price;
 
+            // Nouvelle logique pour gérer la catégorie "Professionnelle"
+            $amountToDivide = $totalAmount;
+            if ($formation->category && in_array($formation->category->name, ['Master Professionnelle', 'Licence Professionnelle'])) {
+                $amountToDivide = $totalAmount - 1600;
+            }
+
             $inscriptionStatus = $isAdminOrFinanceOrSuperAdmin ? $request->status : 'pending';
             $initialPaidAmount = $isAdminOrFinanceOrSuperAdmin ? $request->paid_amount : 0;
             $receiptPathForInitialPayment = null;
 
             if ($isAdminOrFinanceOrSuperAdmin && $initialPaidAmount > 0 && $request->hasFile('initial_receipt_file')) {
                 $initialReceiptFile = $request->file('initial_receipt_file');
-                $receiptPathForInitialPayment = $initialReceiptFile->store('payment_receipts/' . $userToEnroll->id, 'public'); // Stocker avec l'ID utilisateur pour la création initiale
+                $receiptPathForInitialPayment = $initialReceiptFile->store('payment_receipts/' . $userToEnroll->id, 'public');
             }
 
-            // Calculer le montant par acompte pour l'inscription elle-même
-            $amountPerInstallment = ($chosenInstallments > 0) ? round($totalAmount / $chosenInstallments, 2) : $totalAmount;
+            // Calculer le montant par acompte en utilisant le montant à diviser
+            $amountPerInstallment = ($chosenInstallments > 0) ? round($amountToDivide / $chosenInstallments, 2) : $amountToDivide;
 
-            // Créer l'enregistrement d'inscription
             $inscription = Inscription::create([
                 'user_id' => $userToEnroll->id,
                 'formation_id' => $request->formation_id,
                 'status' => $inscriptionStatus,
                 'inscription_date' => now(),
                 'total_amount' => $totalAmount,
-                'paid_amount' => $initialPaidAmount, // Définir directement le montant initial payé ici
+                'paid_amount' => $initialPaidAmount,
                 'chosen_installments' => $chosenInstallments,
                 'amount_per_installment' => $amountPerInstallment,
-                'remaining_installments' => ($amountPerInstallment > 0) ? ceil(($totalAmount - $initialPaidAmount) / $amountPerInstallment) : 0, // Recalculer les acomptes restants en fonction du montant initial payé
+                'remaining_installments' => ($amountPerInstallment > 0) ? ceil(($totalAmount - $initialPaidAmount) / $amountPerInstallment) : 0,
                 'notes' => $request->notes,
-                'documents' => [], // Les documents seront traités séparément s'il s'agit d'un formulaire d'inscription étudiant, pas administrateur
+                'documents' => [],
             ]);
 
-            // Gérer les documents supplémentaires si un étudiant s'inscrit lui-même
             if (!$isAdminOrFinanceOrSuperAdmin && $request->hasFile('documents')) {
                 $documentPaths = [];
                 foreach ($request->file('documents') as $documentFile) {
@@ -176,17 +179,16 @@ class InscriptionController extends Controller
                     $documentPaths[] = $path;
                 }
                 $inscription->documents = $documentPaths;
-                $inscription->save(); // Enregistrer les documents pour l'inscription
+                $inscription->save();
             }
 
-            // Créer un enregistrement de paiement SEULEMENT si un montant initial a été payé par l'administrateur
             if ($isAdminOrFinanceOrSuperAdmin && $initialPaidAmount > 0) {
                 Payment::create([
                     'inscription_id' => $inscription->id,
                     'amount' => $initialPaidAmount,
                     'paid_date' => now(),
-                    'payment_method' => 'cash', // Par défaut ou faire de ceci un champ de formulaire pour l'administrateur
-                    'status' => 'paid', // Marquer les paiements initiaux de l'administrateur comme payés (ou en attente si une vérification est nécessaire)
+                    'payment_method' => 'cash',
+                    'status' => 'paid',
                     'reference' => 'Paiement initial manuel',
                     'receipt_path' => $receiptPathForInitialPayment,
                 ]);
