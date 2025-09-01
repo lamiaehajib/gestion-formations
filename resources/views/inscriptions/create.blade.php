@@ -267,7 +267,7 @@
 
                 const isProfessional = (formationCategory === 'Master Professionnelle' || formationCategory === 'Licence Professionnelle');
                 
-                // If it's a professional formation and 10 installments are selected
+                
                 if (isProfessional && selectedPaymentOption === 10) {
                     const initialFee = 1600;
                     amountToDivide = formationPrice - initialFee; // 19600 - 1600 = 18000
