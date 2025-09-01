@@ -23,7 +23,7 @@
             {{-- Titre et actions --}}
             <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 w-full sm:w-auto justify-between sm:justify-start">
                 <h1 class="text-4xl font-extrabold bg-gradient-to-r from-[#D32F2F] via-[#C2185B] to-[#ef4444] bg-clip-text text-transparent animate-text-glow">
-                     les Inscriptions
+                     test les Inscriptions
                 </h1>
                 
                 <div class="flex space-x-3">
