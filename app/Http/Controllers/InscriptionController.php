@@ -88,123 +88,154 @@ public function create(Request $request)
 }
 
      public function store(Request $request)
-    {
-        $user = Auth::user();
-        $isAdminOrFinanceOrSuperAdmin = $user->hasAnyRole(['Admin', 'Finance', 'Super Admin']);
+{
+    $user = Auth::user();
+    $isAdminOrFinanceOrSuperAdmin = $user->hasAnyRole(['Admin', 'Finance', 'Super Admin']);
 
-        $rules = [
-            'formation_id' => 'required|exists:formations,id',
-            'selected_payment_option' => 'required|integer|min:1|max:12',
-            'notes' => 'nullable|string|max:1000'
-        ];
+    $rules = [
+        'formation_id' => 'required|exists:formations,id',
+        'selected_payment_option' => 'required|integer|min:1|max:12',
+        'notes' => 'nullable|string|max:1000'
+    ];
 
-        if ($isAdminOrFinanceOrSuperAdmin) {
-            $rules['user_id'] = 'required|exists:users,id';
-            $rules['status'] = 'required|in:pending,active,completed,cancelled';
-            $rules['paid_amount'] = 'required|numeric|min:0';
+    if ($isAdminOrFinanceOrSuperAdmin) {
+        $rules['user_id'] = 'required|exists:users,id';
+        $rules['status'] = 'required|in:pending,active,completed,cancelled';
+        $rules['paid_amount'] = 'required|numeric|min:0';
 
-            if ($request->paid_amount > 0) {
-                $rules['initial_receipt_file'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:2048';
-            } else {
-                $rules['initial_receipt_file'] = 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048';
-            }
+        if ($request->paid_amount > 0) {
+            $rules['initial_receipt_file'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:2048';
         } else {
-            $rules['documents'] = 'nullable|array';
-            $rules['documents.*'] = 'file|mimes:pdf,jpg,jpeg,png|max:2048';
+            $rules['initial_receipt_file'] = 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048';
         }
-
-        $validator = Validator::make($request->all(), $rules);
-
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
-
-        $formation = Formation::findOrFail($request->formation_id);
-        $userToEnroll = $isAdminOrFinanceOrSuperAdmin ? User::findOrFail($request->user_id) : $user;
-
-        $existingInscription = Inscription::where('user_id', $userToEnroll->id)
-            ->where('formation_id', $formation->id)
-            ->whereIn('status', ['pending', 'active'])
-            ->first();
-
-        if ($existingInscription) {
-            return redirect()->back()->with('error', 'Cet utilisateur a déjà une inscription active ou en attente pour cette formation.')->withInput();
-        }
-
-        if (!in_array($request->selected_payment_option, $formation->available_payment_options ?? [])) {
-            return redirect()->back()->with('error', 'Option de paiement sélectionnée non valide pour cette formation.')->withInput();
-        }
-
-        DB::beginTransaction();
-        try {
-            $chosenInstallments = $request->selected_payment_option;
-            $totalAmount = $formation->price;
-
-            // Nouvelle logique pour gérer la catégorie "Professionnelle"
-            $amountToDivide = $totalAmount;
-            if ($formation->category && in_array($formation->category->name, ['Master Professionnelle', 'Licence Professionnelle'])) {
-                $amountToDivide = $totalAmount - 1600;
-            }
-
-            $inscriptionStatus = $isAdminOrFinanceOrSuperAdmin ? $request->status : 'pending';
-            $initialPaidAmount = $isAdminOrFinanceOrSuperAdmin ? $request->paid_amount : 0;
-            $receiptPathForInitialPayment = null;
-
-            if ($isAdminOrFinanceOrSuperAdmin && $initialPaidAmount > 0 && $request->hasFile('initial_receipt_file')) {
-                $initialReceiptFile = $request->file('initial_receipt_file');
-                $receiptPathForInitialPayment = $initialReceiptFile->store('payment_receipts/' . $userToEnroll->id, 'public');
-            }
-
-            // Calculer le montant par acompte en utilisant le montant à diviser
-            $amountPerInstallment = ($chosenInstallments > 0) ? round($amountToDivide / $chosenInstallments, 2) : $amountToDivide;
-
-            $inscription = Inscription::create([
-                'user_id' => $userToEnroll->id,
-                'formation_id' => $request->formation_id,
-                'status' => $inscriptionStatus,
-                'inscription_date' => now(),
-                'total_amount' => $totalAmount,
-                'paid_amount' => $initialPaidAmount,
-                'chosen_installments' => $chosenInstallments,
-                'amount_per_installment' => $amountPerInstallment,
-                'remaining_installments' => ($amountPerInstallment > 0) ? ceil(($totalAmount - $initialPaidAmount) / $amountPerInstallment) : 0,
-                'notes' => $request->notes,
-                'documents' => [],
-            ]);
-
-            if (!$isAdminOrFinanceOrSuperAdmin && $request->hasFile('documents')) {
-                $documentPaths = [];
-                foreach ($request->file('documents') as $documentFile) {
-                    $path = $documentFile->store('inscription_documents/' . $inscription->id, 'public');
-                    $documentPaths[] = $path;
-                }
-                $inscription->documents = $documentPaths;
-                $inscription->save();
-            }
-
-            if ($isAdminOrFinanceOrSuperAdmin && $initialPaidAmount > 0) {
-                Payment::create([
-                    'inscription_id' => $inscription->id,
-                    'amount' => $initialPaidAmount,
-                    'paid_date' => now(),
-                    'payment_method' => 'cash',
-                    'status' => 'paid',
-                    'reference' => 'Paiement initial manuel',
-                    'receipt_path' => $receiptPathForInitialPayment,
-                ]);
-            }
-
-            DB::commit();
-
-            return redirect()->route('inscriptions.show', $inscription)
-                ->with('success', $isAdminOrFinanceOrSuperAdmin ? 'Inscription créée avec succès par l\'administrateur.' : 'Votre inscription a été créée avec succès ! Veuillez procéder au paiement.');
-
-        } catch (\Exception $e) {
-            DB::rollback();
-            Log::error('Erreur lors de la création de l\'inscription : ' . $e->getMessage() . ' dans ' . $e->getFile() . ' à la ligne ' . $e->getLine());
-            return redirect()->back()->with('error', 'Une erreur s\'est produite lors de la création de l\'inscription. Veuillez réessayer.')->withInput();
-        }
+    } else {
+        $rules['documents'] = 'nullable|array';
+        $rules['documents.*'] = 'file|mimes:pdf,jpg,jpeg,png|max:2048';
     }
+
+    $validator = Validator::make($request->all(), $rules);
+
+    if ($validator->fails()) {
+        return redirect()->back()->withErrors($validator)->withInput();
+    }
+
+    $formation = Formation::findOrFail($request->formation_id);
+    $userToEnroll = $isAdminOrFinanceOrSuperAdmin ? User::findOrFail($request->user_id) : $user;
+
+    $existingInscription = Inscription::where('user_id', $userToEnroll->id)
+        ->where('formation_id', $formation->id)
+        ->whereIn('status', ['pending', 'active'])
+        ->first();
+
+    if ($existingInscription) {
+        return redirect()->back()->with('error', 'Cet utilisateur a déjà une inscription active ou en attente pour cette formation.')->withInput();
+    }
+
+    if (!in_array($request->selected_payment_option, $formation->available_payment_options ?? [])) {
+        return redirect()->back()->with('error', 'Option de paiement sélectionnée non valide pour cette formation.')->withInput();
+    }
+
+    DB::beginTransaction();
+    try {
+        $chosenInstallments = $request->selected_payment_option;
+        $totalAmount = $formation->price;
+        $initialPaidAmount = $isAdminOrFinanceOrSuperAdmin ? $request->paid_amount : 0;
+        $receiptPathForInitialPayment = null;
+
+        // NEW LOGIC FOR PROFESSIONAL CATEGORIES
+        $amountToDivide = $totalAmount;
+        $fixedFee = 0; // montant fixe s'il existe
+
+        if ($formation->category && in_array($formation->category->name, ['Master Professionnelle', 'Licence Professionnelle'])) {
+            $fixedFee = 1600; // Le frais fixe
+            // On calcule le montant qui reste après déduction du frais fixe du prix total
+            $amountToDivide = $totalAmount - $fixedFee; 
+        }
+
+        // CALCULER L'AMOUT PAR INSTALLMENT SELON LA LOGIQUE STANDARD (1800 DH)
+        // Ceci est la valeur attendue pour chaque installment
+        $standardAmountPerInstallment = ($chosenInstallments > 0) ? round($amountToDivide / $chosenInstallments, 2) : $amountToDivide;
+
+        // CALCULER LE MONTANT PAYÉ HORS FRAIS FIXE
+        // Si le montant initial payé est supérieur aux frais fixes, la différence est un acompte
+        $paymentTowardsInstallments = max(0, $initialPaidAmount - $fixedFee);
+
+        // CALCULER LE NOMBRE D'ACOMPTES DÉJÀ PAYÉS
+        // On calcule combien d'acomptes complets ont été couverts par le paiement initial
+        // Si 2000 DH est payé, cela couvre le frais fixe (1600) + une partie d'un acompte (400)
+        // on ne déduit un acompte restant que si un acompte complet est payé
+        $paidInstallmentsCount = floor($paymentTowardsInstallments / $standardAmountPerInstallment);
+
+        // CALCULER LE MONTANT TOTAL DÉDUIT DES ACOMPTES PAYÉS
+        $paidInstallmentsAmount = $paidInstallmentsCount * $standardAmountPerInstallment;
+        
+        // LE MONTANT RESTANT À PAYER DE LA PREMIÈRE INSTALLMENT SI ELLE N'EST PAS COMPLÈTE
+        $remainingAmountOfFirstInstallment = $paymentTowardsInstallments - $paidInstallmentsAmount;
+        
+        // CALCUL DU MONTANT RESTANT À PAYER AU TOTAL
+        $remainingAmountToPay = $amountToDivide - $paidInstallmentsAmount;
+
+        // CALCULER LE NOMBRE D'ACOMPTES RESTANTS
+        $remainingInstallmentsCount = $chosenInstallments - $paidInstallmentsCount;
+
+
+        $inscriptionStatus = $isAdminOrFinanceOrSuperAdmin ? $request->status : 'pending';
+
+        if ($isAdminOrFinanceOrSuperAdmin && $initialPaidAmount > 0 && $request->hasFile('initial_receipt_file')) {
+            $initialReceiptFile = $request->file('initial_receipt_file');
+            $receiptPathForInitialPayment = $initialReceiptFile->store('payment_receipts/' . $userToEnroll->id, 'public');
+        }
+
+        $inscription = Inscription::create([
+            'user_id' => $userToEnroll->id,
+            'formation_id' => $request->formation_id,
+            'status' => $inscriptionStatus,
+            'inscription_date' => now(),
+            'total_amount' => $totalAmount,
+            'paid_amount' => $initialPaidAmount, // On enregistre le montant exact payé
+            'chosen_installments' => $chosenInstallments,
+            'amount_per_installment' => $standardAmountPerInstallment,
+            // Recalculer les acomptes restants en fonction du montant initial payé
+            // Si on paie 2000 DH, cela couvre 1600+400, on déduit une partie
+            'remaining_installments' => $remainingInstallmentsCount,
+            'notes' => $request->notes,
+            'documents' => [],
+        ]);
+
+        if (!$isAdminOrFinanceOrSuperAdmin && $request->hasFile('documents')) {
+            $documentPaths = [];
+            foreach ($request->file('documents') as $documentFile) {
+                $path = $documentFile->store('inscription_documents/' . $inscription->id, 'public');
+                $documentPaths[] = $path;
+            }
+            $inscription->documents = $documentPaths;
+            $inscription->save();
+        }
+
+        // Créer un enregistrement de paiement pour le montant initial
+        if ($isAdminOrFinanceOrSuperAdmin && $initialPaidAmount > 0) {
+            Payment::create([
+                'inscription_id' => $inscription->id,
+                'amount' => $initialPaidAmount,
+                'paid_date' => now(),
+                'payment_method' => 'cash',
+                'status' => 'paid',
+                'reference' => 'Paiement initial manuel (Frais fixes + acompte)',
+                'receipt_path' => $receiptPathForInitialPayment,
+            ]);
+        }
+
+        DB::commit();
+
+        return redirect()->route('inscriptions.show', $inscription)
+            ->with('success', $isAdminOrFinanceOrSuperAdmin ? 'Inscription créée avec succès par l\'administrateur.' : 'Votre inscription a été créée avec succès ! Veuillez procéder au paiement.');
+
+    } catch (\Exception $e) {
+        DB::rollback();
+        Log::error('Erreur lors de la création de l\'inscription : ' . $e->getMessage() . ' dans ' . $e->getFile() . ' à la ligne ' . $e->getLine());
+        return redirect()->back()->with('error', 'Une erreur s\'est produite lors de la création de l\'inscription. Veuillez réessayer.')->withInput();
+    }
+}
 
     public function show(Inscription $inscription)
     {
