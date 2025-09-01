@@ -630,7 +630,7 @@
         }
         .status-badge {
             margin-top: 10px;
-            align-self: flex-end; /* Align badge to the end when stacked */
+            align-self: flex-end; 
         }
     }
 </style>
@@ -643,7 +643,7 @@
             use Carbon\Carbon;
         @endphp
         <div class="card-base header-card">
-            <h1><i class="fa-solid fa-gauge-high"></i> de Bord Administrateur</h1>
+            <h1><i class="fa-solid fa-gauge-high"></i> Tableau de Bord Administrateur</h1>
             <p class="header-subtitle">Aperçu complet des performances de votre plateforme</p>
 
             <form method="GET" action="{{ route('dashboard') }}" class="date-filter">
