@@ -87,7 +87,8 @@ public function create(Request $request)
     return view('inscriptions.create', compact('users', 'formations'));
 }
 
-     public function store(Request $request)
+ // InscriptionController.php
+public function store(Request $request)
 {
     $user = Auth::user();
     $isAdminOrFinanceOrSuperAdmin = $user->hasAnyRole(['Admin', 'Finance', 'Super Admin']);
@@ -97,11 +98,13 @@ public function create(Request $request)
         'selected_payment_option' => 'required|integer|min:1|max:12',
         'notes' => 'nullable|string|max:1000'
     ];
-
+    
+    // Ajout d'une règle pour le prix modifiable
     if ($isAdminOrFinanceOrSuperAdmin) {
         $rules['user_id'] = 'required|exists:users,id';
         $rules['status'] = 'required|in:pending,active,completed,cancelled';
         $rules['paid_amount'] = 'required|numeric|min:0';
+        $rules['total_amount_override'] = 'nullable|numeric|min:0'; // La nouvelle règle de validation
 
         if ($request->paid_amount > 0) {
             $rules['initial_receipt_file'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:2048';
@@ -138,47 +141,32 @@ public function create(Request $request)
     DB::beginTransaction();
     try {
         $chosenInstallments = $request->selected_payment_option;
-        $totalAmount = $formation->price;
+        
+        // --- NEW LOGIC: Utiliser le prix modifié si l'admin l'a saisi ---
+        $totalAmount = $isAdminOrFinanceOrSuperAdmin && $request->filled('total_amount_override') 
+                     ? (float) $request->total_amount_override 
+                     : $formation->price;
+        // --- FIN DE LA NOUVELLE LOGIQUE ---
+        
         $initialPaidAmount = $isAdminOrFinanceOrSuperAdmin ? $request->paid_amount : 0;
         $receiptPathForInitialPayment = null;
-
-        // NEW LOGIC FOR PROFESSIONAL CATEGORIES
-        $amountToDivide = $totalAmount;
-        $fixedFee = 0; // montant fixe s'il existe
-
+        
+        $fixedFee = 0;
         if ($formation->category && in_array($formation->category->name, ['Master Professionnelle', 'Licence Professionnelle'])) {
-            $fixedFee = 1600; // Le frais fixe
-            // On calcule le montant qui reste après déduction du frais fixe du prix total
-            $amountToDivide = $totalAmount - $fixedFee; 
+            $fixedFee = 1600;
         }
 
-        // CALCULER L'AMOUT PAR INSTALLMENT SELON LA LOGIQUE STANDARD (1800 DH)
-        // Ceci est la valeur attendue pour chaque installment
-        $standardAmountPerInstallment = ($chosenInstallments > 0) ? round($amountToDivide / $chosenInstallments, 2) : $amountToDivide;
-
-        // CALCULER LE MONTANT PAYÉ HORS FRAIS FIXE
-        // Si le montant initial payé est supérieur aux frais fixes, la différence est un acompte
-        $paymentTowardsInstallments = max(0, $initialPaidAmount - $fixedFee);
-
-        // CALCULER LE NOMBRE D'ACOMPTES DÉJÀ PAYÉS
-        // On calcule combien d'acomptes complets ont été couverts par le paiement initial
-        // Si 2000 DH est payé, cela couvre le frais fixe (1600) + une partie d'un acompte (400)
-        // on ne déduit un acompte restant que si un acompte complet est payé
-        $paidInstallmentsCount = floor($paymentTowardsInstallments / $standardAmountPerInstallment);
-
-        // CALCULER LE MONTANT TOTAL DÉDUIT DES ACOMPTES PAYÉS
-        $paidInstallmentsAmount = $paidInstallmentsCount * $standardAmountPerInstallment;
+        // Le montant à diviser est basé sur le nouveau prix total
+        $totalInstallmentAmount = ($fixedFee > 0) ? ($totalAmount - $fixedFee) : $totalAmount;
         
-        // LE MONTANT RESTANT À PAYER DE LA PREMIÈRE INSTALLMENT SI ELLE N'EST PAS COMPLÈTE
-        $remainingAmountOfFirstInstallment = $paymentTowardsInstallments - $paidInstallmentsAmount;
+        $remainingAmountToPayForInstallments = $totalInstallmentAmount - max(0, $initialPaidAmount - $fixedFee);
+
+        $numberOfRemainingInstallments = $chosenInstallments; 
+
+        $amountPerInstallment = ($remainingAmountToPayForInstallments > 0 && $numberOfRemainingInstallments > 0)
+                                ? round($remainingAmountToPayForInstallments / $numberOfRemainingInstallments, 2)
+                                : 0;
         
-        // CALCUL DU MONTANT RESTANT À PAYER AU TOTAL
-        $remainingAmountToPay = $amountToDivide - $paidInstallmentsAmount;
-
-        // CALCULER LE NOMBRE D'ACOMPTES RESTANTS
-        $remainingInstallmentsCount = $chosenInstallments - $paidInstallmentsCount;
-
-
         $inscriptionStatus = $isAdminOrFinanceOrSuperAdmin ? $request->status : 'pending';
 
         if ($isAdminOrFinanceOrSuperAdmin && $initialPaidAmount > 0 && $request->hasFile('initial_receipt_file')) {
@@ -191,13 +179,11 @@ public function create(Request $request)
             'formation_id' => $request->formation_id,
             'status' => $inscriptionStatus,
             'inscription_date' => now(),
-            'total_amount' => $totalAmount,
-            'paid_amount' => $initialPaidAmount, // On enregistre le montant exact payé
+            'total_amount' => $totalAmount, // On enregistre le prix final
+            'paid_amount' => $initialPaidAmount,
             'chosen_installments' => $chosenInstallments,
-            'amount_per_installment' => $standardAmountPerInstallment,
-            // Recalculer les acomptes restants en fonction du montant initial payé
-            // Si on paie 2000 DH, cela couvre 1600+400, on déduit une partie
-            'remaining_installments' => $remainingInstallmentsCount,
+            'amount_per_installment' => $amountPerInstallment,
+            'remaining_installments' => $numberOfRemainingInstallments,
             'notes' => $request->notes,
             'documents' => [],
         ]);
@@ -212,7 +198,6 @@ public function create(Request $request)
             $inscription->save();
         }
 
-        // Créer un enregistrement de paiement pour le montant initial
         if ($isAdminOrFinanceOrSuperAdmin && $initialPaidAmount > 0) {
             Payment::create([
                 'inscription_id' => $inscription->id,
@@ -220,7 +205,7 @@ public function create(Request $request)
                 'paid_date' => now(),
                 'payment_method' => 'cash',
                 'status' => 'paid',
-                'reference' => 'Paiement initial manuel (Frais fixes + acompte)',
+                'reference' => 'Paiement initial manuel',
                 'receipt_path' => $receiptPathForInitialPayment,
             ]);
         }
@@ -237,7 +222,7 @@ public function create(Request $request)
     }
 }
 
-    public function show(Inscription $inscription)
+public function show(Inscription $inscription)
     {
         $user = Auth::user();
         // Si l'utilisateur n'est pas 'admin' ou 'finance' ou 'super admin' et qu'il n'est pas le propriétaire de l'inscription, l'accès est refusé
@@ -265,87 +250,86 @@ public function create(Request $request)
         return view('inscriptions.edit', compact('inscription', 'formations', 'users'));
     }
 
-    public function update(Request $request, Inscription $inscription)
-    {
-        $validator = Validator::make($request->all(), [
-            'status' => 'required|in:pending,active,completed,cancelled',
-            'chosen_installments' => 'required|integer|min:1',
-            'total_amount' => 'required|numeric|min:0',
-            'paid_amount' => 'required|numeric|min:0', 
-            'documents' => 'nullable|array', 
-            'documents.*' => 'file|mimes:pdf,jpg,jpeg,png|max:8048',
-            'notes' => 'nullable|string|max:1000',
-            'access_restricted' => 'boolean', // <--- Ceci est correct pour la validation
-            'next_installment_due_date' => 'nullable|date', // <--- Ceci est correct pour la validation
-        ]);
+   public function update(Request $request, Inscription $inscription)
+{
+    // Règle de validation pour le nouveau champ 'total_amount'
+    $validator = Validator::make($request->all(), [
+        'status' => 'required|in:pending,active,completed,cancelled',
+        'chosen_installments' => 'required|integer|min:1',
+        'total_amount' => 'required|numeric|min:0', // Le montant total est maintenant un champ modifiable
+        'paid_amount' => 'required|numeric|min:0', 
+        'documents' => 'nullable|array', 
+        'documents.*' => 'file|mimes:pdf,jpg,jpeg,png|max:8048',
+        'notes' => 'nullable|string|max:1000',
+        'access_restricted' => 'boolean',
+        'next_installment_due_date' => 'nullable|date',
+    ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
-
-        DB::beginTransaction();
-        try {
-            $oldPaidAmount = $inscription->paid_amount;
-            $oldStatus = $inscription->status; 
-            $oldAccessRestricted = $inscription->access_restricted; // Conserver l'ancien état
-
-            $newPaidAmount = $request->paid_amount;
-            $chosenInstallments = $request->chosen_installments;
-            $totalAmount = $request->total_amount;
-            // $amountPerInstallment = ($chosenInstallments > 0) ? round($totalAmount / $chosenInstallments, 2) : $totalAmount; // Nous ne l'utilisons plus ici
-
-            $inscription->fill([
-                'status' => $request->status,
-                'total_amount' => $totalAmount,
-                'paid_amount' => $newPaidAmount, // Mise à jour du montant payé
-                'chosen_installments' => $chosenInstallments,
-                // Nous ne mettons pas 'amount_per_installment' ici car il ne change pas lors de la mise à jour
-                // Et nous ne mettons pas 'remaining_installments' ici pour éviter un recalcul incorrect
-                'notes' => $request->notes,
-                'access_restricted' => $request->boolean('access_restricted'), // <--- Mettre à jour access_restricted directement
-                'next_installment_due_date' => $request->next_installment_due_date, // <--- Mettre à jour next_installment_due_date directement
-            ]);
-
-            $uploadedDocumentPaths = $inscription->documents ?? [];
-            if ($request->hasFile('documents')) {
-                foreach ($request->file('documents') as $documentFile) {
-                    $path = $documentFile->store('inscription_documents/' . $inscription->id, 'public');
-                    $uploadedDocumentPaths[] = $path;
-                }
-            }
-            $inscription->documents = $uploadedDocumentPaths;
-
-            $inscription->save(); // Enregistrer les modifications de base
-
-            // S'il y a une différence positive dans le montant payé (nouveau paiement via le formulaire de modification)
-            if ($newPaidAmount > $oldPaidAmount) {
-                $newPaymentAmount = $newPaidAmount - $oldPaidAmount;
-                // Ajouter ce nouveau paiement comme un enregistrement distinct
-                // Cette fonction doit mettre à jour correctement paid_amount dans Inscription
-                // et doit modifier remaining_installments dans Inscription (diminuer de un)
-                $inscription->addPayment($newPaymentAmount, 'cash', 'Paiement manuel via édition'); 
-            }
-
-            // Si l'état de restriction d'accès est passé de restreint à non restreint (l'administrateur a levé la restriction)
-            if ($oldAccessRestricted && !$inscription->access_restricted) {
-                Log::info("L'administrateur (" . (Auth::id() ?? 'N/A') . ") a levé la restriction d'accès pour l'inscription ID : {$inscription->id}.");
-                // Mettre à jour la prochaine date d'échéance au 5ème jour du mois suivant si la restriction est levée
-                if (!$inscription->next_installment_due_date || $inscription->next_installment_due_date->lt(Carbon::today()->day(5))) {
-                   $inscription->next_installment_due_date = Carbon::today()->addMonth()->day(5);
-                   $inscription->save(); // Enregistrer la nouvelle modification de la date d'échéance
-                }
-            }
-            // Si access_restricted est passé de false à true, pas besoin de logique spéciale ici
-            // car la tâche planifiée se chargera de restreindre l'accès et de mettre à jour next_installment_due_date si nécessaire
-
-            DB::commit();
-            return redirect()->route('inscriptions.show', $inscription)->with('success', 'Inscription mise à jour avec succès.');
-        } catch (\Exception $e) {
-            DB::rollback();
-            Log::error('Erreur lors de la mise à jour de l\'inscription : ' . $e->getMessage() . ' dans ' . $e->getFile() . ' à la ligne ' . $e->getLine());
-            return redirect()->back()->with('error', 'Une erreur s\'est produite lors de la mise à jour de l\'inscription. Veuillez réessayer.')->withInput();
-        }
+    if ($validator->fails()) {
+        return redirect()->back()->withErrors($validator)->withInput();
     }
+
+    DB::beginTransaction();
+    try {
+        $oldPaidAmount = $inscription->paid_amount;
+        
+        $newTotalAmount = (float) $request->total_amount;
+        $newPaidAmount = (float) $request->paid_amount;
+        $chosenInstallments = (int) $request->chosen_installments;
+        $oldRemainingAmount = $inscription->total_amount - $inscription->paid_amount;
+
+        // --- DEBUT DU NOUVEAU LOGIQUE DE CALCUL ---
+        
+        // On calcule le montant total qui reste à diviser
+        $remainingBalance = $newTotalAmount - $newPaidAmount;
+        
+        // On recalcule le montant de chaque acompte basé sur le nouveau solde et le nouveau nombre d'acomptes
+        $newAmountPerInstallment = ($remainingBalance > 0 && $chosenInstallments > 0) 
+                                ? round($remainingBalance / $chosenInstallments, 2) 
+                                : 0;
+        
+        // Le nombre d'acomptes restants est maintenant le nombre total d'acomptes choisi
+        // La logique est simplifiée pour que l'acompte soit un calcul direct.
+        // Si la différence entre l'ancien paid_amount et le nouveau est positive,
+        // on peut ajouter un paiement, mais pour l'instant on garde la logique de base.
+        $newRemainingInstallments = $chosenInstallments;
+
+        // Si le montant total est payé, on met les acomptes restants à 0.
+        if (abs($newTotalAmount - $newPaidAmount) < 0.01) {
+            $newRemainingInstallments = 0;
+        }
+
+        // --- FIN DU NOUVEAU LOGIQUE DE CALCUL ---
+
+        $inscription->fill([
+            'status' => $request->status,
+            'total_amount' => $newTotalAmount, // Mise à jour du nouveau montant total
+            'paid_amount' => $newPaidAmount, // Mise à jour du nouveau montant payé
+            'chosen_installments' => $chosenInstallments,
+            'amount_per_installment' => $newAmountPerInstallment, // Mise à jour du montant par acompte
+            'remaining_installments' => $newRemainingInstallments, // Mise à jour des acomptes restants
+            'notes' => $request->notes,
+            'access_restricted' => $request->boolean('access_restricted'), 
+            'next_installment_due_date' => $request->next_installment_due_date,
+        ]);
+        
+        // Gérer l'ajout d'un paiement si le montant payé a augmenté
+        if ($newPaidAmount > $oldPaidAmount) {
+            $newPaymentAmount = $newPaidAmount - $oldPaidAmount;
+            // Assurez-vous que la méthode addPayment() de votre modèle Inscription est correcte
+            $inscription->addPayment($newPaymentAmount, 'cash', 'Paiement manuel via édition');
+        }
+
+        $inscription->save();
+
+        DB::commit();
+        return redirect()->route('inscriptions.show', $inscription)->with('success', 'Inscription mise à jour avec succès.');
+    } catch (\Exception $e) {
+        DB::rollback();
+        Log::error('Erreur lors de la mise à jour de l\'inscription : ' . $e->getMessage() . ' dans ' . $e->getFile() . ' à la ligne ' . $e->getLine());
+        return redirect()->back()->with('error', 'Une erreur s\'est produite lors de la mise à jour de l\'inscription. Veuillez réessayer.')->withInput();
+    }
+}
 
     public function destroy(Inscription $inscription)
     {

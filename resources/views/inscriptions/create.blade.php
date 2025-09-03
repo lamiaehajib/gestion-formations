@@ -101,6 +101,19 @@
                                 @enderror
                             </div>
 
+                            <div class="form-group animate-fade-in-up md:col-span-2">
+                                <label for="total_amount_override" class="form-label label-with-icon text-green-700">
+                                    Montant Total de l'Inscription (après réduction)
+                                    <i class="fas fa-percent input-icon-label text-green-500"></i>
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="number" step="0.01" min="0" name="total_amount_override" id="total_amount_override" class="form-input text-green-700 font-bold" value="" placeholder="Prix total normal de la formation">
+                                </div>
+                                @error('total_amount_override')
+                                    <p class="error-message">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            
                             <div class="md:col-span-2 form-group animate-bounce-in" id="payment-details-summary" style="display: none;">
                                 <div class="bg-gray-100 border-l-4 border-red-500 text-gray-700 p-4 rounded-lg shadow-inner">
                                     <h5 class="font-bold text-lg mb-2">Détails du Paiement</h5>
@@ -184,6 +197,7 @@
             const formationSelect = document.getElementById('formation_id');
             const paymentOptionSelect = document.getElementById('selected_payment_option');
             const initialPaidAmountInput = document.getElementById('initial_paid_amount');
+            const totalAmountOverrideInput = document.getElementById('total_amount_override');
             const initialReceiptUploadSection = document.getElementById('initial_receipt_upload_section');
             const initialReceiptFileInput = document.getElementById('initial_receipt_file');
             const inscriptionForm = document.getElementById('inscription-form');
@@ -206,7 +220,7 @@
 
             function updatePaymentOptionsAndAmount() {
                 const selectedFormationOption = formationSelect.options[formationSelect.selectedIndex];
-                const formationPrice = parseFloat(selectedFormationOption.dataset.price || 0);
+                let formationPrice = parseFloat(selectedFormationOption.dataset.price || 0);
                 const formationCategory = selectedFormationOption.dataset.category;
                 const availableOptionsJson = selectedFormationOption.dataset.availableOptions;
                 let availableOptions = [];
@@ -246,62 +260,63 @@
                     paymentOptionSelect.appendChild(defaultOption);
                     paymentOptionSelect.value = "1";
                 }
+                
+                // Mettre à jour le prix total affiché dans le champ de réduction
+                if (totalAmountOverrideInput) {
+                    totalAmountOverrideInput.value = formationPrice.toFixed(2);
+                }
 
                 updateInitialPaymentAmountAndReceiptVisibility();
             }
 
-            // La fonction complète avec le nouveau calcul
-
             function updateInitialPaymentAmountAndReceiptVisibility() {
                 const selectedFormationOption = formationSelect.options[formationSelect.selectedIndex];
-                const formationPrice = parseFloat(selectedFormationOption.dataset.price || 0);
-                const formationCategory = selectedFormationOption.dataset.category;
+                let formationPrice = parseFloat(selectedFormationOption.dataset.price || 0);
+                const formationCategory = selectedFormationOption.dataset.category; // Assurez-vous que cette ligne est présente
                 const selectedPaymentOption = parseInt(paymentOptionSelect.value);
-
-                let defaultAmount = 0;
-                let showReceiptField = false;
-                let amountToDivide = formationPrice;
-
-                // Masquer le résumé du paiement initialement
-                paymentDetailsSummary.style.display = 'none';
-
-                const isProfessional = (formationCategory === 'Master Professionnelle' || formationCategory === 'Licence Professionnelle');
+                const initialPaidAmount = parseFloat(initialPaidAmountInput.value) || 0;
                 
-                
-                if (isProfessional && selectedPaymentOption === 10) {
-                    const initialFee = 1600;
-                    amountToDivide = formationPrice - initialFee; // 19600 - 1600 = 18000
-                    defaultAmount = initialFee;
-                    showReceiptField = true;
-                    
-                    // NOUVEAU CALCUL ICI : on divise par 10 versements au lieu de 9
-                    const monthlyPayment = (amountToDivide / selectedPaymentOption).toFixed(2); // 18000 / 10 = 1800
-                    const remainingInstallments = selectedPaymentOption;
+                // Utiliser le prix de la formation modifié si l'administrateur a saisi une valeur
+                const finalTotalAmount = parseFloat(totalAmountOverrideInput.value) || formationPrice;
 
-                    paymentDetailsSummary.style.display = 'block';
-                    firstPaymentDetails.innerHTML = `<strong>Premier Versement:</strong> <span class="text-red-600">${initialFee.toFixed(2)} DH</span>`;
-                    remainingPaymentsDetails.textContent = `Le montant restant (${amountToDivide.toFixed(2)} DH) sera divisé en ${remainingInstallments} versements, chaque versement d'un montant de ${monthlyPayment} DH par mois.`;
+                let showReceiptField = true;
 
-                } else if (selectedPaymentOption > 1) {
-                    // Standard calculation for other payment options
-                    defaultAmount = (amountToDivide / selectedPaymentOption).toFixed(2);
-                    showReceiptField = true;
-
-                    paymentDetailsSummary.style.display = 'block';
-                    firstPaymentDetails.innerHTML = `<strong>Montant de chaque versement:</strong> <span class="text-red-600">${defaultAmount} DH</span>`;
-                    remainingPaymentsDetails.textContent = `Le montant total à diviser: ${amountToDivide.toFixed(2)} DH.`;
-
-                } else if (selectedPaymentOption === 1) {
-                    // Full payment calculation
-                    defaultAmount = formationPrice;
-                    showReceiptField = true;
-                    
-                    paymentDetailsSummary.style.display = 'block';
-                    firstPaymentDetails.textContent = `Paiement complet: ${formationPrice.toFixed(2)} DH`;
-                    remainingPaymentsDetails.textContent = '';
+                // --- NEW LOGIC: Calculate remaining amount for installments ---
+                let fixedFee = 0;
+                if (formationCategory === 'Master Professionnelle' || formationCategory === 'Licence Professionnelle') {
+                    fixedFee = 1600;
                 }
+                
+                // Total amount to be divided (e.g., 18000 DH for professional courses)
+                const totalInstallmentAmount = finalTotalAmount - fixedFee;
 
-                initialPaidAmountInput.value = defaultAmount;
+                // Amount paid that exceeds the fixed fee
+                const extraPaidAmount = Math.max(0, initialPaidAmount - fixedFee);
+                
+                // Remaining balance to be paid in installments (18000 - extraPaidAmount)
+                const remainingAmountToPayForInstallments = totalInstallmentAmount - extraPaidAmount;
+                
+                // Calculate the amount of each installment from the remaining balance
+                const amountPerInstallment = (remainingAmountToPayForInstallments > 0 && selectedPaymentOption > 0) 
+                                            ? (remainingAmountToPayForInstallments / selectedPaymentOption).toFixed(2)
+                                            : '0.00';
+                
+                // --- END OF NEW LOGIC ---
+
+                // Update the summary section
+                paymentDetailsSummary.style.display = 'block';
+                
+                let firstPaymentDetailsText = `<strong>Montant Initial Payé:</strong> <span class="text-red-600">${initialPaidAmount.toFixed(2)} DH</span>`;
+                if (fixedFee > 0) {
+                    firstPaymentDetailsText += ` (inclut les frais fixes de ${fixedFee.toFixed(2)} DH)`;
+                }
+                firstPaymentDetails.innerHTML = firstPaymentDetailsText;
+                
+                if (remainingAmountToPayForInstallments > 0) {
+                    remainingPaymentsDetails.textContent = `Le montant restant (${remainingAmountToPayForInstallments.toFixed(2)} DH) sera divisé en ${selectedPaymentOption} versements de ${amountPerInstallment} DH chacun.`;
+                } else {
+                    remainingPaymentsDetails.textContent = `Le paiement complet de la formation a été effectué.`;
+                }
 
                 if (showReceiptField) {
                     initialReceiptUploadSection.classList.remove('hidden');
@@ -313,12 +328,19 @@
                 }
             }
 
+            // Add an event listener to the initial paid amount input
+            initialPaidAmountInput.addEventListener('input', updateInitialPaymentAmountAndReceiptVisibility);
+            
+            // Add an event listener to the total amount override input
+            totalAmountOverrideInput.addEventListener('input', updateInitialPaymentAmountAndReceiptVisibility);
+
+            // Also call the function on change of formation and payment option
+            formationSelect.addEventListener('change', updatePaymentOptionsAndAmount);
+            paymentOptionSelect.addEventListener('change', updateInitialPaymentAmountAndReceiptVisibility);
+
             if (formationSelect.value) {
                 updatePaymentOptionsAndAmount();
             }
-
-            formationSelect.addEventListener('change', updatePaymentOptionsAndAmount);
-            paymentOptionSelect.addEventListener('change', updateInitialPaymentAmountAndReceiptVisibility);
 
             inscriptionForm.addEventListener('submit', function() {
                 submitBtn.disabled = true;
