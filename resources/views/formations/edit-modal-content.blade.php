@@ -289,12 +289,8 @@
     </form>
 </div>
 
-{{-- Ensure the dynamic field setup script runs after content is loaded --}}
-<script>
-    // This script block will be executed once the AJAX content is inserted.
-    // It calls the initializeModalForm function from the parent script.
-    // The parent script (formations/index.blade.php) needs to define initializeModalForm globally
-    // or ensure it's accessible here.
+
+<script> 
     if (typeof initializeModalForm === 'function') {
         const editForm = document.getElementById('formation-edit-form');
         if (editForm) {

@@ -1980,7 +1980,7 @@ window.initializeModalForm = function(formElement) { // Khas tkoun global haka
             const newCapacity = parseInt(formElement.querySelector('[id$="_capacity"]').value);
 
             // Fetch request needs to be aware of the exact URL structure
-            fetch(`/api/formations/${currentFormationId}/inscriptions-count`) // 👈 Make sure this URL matches your api.php route
+           fetch(`/formations/${currentFormationId}/inscriptions-count`)// 👈 Make sure this URL matches your api.php route
                 .then(response => {
                     // console.log('Response Status:', response.status); // Zid hadi
                     if (!response.ok) {
@@ -2190,16 +2190,4 @@ window.initializeModalForm = function(formElement) { // Khas tkoun global haka
 </script>
 @endpush
 @endsection
-
-
-
-
-
-
-
-
-
-
-
-
 
