@@ -548,33 +548,7 @@
             </div>
 
             {{-- Quick Actions Card --}}
-            @if(Auth::user()->role === 'Admin' || $inscription->user_id === Auth::id())
-                <div class="card animated-card fade-in-right" style="animation-delay: 0.4s;">
-                    <div class="card-header gradient-header text-white">
-                        <h4 class="card-title mb-0">
-                            <i class="fas fa-tools me-2 floating-icon"></i>
-                            Actions rapides
-                        </h4>
-                    </div>
-                    <div class="card-body glass-card">
-                        <div class="d-grid gap-3">
-                            @if(in_array($inscription->status, ['pending', 'active']))
-                               <form action="{{ route('inscriptions.updateStatus', $inscription) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cette inscription ?');">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="btn quick-action-btn text-white w-100">
-                                        <i class="fas fa-times-circle me-2"></i> Annuler l'inscription
-                                    </button>
-                                </form>
-                            @else
-                                <button type="button" class="btn btn-secondary w-100" disabled style="border-radius: 15px; padding: 15px 25px;">
-                                    <i class="fas fa-info-circle me-2"></i> Inscription déjà {{ $currentStatus['text'] ?? $inscription->status }}
-                                </button>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            @endif
+            
         </div>
     </div>
 </div>
