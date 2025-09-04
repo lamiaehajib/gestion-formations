@@ -122,106 +122,119 @@ class PaymentController extends Controller
     /**
      * Store a new payment
      */
-    public function store(Request $request)
-    {
-        $inscription = Inscription::findOrFail($request->inscription_id);
+   
+public function store(Request $request)
+{
+    $inscription = Inscription::findOrFail($request->inscription_id);
 
-        // Authorization check
-        if (!Auth::user() || (!Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) && $inscription->user_id !== Auth::id())) {
-            abort(403, 'Unauthorized action. You do not have permission to create this payment for this inscription.');
+    // Authorization check
+    if (!Auth::user() || (!Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) && $inscription->user_id !== Auth::id())) {
+        abort(403, 'Unauthorized action. You do not have permission to create this payment for this inscription.');
+    }
+
+    if (!Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) && $inscription->status === 'pending') {
+        return redirect()->back()->with('error', 'Vous ne pouvez pas effectuer un paiement pour une inscription en attente. Veuillez attendre que votre inscription soit activée.');
+    }
+
+    $validator = Validator::make($request->all(), [
+        'inscription_id' => 'required|exists:inscriptions,id',
+        'payment_choice' => 'required|in:full_remaining,next_installment,custom_amount', // << MODIFIED HERE
+        'amount_to_pay' => 'required|numeric|min:0.01',
+        'payment_method' => 'required|in:cash,bank_transfer',
+        'payment_description' => 'nullable|string|max:1000',
+        'receipt_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+    ]);
+
+    if ($validator->fails()) {
+        return redirect()->back()
+            ->withErrors($validator)
+            ->withInput();
+    }
+
+    DB::beginTransaction();
+    try {
+        $inscription->refresh();
+
+        $totalAmount = $inscription->total_amount;
+        $paidAmountSoFar = $inscription->paid_amount;
+        $remainingAmount = $totalAmount - $paidAmountSoFar;
+
+        $amountToPay = (float) $request->amount_to_pay;
+
+        $epsilon = 0.01;
+        
+        // Nouvelle logique: validation du montant à payer selon le choix
+        if ($request->payment_choice === 'full_remaining') {
+            $expectedAmount = $remainingAmount;
+            if (abs($amountToPay - $expectedAmount) > $epsilon) {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'Le montant saisi ne correspond pas au montant restant total.')->withInput();
+            }
+        } elseif ($request->payment_choice === 'next_installment') {
+            $expectedAmount = $inscription->amount_per_installment;
+            // Handle last payment being less than an installment
+            if ($remainingAmount < $expectedAmount) {
+                $expectedAmount = $remainingAmount;
+            }
+            if (abs($amountToPay - $expectedAmount) > $epsilon) {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'Le montant saisi ne correspond pas au montant du prochain versement.')->withInput();
+            }
+        } elseif ($amountToPay > $remainingAmount + $epsilon) { // Validation for custom amount
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Le montant à payer dépasse le reste dû pour cette inscription.')->withInput();
         }
 
-        // Prevent payments for 'pending' inscriptions by students.
-        if (!Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) && $inscription->status === 'pending') {
-            return redirect()->back()->with('error', 'Vous ne pouvez pas effectuer un paiement pour une inscription en attente. Veuillez attendre que votre inscription soit activée.');
+        $receiptPath = null;
+        if ($request->hasFile('receipt_file')) {
+            $receiptPath = $request->file('receipt_file')->store('payment_receipts/' . $inscription->id, 'public');
         }
 
-        $validator = Validator::make($request->all(), [
-            'inscription_id' => 'required|exists:inscriptions,id',
-            'payment_choice' => 'required|in:full_remaining,next_installment,custom_installments_count',
-            'amount_to_pay' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|in:cash,bank_transfer',
-            'payment_description' => 'nullable|string|max:1000',
-            'receipt_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+        $paymentStatus = 'pending';
+        $paidDate = null;
+        if (Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin'])) {
+            $paymentStatus = 'paid';
+            $paidDate = Carbon::now();
+        }
+        
+        $payment = Payment::create([
+            'inscription_id' => $inscription->id,
+            'amount' => $amountToPay,
+            'due_date' => Carbon::now()->addDays(7),
+            'paid_date' => $paidDate,
+            'payment_method' => $request->payment_method,
+            'status' => $paymentStatus,
+            'reference' => $request->payment_description,
+            'receipt_path' => $receiptPath,
+            'created_by_user_id' => Auth::id(),
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
+        if ($payment->status === 'paid') {
+            $inscription->paid_amount += $payment->amount;
+            $inscription->save();
+            $this->createPaymentNotification($payment);
         }
 
-        DB::beginTransaction();
-        try {
-            $inscription->refresh();
-
-            $totalAmount = $inscription->total_amount;
-            $paidAmountSoFar = $inscription->paid_amount;
-            $remainingAmount = $totalAmount - $paidAmountSoFar;
-
-            $amountToPay = (float) $request->amount_to_pay;
-
-            $epsilon = 0.01;
-            if ($amountToPay > $remainingAmount + $epsilon) {
-                DB::rollBack();
-                return redirect()->back()->with('error', 'Le montant à payer dépasse le reste dû pour cette inscription.')->withInput();
-            }
-
-            $receiptPath = null;
-            if ($request->hasFile('receipt_file')) {
-                $receiptPath = $request->file('receipt_file')->store('payment_receipts/' . $inscription->id, 'public');
-            }
-
-            $paymentStatus = 'pending';
-            $paidDate = null;
-            if (Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin'])) {
-                $paymentStatus = 'paid';
-                $paidDate = Carbon::now();
-            }
-
-            
-            $payment = Payment::create([
-                'inscription_id' => $inscription->id,
-                'amount' => $amountToPay,
-                'due_date' => Carbon::now()->addDays(7),
-                'paid_date' => $paidDate,
-                'payment_method' => $request->payment_method,
-                'status' => $paymentStatus,
-                'reference' => $request->payment_description,
-                'receipt_path' => $receiptPath,
-                'created_by_user_id' => Auth::id(),
-            ]);
-
-            if ($payment->status === 'paid') {
-                $inscription->paid_amount += $payment->amount;
-                $inscription->save();
-                // Hada ghir code dial notification interne, y9der ybqa
-                $this->createPaymentNotification($payment);
-            }
-
-            // ===============================================
-            // NOUVELLE LOGIQUE POUR L'ENVOI D'EMAIL A L'ADMIN
-            // ===============================================
-
-             $rolesToSendEmail = ['Admin', 'Finance', 'Super Admin'];
-            $admins = User::role($rolesToSendEmail)->get();
-            foreach ($admins as $admin) {
-                Mail::to($admin->email)->send(new NewPaymentNotification($payment));
-            }
-
-            DB::commit();
-
-            return redirect()->route('payments.show', $payment->id)
-                ->with('success', 'Votre paiement a été enregistré avec succès! Son statut est ' . ($paymentStatus === 'paid' ? 'Payé.' : 'En attente de validation.'));
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Error storing new payment: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
-            return redirect()->back()
-                ->with('error', 'Une erreur est survenue lors de l\'enregistrement de votre paiement. Veuillez réessayer.')
-                ->withInput();
+        $rolesToSendEmail = ['Admin', 'Finance', 'Super Admin'];
+        $admins = User::role($rolesToSendEmail)->get();
+        foreach ($admins as $admin) {
+            Mail::to($admin->email)->send(new NewPaymentNotification($payment));
         }
+
+        DB::commit();
+
+        return redirect()->route('payments.show', $payment->id)
+            ->with('success', 'Votre paiement a été enregistré avec succès! Son statut est ' . ($paymentStatus === 'paid' ? 'Payé.' : 'En attente de validation.'));
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Error storing new payment: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+        return redirect()->back()
+            ->with('error', 'Une erreur est survenue lors de l\'enregistrement de votre paiement. Veuillez réessayer.')
+            ->withInput();
     }
+}
+
 
 
     /**

@@ -2190,3 +2190,16 @@ window.initializeModalForm = function(formElement) { // Khas tkoun global haka
 </script>
 @endpush
 @endsection
+
+
+
+
+
+
+
+
+
+
+
+
+

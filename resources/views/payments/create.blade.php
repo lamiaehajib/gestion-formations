@@ -408,19 +408,34 @@
                                 </div>
                             </div>
 
-                            {{-- Champ Montant du paiement --}}
-                            <div id="amount-field" class="md:col-span-1 hidden">
-                                <label for="amount_to_pay" class="form-label-modern block">
-                                    <i class="fas fa-dollar-sign"></i> Montant à Payer <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <input type="number" step="0.01" min="0.01" class="form-control-modern bg-gray-100 cursor-not-allowed" id="amount_to_pay" name="amount_to_pay" value="{{ old('amount_to_pay') }}" required readonly>
-                                </div>
-                                <small class="form-text-modern" id="payment-hint"></small>
-                                @error('amount_to_pay')
-                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
+                           <div id="payment-options-section" class="md:col-span-2 hidden">
+    <label for="payment_choice" class="form-label-modern block">
+        <i class="fas fa-hand-holding-dollar"></i> Comment voulez-vous payer ? <span class="text-red-500">*</span>
+    </label>
+    <div class="space-y-2" id="payment-choices-radios">
+        {{-- Radio buttons will be inserted here by JavaScript --}}
+    </div>
+    @error('payment_choice')
+        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+    @enderror
+</div>
+
+{{-- Ancien: Dropdown for choosing number of installments --}}
+{{-- Ce bloc devient obsolète avec la nouvelle logique, on le retire --}}
+
+{{-- Champ Montant du paiement --}}
+<div id="amount-field" class="md:col-span-1 hidden">
+    <label for="amount_to_pay" class="form-label-modern block">
+        <i class="fas fa-dollar-sign"></i> Montant à Payer <span class="text-red-500">*</span>
+    </label>
+    <div class="relative">
+        <input type="number" step="0.01" min="0.01" class="form-control-modern bg-gray-100 cursor-not-allowed" id="amount_to_pay" name="amount_to_pay" value="{{ old('amount_to_pay') }}" required readonly>
+    </div>
+    <small class="form-text-modern" id="payment-hint"></small>
+    @error('amount_to_pay')
+        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+    @enderror
+</div>
 
                             {{-- Champ Date de paiement (Automatique) --}}
                             <div class="md:col-span-1">
@@ -500,329 +515,239 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const inscriptionSelect = document.getElementById('inscription_id');
-        const inscriptionInfoSection = document.getElementById('inscription-info');
-        const paymentOptionsSection = document.getElementById('payment-options-section');
-        const paymentChoicesRadios = document.getElementById('payment-choices-radios');
-        const customInstallmentsSelection = document.getElementById('custom-installments-selection');
-        const numInstallmentsToPaySelect = document.getElementById('num_installments_to_pay');
-        const amountToPayInput = document.getElementById('amount_to_pay');
-        const paymentHint = document.getElementById('payment-hint');
-        const submitBtn = document.getElementById('submit-btn');
-        const paymentForm = document.getElementById('paymentForm');
+document.addEventListener('DOMContentLoaded', function() {
+    const inscriptionSelect = document.getElementById('inscription_id');
+    const inscriptionInfoSection = document.getElementById('inscription-info');
+    const paymentOptionsSection = document.getElementById('payment-options-section');
+    const paymentChoicesRadios = document.getElementById('payment-choices-radios');
+    const amountToPayInput = document.getElementById('amount_to_pay');
+    const paymentHint = document.getElementById('payment-hint');
+    const submitBtn = document.getElementById('submit-btn');
+    const paymentForm = document.getElementById('paymentForm');
 
-        let currentInscriptionData = {};
-        const epsilon = 0.01; // Small value for floating point comparisons
+    let currentInscriptionData = {};
+    const epsilon = 0.01;
 
-        function updateInscriptionDetails() {
-            const selectedOption = inscriptionSelect.options[inscriptionSelect.selectedIndex];
-            
-            if (selectedOption.value) {
-                inscriptionInfoSection.classList.remove('hidden');
-                paymentOptionsSection.classList.remove('hidden');
-                
-                currentInscriptionData = {
-                    totalAmount: parseFloat(selectedOption.dataset.totalAmount),
-                    paidAmount: parseFloat(selectedOption.dataset.paidAmount),
-                    amountPerInstallment: parseFloat(selectedOption.dataset.amountPerInstallment),
-                    chosenInstallments: parseInt(selectedOption.dataset.chosenInstallments),
-                    remainingAmount: parseFloat(selectedOption.dataset.remainingAmount),
-                    formationTitle: selectedOption.textContent.split('(')[0].trim()
-                };
-
-                // Populate inscription info display
-                document.getElementById('info-formation-title').textContent = currentInscriptionData.formationTitle;
-                document.getElementById('info-total-amount').textContent = currentInscriptionData.totalAmount.toFixed(2);
-                document.getElementById('info-paid-amount').textContent = currentInscriptionData.paidAmount.toFixed(2);
-                document.getElementById('info-remaining-amount-display').textContent = currentInscriptionData.remainingAmount.toFixed(2);
-                
-                const paymentTypeText = currentInscriptionData.chosenInstallments === 1 
-                                                ? 'Paiement Complet' 
-                                                : `En ${currentInscriptionData.chosenInstallments} Versements`;
-                document.getElementById('info-payment-type').textContent = paymentTypeText;
-
-                // Disable payment options if remaining amount is zero or negligible
-                if (currentInscriptionData.remainingAmount <= epsilon) {
-                    paymentOptionsSection.classList.add('hidden');
-                    amountToPayInput.value = '0.00';
-                    amountToPayInput.readOnly = true;
-                    amountToPayInput.classList.add('bg-gray-100', 'cursor-not-allowed');
-                    paymentHint.textContent = 'Cette inscription est déjà entièrement payée.';
-                    submitBtn.disabled = true; // Button disabled if fully paid
-                    document.getElementById('amount-field').classList.remove('hidden'); // Ensure amount field is visible to show 0.00
-                } else {
-                    // Reset amount field and hint
-                    amountToPayInput.value = '';
-                    paymentHint.textContent = '';
-                    customInstallmentsSelection.classList.add('hidden'); // Hide on new inscription select
-                    amountToPayInput.readOnly = true;
-                    amountToPayInput.classList.add('bg-gray-100', 'cursor-not-allowed');
-                    document.getElementById('amount-field').classList.remove('hidden'); // Ensure amount field is visible
-
-                    // Generate payment options and let generatePaymentOptions/updateAmountField handle button state
-                    generatePaymentOptions(); 
-                }
-                
-            } else {
-                // No inscription selected
-                inscriptionInfoSection.classList.add('hidden');
-                paymentOptionsSection.classList.add('hidden');
-                paymentChoicesRadios.innerHTML = ''; // Clear radios
-                customInstallmentsSelection.classList.add('hidden'); // Hide on no inscription
-                numInstallmentsToPaySelect.innerHTML = ''; // Clear custom options
-                amountToPayInput.value = '';
-                amountToPayInput.readOnly = true;
-                amountToPayInput.classList.add('bg-gray-100', 'cursor-not-allowed');
-                paymentHint.textContent = '';
-                submitBtn.disabled = true; // Button disabled if no inscription selected
-                document.getElementById('amount-field').classList.add('hidden'); // Hide amount field
-            }
-        }
-
-        function generatePaymentOptions() {
-            paymentChoicesRadios.innerHTML = '';
-            const remaining = currentInscriptionData.remainingAmount;
-            const installmentAmount = currentInscriptionData.amountPerInstallment;
-            const currentPaidInstallments = Math.floor(currentInscriptionData.paidAmount / installmentAmount + epsilon);
-            const totalInstallments = currentInscriptionData.chosenInstallments;
-
-            // Option: Payer le reste total (Always show if remaining > 0)
-            if (remaining > epsilon) { 
-                addRadioButton('full_remaining', `Payer le reste total (${remaining.toFixed(2)} DH)`, remaining.toFixed(2));
-            }
-
-            // Option: Payer le prochain versement (if applicable and not full payment)
-            if (currentInscriptionData.chosenInstallments > 1 && remaining > epsilon) {
-                let nextInstallmentValue = installmentAmount;
-                // If this is the last installment and remaining is less than a full installment,
-                // set nextInstallmentValue to remaining.
-                if ((currentPaidInstallments + 1 === totalInstallments) && remaining < installmentAmount + epsilon) {
-                    nextInstallmentValue = remaining;
-                }
-                // Only show if not effectively the same as "full_remaining"
-                if (Math.abs(nextInstallmentValue - remaining) > epsilon) {
-                    addRadioButton('next_installment', `Payer le prochain versement (${nextInstallmentValue.toFixed(2)} DH)`, nextInstallmentValue.toFixed(2));
-                }
-            }
-            
-            // Option: Payer un montant personnalisé (which will reveal a dropdown for installments count)
-            const remainingInstallmentsCount = totalInstallments - currentPaidInstallments;
-            // Show custom installments option only if there are at least two installments remaining to choose from,
-            // and the remaining amount is more than one installment.
-            if (currentInscriptionData.chosenInstallments > 1 && remainingInstallmentsCount > 1 && remaining > installmentAmount + epsilon) {
-                addRadioButton('custom_installments_count', 'Payer un nombre d\'acomptes personnalisé', ''); // No amount needed here
-            }
-
-            paymentChoicesRadios.querySelectorAll('input[name="payment_choice"]').forEach(radio => {
-                radio.removeEventListener('change', updateAmountField); // Remove old listener to prevent duplicates
-                radio.addEventListener('change', updateAmountField);
-            });
-
-            // Automatically select the first available option if there are options,
-            // and trigger the amount update.
-            const firstRadio = paymentChoicesRadios.querySelector('input[type="radio"]');
-            if (firstRadio) {
-                firstRadio.checked = true;
-                updateAmountField(); 
-            } else {
-                amountToPayInput.value = '';
-                paymentHint.textContent = '';
-                submitBtn.disabled = true; // Button disabled if no payment options are generated
-            }
-        }
-
-        function addRadioButton(value, text, amount) {
-            const label = document.createElement('label');
-            label.className = 'inline-flex items-center cursor-pointer mb-2'; // Added cursor-pointer and margin-bottom
-            label.innerHTML = `
-                <input type="radio" class="form-radio-modern" name="payment_choice" value="${value}" data-amount="${amount}">
-                <span class="ml-2 text-gray-700">${text}</span>
-            `;
-            paymentChoicesRadios.appendChild(label);
-        }
-
-        function updateAmountField() {
-            const selectedPaymentChoice = document.querySelector('input[name="payment_choice"]:checked');
-            customInstallmentsSelection.classList.add('hidden'); 
-            numInstallmentsToPaySelect.innerHTML = '<option value="">-- Choisir le nombre d\'acomptes --</option>'; // Clear options
-
-            if (selectedPaymentChoice) {
-                const choiceValue = selectedPaymentChoice.value;
-                const remaining = currentInscriptionData.remainingAmount;
-                const installmentAmount = currentInscriptionData.amountPerInstallment;
-
-                if (choiceValue === 'full_remaining' || choiceValue === 'next_installment') {
-                    const amount = parseFloat(selectedPaymentChoice.dataset.amount);
-                    amountToPayInput.value = amount.toFixed(2);
-                    amountToPayInput.readOnly = true;
-                    amountToPayInput.classList.add('bg-gray-100', 'cursor-not-allowed');
-                    amountToPayInput.classList.remove('bg-white', 'cursor-text'); // Ensure correct classes
-                    paymentHint.textContent = selectedPaymentChoice.nextElementSibling.textContent + " sera appliqué.";
-                    submitBtn.disabled = false; // Enable button here
-                } else if (choiceValue === 'custom_installments_count') {
-                    amountToPayInput.value = '';
-                    amountToPayInput.readOnly = true;
-                    amountToPayInput.classList.add('bg-gray-100', 'cursor-not-allowed');
-                    amountToPayInput.classList.remove('bg-white', 'cursor-text'); // Ensure correct classes
-                    
-                    customInstallmentsSelection.classList.remove('hidden');
-                    populateCustomInstallmentsDropdown();
-                    
-                    paymentHint.textContent = `Veuillez choisir le nombre d'acomptes à payer.`;
-                    submitBtn.disabled = true; // Disable until a custom amount is chosen
-                }
-            } else {
-                amountToPayInput.value = '';
-                amountToPayInput.readOnly = true;
-                amountToPayInput.classList.add('bg-gray-100', 'cursor-not-allowed');
-                amountToPayInput.classList.remove('bg-white', 'cursor-text'); // Ensure correct classes
-                paymentHint.textContent = '';
-                submitBtn.disabled = true; // Disable if no choice is selected
-            }
-        }
-
-        function populateCustomInstallmentsDropdown() {
-            numInstallmentsToPaySelect.innerHTML = '<option value="">-- Choisir le nombre d\'acomptes --</option>';
-            const remaining = currentInscriptionData.remainingAmount;
-            const installmentAmount = currentInscriptionData.amountPerInstallment;
-            const currentPaidAmount = currentInscriptionData.paidAmount;
-            const totalCourseAmount = currentInscriptionData.totalAmount;
-            
-            // Calculate how many full installments are remaining
-            // We use Math.floor with epsilon to handle floating point inaccuracies
-            const paidInstallmentsCount = Math.floor(currentPaidAmount / installmentAmount + epsilon);
-            const totalInstallmentsCount = currentInscriptionData.chosenInstallments;
-            const maxInstallmentsToPay = totalInstallmentsCount - paidInstallmentsCount;
-
-            for (let i = 1; i <= maxInstallmentsToPay; i++) {
-                let calculatedAmount = 0;
-                let tempPaid = currentPaidAmount;
-                let tempRemaining = remaining;
-
-                // Calculate the exact amount for 'i' installments, considering the last installment might be less
-                for (let j = 0; j < i; j++) {
-                    const amountForThisInstallment = Math.min(installmentAmount, tempRemaining);
-                    calculatedAmount += amountForThisInstallment;
-                    tempPaid += amountForThisInstallment;
-                    tempRemaining = totalCourseAmount - tempPaid;
-                    if (tempRemaining <= epsilon && j < i - 1) { // If fully paid before reaching 'i' installments, break
-                           calculatedAmount = remaining; // Cap at total remaining
-                           break;
-                    }
-                }
-                
-                // Ensure the calculated amount does not exceed the total remaining amount
-                calculatedAmount = Math.min(calculatedAmount, remaining);
-
-                if (calculatedAmount > epsilon) { // Only add if the calculated amount is positive
-                    const optionText = `${i} acompte(s) (${calculatedAmount.toFixed(2)} DH)`;
-                    const newOption = document.createElement('option');
-                    newOption.value = calculatedAmount.toFixed(2);
-                    newOption.textContent = optionText;
-                    numInstallmentsToPaySelect.appendChild(newOption);
-                }
-            }
-
-            // Remove old listener before adding new one
-            numInstallmentsToPaySelect.removeEventListener('change', handleCustomInstallmentChange);
-            numInstallmentsToPaySelect.addEventListener('change', handleCustomInstallmentChange);
-        }
-
-        function handleCustomInstallmentChange() {
-            const selectedAmount = parseFloat(numInstallmentsToPaySelect.value);
-            if (!isNaN(selectedAmount) && selectedAmount > epsilon) { // Use epsilon for comparison
-                amountToPayInput.value = selectedAmount.toFixed(2);
-                paymentHint.textContent = `Vous allez payer ${numInstallmentsToPaySelect.options[numInstallmentsToPaySelect.selectedIndex].textContent}.`;
-                submitBtn.disabled = false; // Enable button when a custom amount is chosen
-            } else {
-                amountToPayInput.value = '';
-                paymentHint.textContent = '';
-                submitBtn.disabled = true; // Disable if no custom amount is chosen or amount is zero
-            }
-        }
-
-        // Event Listeners
-        inscriptionSelect.addEventListener('change', updateInscriptionDetails);
+    function updateInscriptionDetails() {
+        const selectedOption = inscriptionSelect.options[inscriptionSelect.selectedIndex];
         
-        // Initial setup if an inscription is pre-selected (e.g., via old() value)
-        if (inscriptionSelect.value) {
-            updateInscriptionDetails();
+        if (selectedOption.value) {
+            inscriptionInfoSection.classList.remove('hidden');
+            paymentOptionsSection.classList.remove('hidden');
+            
+            currentInscriptionData = {
+                totalAmount: parseFloat(selectedOption.dataset.totalAmount),
+                paidAmount: parseFloat(selectedOption.dataset.paidAmount),
+                amountPerInstallment: parseFloat(selectedOption.dataset.amountPerInstallment),
+                chosenInstallments: parseInt(selectedOption.dataset.chosenInstallments),
+                remainingAmount: parseFloat(selectedOption.dataset.remainingAmount),
+                formationTitle: selectedOption.textContent.split('(')[0].trim()
+            };
+
+            // Populate inscription info display
+            document.getElementById('info-formation-title').textContent = currentInscriptionData.formationTitle;
+            document.getElementById('info-total-amount').textContent = currentInscriptionData.totalAmount.toFixed(2);
+            document.getElementById('info-paid-amount').textContent = currentInscriptionData.paidAmount.toFixed(2);
+            document.getElementById('info-remaining-amount-display').textContent = currentInscriptionData.remainingAmount.toFixed(2);
+            
+            const paymentTypeText = currentInscriptionData.chosenInstallments === 1
+                                    ? 'Paiement Complet'
+                                    : `En ${currentInscriptionData.chosenInstallments} Versements`;
+            document.getElementById('info-payment-type').textContent = paymentTypeText;
+
+            if (currentInscriptionData.remainingAmount <= epsilon) {
+                paymentOptionsSection.classList.add('hidden');
+                amountToPayInput.value = '0.00';
+                amountToPayInput.readOnly = true;
+                amountToPayInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+                paymentHint.textContent = 'Cette inscription est déjà entièrement payée.';
+                submitBtn.disabled = true;
+                document.getElementById('amount-field').classList.remove('hidden');
+            } else {
+                amountToPayInput.value = '';
+                paymentHint.textContent = '';
+                document.getElementById('amount-field').classList.remove('hidden');
+                generatePaymentOptions();
+            }
         } else {
-            // Ensure button is disabled if no inscription is initially selected
+            inscriptionInfoSection.classList.add('hidden');
+            paymentOptionsSection.classList.add('hidden');
+            paymentChoicesRadios.innerHTML = '';
+            amountToPayInput.value = '';
+            amountToPayInput.readOnly = true;
+            amountToPayInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+            paymentHint.textContent = '';
             submitBtn.disabled = true;
-            // Hide amount field initially if no inscription is selected
             document.getElementById('amount-field').classList.add('hidden');
         }
+    }
 
-        // Handle form submission loading state and validation
-        paymentForm.addEventListener('submit', function(event) {
-            const amount = parseFloat(amountToPayInput.value);
-            const remaining = currentInscriptionData.remainingAmount;
-            
-            if (isNaN(amount) || amount <= epsilon) { // Check if amount is non-positive or not a number
-                alert('Veuillez entrer un montant valide supérieur à zéro.');
-                event.preventDefault();
-                return false;
+    function generatePaymentOptions() {
+        paymentChoicesRadios.innerHTML = '';
+        const remaining = currentInscriptionData.remainingAmount;
+        const installmentAmount = currentInscriptionData.amountPerInstallment;
+
+        // Option: Payer le reste total
+        if (remaining > epsilon) {
+            addRadioButton('full_remaining', `Payer le reste total (${remaining.toFixed(2)} DH)`, remaining.toFixed(2));
+        }
+
+        // Option: Payer le prochain versement
+        if (currentInscriptionData.chosenInstallments > 1 && remaining > epsilon) {
+            let nextInstallmentValue = installmentAmount;
+            if (remaining < installmentAmount + epsilon) {
+                nextInstallmentValue = remaining;
             }
-            if (amount > remaining + epsilon) { // Allow for small floating point differences
-                alert(`Le montant saisi (${amount.toFixed(2)} DH) dépasse le reste à payer (${remaining.toFixed(2)} DH).`);
-                event.preventDefault();
-                return false;
+            if (Math.abs(nextInstallmentValue - remaining) > epsilon) {
+                addRadioButton('next_installment', `Payer le prochain versement (${nextInstallmentValue.toFixed(2)} DH)`, nextInstallmentValue.toFixed(2));
             }
-            
-            submitBtn.disabled = true;
-            const loadingSpinner = submitBtn.querySelector('.loading-spinner');
-            if (loadingSpinner) {
-                loadingSpinner.classList.remove('hidden');
-            }
-            submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+        }
+        
+        // Nouvelle option: Montant personnalisé
+        addRadioButton('custom_amount', 'Payer un montant personnalisé', ''); // no amount needed here
+
+        paymentChoicesRadios.querySelectorAll('input[name="payment_choice"]').forEach(radio => {
+            radio.removeEventListener('change', updateAmountField);
+            radio.addEventListener('change', updateAmountField);
         });
 
-        // Auto-hide alerts after 5 seconds
-        setTimeout(function() {
-            const alerts = document.querySelectorAll('.animated-alert');
-            alerts.forEach(function(alert) {
-                alert.classList.add('fade-out');
-                setTimeout(() => alert.remove(), 500);
-            });
-        }, 5000);
+        const firstRadio = paymentChoicesRadios.querySelector('input[type="radio"]');
+        if (firstRadio) {
+            firstRadio.checked = true;
+            updateAmountField();
+        } else {
+            amountToPayInput.value = '';
+            paymentHint.textContent = '';
+            submitBtn.disabled = true;
+        }
+    }
 
-        // Add ripple effect to buttons
-        document.querySelectorAll('.btn-modern').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                // Prevent ripple if the button is disabled
-                if (this.disabled) {
-                    return;
-                }
+    function addRadioButton(value, text, amount) {
+        const label = document.createElement('label');
+        label.className = 'inline-flex items-center cursor-pointer mb-2';
+        label.innerHTML = `
+            <input type="radio" class="form-radio-modern" name="payment_choice" value="${value}" data-amount="${amount}">
+            <span class="ml-2 text-gray-700">${text}</span>
+        `;
+        paymentChoicesRadios.appendChild(label);
+    }
 
-                const ripple = document.createElement('span');
-                const rect = this.getBoundingClientRect();
-                const size = Math.max(rect.width, rect.height);
-                const x = e.clientX - rect.left - size / 2;
-                const y = e.clientY - rect.top - size / 2;
-                
-                ripple.style.cssText = `
-                    width: ${size}px;
-                    height: ${size}px;
-                    left: ${x}px;
-                    top: ${y}px;
-                    position: absolute;
-                    border-radius: 50%;
-                    background: rgba(255, 255, 255, 0.5);
-                    transform: scale(0);
-                    animation: ripple 0.6s linear;
-                    pointer-events: none;
-                    z-index: 1; 
-                `;
-                
-                this.style.position = 'relative';
-                this.style.overflow = 'hidden';
-                this.appendChild(ripple);
-                
-                setTimeout(() => ripple.remove(), 600);
-            });
+    function updateAmountField() {
+    const selectedPaymentChoice = document.querySelector('input[name="payment_choice"]:checked');
+    if (selectedPaymentChoice) {
+        const choiceValue = selectedPaymentChoice.value;
+        const amountAttribute = selectedPaymentChoice.dataset.amount;
+
+        amountToPayInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
+        amountToPayInput.classList.add('bg-white', 'cursor-text');
+        amountToPayInput.readOnly = false;
+        
+        let newRemainingAmount = currentInscriptionData.remainingAmount;
+
+        if (choiceValue === 'full_remaining' || choiceValue === 'next_installment') {
+            const amount = parseFloat(amountAttribute);
+            amountToPayInput.value = amount.toFixed(2);
+            amountToPayInput.readOnly = true;
+            amountToPayInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+            amountToPayInput.classList.remove('bg-white', 'cursor-text');
+            paymentHint.textContent = selectedPaymentChoice.nextElementSibling.textContent + " sera appliqué.";
+            newRemainingAmount -= amount; // Kaynt9as le montant sélectionné mn l'reste
+        } else if (choiceValue === 'custom_amount') {
+            amountToPayInput.value = ''; // Clear amount for custom entry
+            paymentHint.textContent = 'Veuillez entrer le montant que vous souhaitez payer.';
+        }
+        submitBtn.disabled = false;
+
+        // Mise à jour de l'affichage du 'Reste à Payer' en temps réel
+        document.getElementById('info-remaining-amount-display').textContent = newRemainingAmount.toFixed(2);
+    } else {
+        // ... (existing code for no choice)
+        document.getElementById('info-remaining-amount-display').textContent = currentInscriptionData.remainingAmount.toFixed(2); // Réinitialisation
+    }
+}
+    
+    // Event Listeners
+    inscriptionSelect.addEventListener('change', updateInscriptionDetails);
+    
+    // Event listener for the custom amount field, to re-enable the button if it was disabled
+    amountToPayInput.addEventListener('input', function() {
+        submitBtn.disabled = (parseFloat(this.value) <= 0 || isNaN(parseFloat(this.value)));
+    });
+
+    // Initial setup if an inscription is pre-selected (e.g., via old() value)
+    if (inscriptionSelect.value) {
+        updateInscriptionDetails();
+    } else {
+        submitBtn.disabled = true;
+        document.getElementById('amount-field').classList.add('hidden');
+    }
+
+    // Handle form submission loading state and validation
+    paymentForm.addEventListener('submit', function(event) {
+        const amount = parseFloat(amountToPayInput.value);
+        const remaining = currentInscriptionData.remainingAmount;
+        
+        if (isNaN(amount) || amount <= epsilon) {
+            alert('Veuillez entrer un montant valide supérieur à zéro.');
+            event.preventDefault();
+            return false;
+        }
+        if (amount > remaining + epsilon) {
+            alert(`Le montant saisi (${amount.toFixed(2)} DH) dépasse le reste à payer (${remaining.toFixed(2)} DH).`);
+            event.preventDefault();
+            return false;
+        }
+        
+        submitBtn.disabled = true;
+        const loadingSpinner = submitBtn.querySelector('.loading-spinner');
+        if (loadingSpinner) {
+            loadingSpinner.classList.remove('hidden');
+        }
+        submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+    });
+
+    // Auto-hide alerts after 5 seconds
+    setTimeout(function() {
+        const alerts = document.querySelectorAll('.animated-alert');
+        alerts.forEach(function(alert) {
+            alert.classList.add('fade-out');
+            setTimeout(() => alert.remove(), 500);
+        });
+    }, 5000);
+
+    // Add ripple effect to buttons
+    document.querySelectorAll('.btn-modern').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            if (this.disabled) {
+                return;
+            }
+            const ripple = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.cssText = `
+                width: ${size}px;
+                height: ${size}px;
+                left: ${x}px;
+                top: ${y}px;
+                position: absolute;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.5);
+                transform: scale(0);
+                animation: ripple 0.6s linear;
+                pointer-events: none;
+                z-index: 1; 
+            `;
+            
+            this.style.position = 'relative';
+            this.style.overflow = 'hidden';
+            this.appendChild(ripple);
+            
+            setTimeout(() => ripple.remove(), 600);
         });
     });
+});
 </script>
 @endpush
