@@ -164,7 +164,7 @@
                                 <li class="custom-list-item"><strong>Méthode:</strong> {{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</li>
                                 <li class="custom-list-item"><strong>Date d'échéance:</strong> {{ \Carbon\Carbon::parse($payment->due_date)->format('d/m/Y') }}</li>
                                 @if($payment->paid_date)
-                                <li class="custom-list-item"><strong>Date de Paiement:</strong> {{ \Carbon\Carbon::parse($payment->paid_date)->format('d/m/Y H:i') }}</li>
+                                <li class="custom-list-item"><strong>Date de Paiement:</strong> {{ \Carbon\Carbon::parse($payment->paid_date)->format('d/m/Y') }}</li>
                                 @endif
                                 @if($payment->late_fee > 0)
                                 <li class="custom-list-item"><strong>Frais de Retard:</strong> <span class="badge bg-danger">{{ number_format($payment->late_fee, 2) }} DH</span></li>
