@@ -527,7 +527,6 @@
                                             @endif
                 </div>
             </div>
-            
 
             {{-- Notes Card --}}
             <div class="card animated-card mb-4 fade-in-right notes-card" style="animation-delay: 0.2s;">
@@ -546,54 +545,32 @@
                 </div>
             </div>
 
-            
-
-            <div class="card animated-card mb-4 fade-in-right">
-                <div class="card-header gradient-secondary text-white">
-                    <h4 class="card-title mb-0">
-                        <i class="fas fa-paperclip me-2 floating-icon"></i>
-                        Documents joints
-                    </h4>
-                </div>
-                <div class="card-body glass-card">
-                     @if($inscription->documents && count($user->documents) > 0)
-                    <hr class="my-4">
-                    <div class="animate__animated animate__fadeInUp">
-                        <h4 class="text-primary fw-bold mb-3"><i class="fas fa-folder-open me-2"></i> Documents</h4>
-                        <ul class="list-group list-group-flush text-start">
-                            @foreach($user->documents as $document)
-                                @if(isset($document['path']))
-                                    <li class="list-group-item d-flex justify-content-between align-items-center document-item">
-                                        <div class="d-flex align-items-center">
-                                            @php
-                                                $icon = 'fas fa-file-alt';
-                                                if (isset($document['type'])) {
-                                                    if ($document['type'] == 'pdf') $icon = 'fas fa-file-pdf text-danger';
-                                                    else if (in_array($document['type'], ['jpg', 'jpeg', 'png', 'gif'])) $icon = 'fas fa-file-image text-info';
-                                                    else if (in_array($document['type'], ['doc', 'docx'])) $icon = 'fas fa-file-word text-primary';
-                                                }
-                                            @endphp
-                                            <i class="{{ $icon }} me-2 document-icon"></i>
-                                            <span class="fw-medium">{{ $document['name'] ?? 'Document sans nom' }}</span>
-                                        </div>
-                                        <a href="{{ asset('storage/' . $document['path']) }}" 
-                                           target="_blank" 
-                                           class="btn btn-sm btn-outline-secondary">
-                                            <i class="fas fa-eye me-1"></i> Voir
-                                        </a>
-                                    </li>
-                                @endif
-                            @endforeach
-                        </ul>
-                    </div>
-                    @else
-                    <hr class="my-4">
-                    <div class="alert alert-info text-center animate__animated animate__fadeIn">
-                        <i class="fas fa-info-circle me-2"></i> Aucun document n'a été téléchargé pour cet utilisateur.
-                    </div>
-                    @endif
-                </div>
-            </div>
+             <div class="card animated-card mb-4 fade-in-right">
+        <div class="card-header gradient-secondary text-white">
+            <h4 class="card-title mb-0">
+                <i class="fas fa-paperclip me-2 floating-icon"></i>
+                Documents joints du etudiant
+            </h4>
+        </div>
+        <div class="card-body glass-card">
+            @if($inscription->user->documents)
+                <ul class="list-unstyled">
+                    @foreach($inscription->user->documents as $document)
+                        <li class="document-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="fas fa-file me-2"></i> {{ $document['name'] }}
+                            </span>
+                            <a href="{{ Storage::url($document['path']) }}" target="_blank" class="text-white btn btn-sm animated-btn" title="Voir le document">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            @else
+                <p class="text-muted">Aucun document joint pour ce client.</p>
+            @endif
+        </div>
+    </div>
             
         </div>
     </div>

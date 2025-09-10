@@ -223,19 +223,22 @@ public function store(Request $request)
 }
 
 public function show(Inscription $inscription)
-    {
-        $user = Auth::user();
-        // Si l'utilisateur n'est pas 'admin' ou 'finance' ou 'super admin' et qu'il n'est pas le propriétaire de l'inscription, l'accès est refusé
-        if (!$user->hasAnyRole(['Admin', 'Finance', 'Super Admin']) && $inscription->user_id !== $user->id) {
-            abort(403, 'Action non autorisée.');
-        }
+{
+    $user = Auth::user();
 
-        $inscription->load(['user', 'formation', 'formation.category', 'payments']);
-        $remainingAmount = $inscription->remaining_amount;
-        $nextPaymentAmount = ($inscription->amount_per_installment > 0) ? $inscription->amount_per_installment : $remainingAmount;
-
-        return view('inscriptions.show', compact('inscription', 'remainingAmount', 'nextPaymentAmount'));
+    if (!$user->hasAnyRole(['Admin', 'Finance', 'Super Admin']) && $inscription->user_id !== $user->id) {
+        abort(403, 'Action non autorisée.');
     }
+
+    // Correct: Only load the 'user' relationship.
+    // The 'documents' attribute is automatically available due to the cast.
+    $inscription->load(['user', 'formation', 'formation.category', 'payments']);
+    
+    $remainingAmount = $inscription->remaining_amount;
+    $nextPaymentAmount = ($inscription->amount_per_installment > 0) ? $inscription->amount_per_installment : $remainingAmount;
+
+    return view('inscriptions.show', compact('inscription', 'remainingAmount', 'nextPaymentAmount'));
+}
 
     public function edit(Inscription $inscription)
     {
