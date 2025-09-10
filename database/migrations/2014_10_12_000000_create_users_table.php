@@ -24,7 +24,7 @@ return new class extends Migration
             $table->date('birth_date')->nullable();
             $table->string('cin')->nullable()->unique();
             $table->string('avatar')->nullable();
-           
+           $table->json('documents')->nullable(); 
             $table->enum('status', ['active', 'inactive', 'suspended'])->default('active');
             $table->rememberToken();
             $table->timestamps();

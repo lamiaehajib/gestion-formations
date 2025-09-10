@@ -99,6 +99,7 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        // 1. Validation des données, y compris les documents
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -106,32 +107,66 @@ class UserController extends Controller
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status' => 'required|in:active,inactive,suspended',
             'role' => 'required|string|exists:roles,name',
+
+            // Validation pour la structure de documents envoyée par le formulaire
+            'documents' => 'nullable|array',
+            'documents.*.name' => 'nullable|string|max:255',
+            'documents.*.file' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:5120',
         ]);
 
-        // Génère un mot de passe temporaire aléatoire
+        // 2. Préparation des données de l'utilisateur
         $temporaryPassword = \Illuminate\Support\Str::random(10);
-
         $userData = [
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
             'status' => $request->status,
-            'password' => Hash::make($temporaryPassword), // On hache le mot de passe temporaire
+            'password' => Hash::make($temporaryPassword),
             'email_verified_at' => now(),
         ];
 
+        // 3. Gestion de l'avatar
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
             $userData['avatar'] = $avatarPath;
         }
 
+        // 4. Gestion des documents (Nouveau code)
+        $documentsData = [];
+        if ($request->has('documents')) {
+            foreach ($request->input('documents') as $index => $document) {
+                // Vérifier s'il y a un fichier correspondant pour cet index
+                if ($request->hasFile("documents.{$index}.file")) {
+                    $file = $request->file("documents.{$index}.file");
+
+                    // S'assurer que le fichier est valide avant de le stocker
+                    if ($file->isValid()) {
+                        $path = $file->store('documents', 'public');
+
+                        // Utiliser le nom du document s'il est fourni, sinon le nom de fichier original
+                        $docName = $document['name'] ?? pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+
+                        $documentsData[] = [
+                            'name' => $docName,
+                            'path' => $path,
+                            'type' => $file->getClientOriginalExtension(),
+                        ];
+                    }
+                }
+            }
+        }
+        $userData['documents'] = $documentsData;
+
+
+        // 5. Création de l'utilisateur
         $user = User::create($userData);
 
+        // 6. Assignation du rôle
         if ($request->filled('role')) {
             $user->syncRoles($request->role);
         }
 
-        // Envoie l'email avec le mot de passe temporaire
+        // 7. Envoi de l'email avec le mot de passe temporaire
         Mail::to($user->email)->send(new UserCreatedMail($user, $temporaryPassword));
 
         return redirect()->route('users.index')->with('success', 'Utilisateur créé avec succès et un mot de passe temporaire a été envoyé par email!');
@@ -165,18 +200,25 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        // Permission is already checked by the middleware
+        // 1. Validation des données, y compris les documents
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'phone' => 'nullable|string|max:20',
-            // Password is nullable for update, meaning it's only updated if provided
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => 'required|in:active,inactive,suspended', // Added 'suspended' to validation
+            'status' => 'required|in:active,inactive,suspended',
             'role' => 'required|string|exists:roles,name',
+
+            // Validation pour la structure de documents
+            'documents' => 'nullable|array',
+            'documents.*.name' => 'nullable|string|max:255',
+            'documents.*.file' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:5120',
+            'documents.*.id' => 'nullable|string', // Pour identifier les documents existants
+            'removed_documents' => 'nullable|array',
         ]);
 
+        // 2. Préparation des données de l'utilisateur
         $userData = [
             'name' => $request->name,
             'email' => $request->email,
@@ -184,34 +226,84 @@ class UserController extends Controller
             'status' => $request->status,
         ];
 
-        // Only update password if a new one is provided
+        // Gérer la mise à jour du mot de passe si un nouveau est fourni
         if ($request->filled('password')) {
             $userData['password'] = Hash::make($request->password);
         }
 
-        // Handle avatar update
+        // Gérer l'avatar
         if ($request->hasFile('avatar')) {
-            // Delete old avatar if it exists
             if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
                 Storage::disk('public')->delete($user->avatar);
             }
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
             $userData['avatar'] = $avatarPath;
-        } elseif ($request->input('clear_avatar')) { // Add logic to clear avatar if requested (e.g., a checkbox)
+        } elseif ($request->input('clear_avatar')) {
             if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
                 Storage::disk('public')->delete($user->avatar);
             }
             $userData['avatar'] = null;
         }
-        
-        $user->update($userData);
 
-        // Update the user's role using syncRoles
+        // 3. Gestion des documents (Nouveau code)
+        // Ne pas utiliser json_decode(), le modèle User le fait pour toi grâce à $casts
+        $updatedDocuments = $user->documents ?? [];
+
+        // Gérer la suppression des documents existants
+        if ($request->has('removed_documents')) {
+            $removedPaths = $request->input('removed_documents');
+            // Filtrer les documents existants pour ne garder que ceux qui ne sont pas à supprimer
+            $updatedDocuments = array_filter($updatedDocuments, function ($doc) use ($removedPaths) {
+                $isRemoved = in_array($doc['path'], $removedPaths);
+                if ($isRemoved) {
+                    // Supprimer le fichier du stockage
+                    if (Storage::disk('public')->exists($doc['path'])) {
+                        Storage::disk('public')->delete($doc['path']);
+                    }
+                }
+                return !$isRemoved;
+            });
+            // Ré-indexer le tableau après le filtrage
+            $updatedDocuments = array_values($updatedDocuments);
+        }
+
+        // Parcourir les documents soumis pour les mettre à jour ou en ajouter de nouveaux
+        if ($request->has('documents')) {
+            foreach ($request->input('documents') as $index => $document) {
+                // Si c'est un document existant (il a un 'id')
+                if (isset($document['id']) && $document['id'] !== null) {
+                    // Mettre à jour le nom du document existant s'il a changé
+                    foreach ($updatedDocuments as &$doc) {
+                        if ($doc['path'] === $document['id']) {
+                            $doc['name'] = $document['name'] ?? $doc['name'];
+                            break;
+                        }
+                    }
+                } else if ($request->hasFile("documents.{$index}.file")) {
+                    // S'il y a un nouveau fichier, l'ajouter
+                    $file = $request->file("documents.{$index}.file");
+                    if ($file->isValid()) {
+                        $path = $file->store('documents', 'public');
+                        $docName = $document['name'] ?? pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+
+                        $updatedDocuments[] = [
+                            'name' => $docName,
+                            'path' => $path,
+                            'type' => $file->getClientOriginalExtension(),
+                        ];
+                    }
+                }
+            }
+        }
+
+        $userData['documents'] = $updatedDocuments;
+
+        // 4. Mettre à jour l'utilisateur et son rôle
+        $user->update($userData);
         $user->syncRoles($request->role);
 
         return redirect()->route('users.index')->with('success', 'Utilisateur mis à jour avec succès!');
     }
-
     /**
      * Remove the specified user from storage.
      */

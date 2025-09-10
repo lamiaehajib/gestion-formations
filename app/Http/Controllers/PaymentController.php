@@ -20,10 +20,7 @@ use App\Mail\NewPaymentNotification;
 
 
 class PaymentController extends Controller
-{
-
-
-    
+{    
     /**
      * Display a listing of payments
      */

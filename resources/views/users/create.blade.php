@@ -15,7 +15,7 @@
                 </div>
                 <a href="{{ route('users.index') }}"
                    class="inline-flex items-center px-6 py-3 bg-white hover:bg-gray-100 text-gray-800 font-semibold rounded-full shadow-md transition-all duration-300 transform hover:scale-105 border border-gray-200">
-                    <i class="fa-solid fa-arrow-left-long 0"></i>
+                    <i class="fa-solid fa-arrow-left-long mr-2"></i>
                     Retour à la liste
                 </a>
             </div>
@@ -49,7 +49,11 @@
                     <div class="flex flex-col items-center justify-center mb-8">
                         <div class="relative group">
                             <div class="w-36 h-36 rounded-full bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center text-white text-5xl font-bold shadow-lg ring-4 ring-pink-200 group-hover:ring-pink-400 transition-all duration-300" id="avatar-preview">
-                                <i class="fa-solid fa-camera-retro text-7xl opacity-80"></i>
+                                @if(isset($user->avatar))
+                                    <img src="{{ asset('storage/' . $user->avatar) }}" alt="Avatar" class="w-full h-full object-cover rounded-full">
+                                @else
+                                    <i class="fa-solid fa-camera-retro text-7xl opacity-80"></i>
+                                @endif
                             </div>
                             <label for="avatar" class="absolute bottom-0 right-0 bg-white rounded-full p-3 shadow-lg cursor-pointer hover:bg-gray-100 transition-colors duration-200 transform group-hover:scale-110">
                                 <i class="fa-solid fa-camera"></i>
@@ -100,9 +104,42 @@
                         </div>
                     </div>
 
-                    {{-- On a retiré le bloc "Sécurité" pour que le mot de passe soit généré automatiquement par le contrôleur --}}
+                    {{-- Nouveau bloc pour la liste de documents --}}
+                    <div class="bg-gray-50 rounded-2xl p-6 lg:p-8 border border-gray-100 shadow-sm animate__animated animate__fadeInRight" style="animation-delay: 0.6s;">
+                        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                            <i class="fa-solid fa-file-arrow-up text-red-700 mr-3 text-2xl"></i> Documents (Facultatif)
+                        </h3>
+                        
+                        <div id="documents-container" class="space-y-4">
+                            {{-- Le premier champ de document --}}
+                            <div class="document-item bg-white p-4 rounded-xl border border-gray-200">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Nom du document</label>
+                                        <input type="text" name="documents[0][name]" 
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-200 focus:border-red-500 transition-all"
+                                                placeholder="Ex: Baccalauréat">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Fichier</label>
+                                        <div class="flex items-center">
+                                            <input type="file" name="documents[0][file]"
+                                                   class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-200 focus:border-red-500 transition-all">
+                                            <button type="button" onclick="removeDocument(this)" class="ml-2 p-2 text-red-600 hover:text-red-800 transition-colors">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="bg-gray-50 rounded-2xl p-6 lg:p-8 border border-gray-100 shadow-sm animate__animated animate__fadeInRight" style="animation-delay: 0.4s;">
+                        <button type="button" onclick="addDocument()" class="mt-4 inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-full transition-colors duration-200">
+                            <i class="fa-solid fa-plus mr-2"></i> Ajouter un autre document
+                        </button>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-2xl p-6 lg:p-8 border border-gray-100 shadow-sm animate__animated animate__fadeInRight" style="animation-delay: 0.8s;">
                         <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
                             <i class="fa-solid fa-users-gear text-red-700 mr-3 text-2xl"></i> Rôles et statut
                         </h3>
@@ -114,6 +151,7 @@
                                         class="w-full px-5 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-red-200 focus:border-red-500 transition-all duration-300 text-gray-800 @error('status') border-red-500 ring-red-100 @enderror">
                                     <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Actif</option>
                                     <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Inactif</option>
+                                    <option value="suspended" {{ old('status') == 'suspended' ? 'selected' : '' }}>Suspendu</option>
                                 </select>
                                 @error('status')
                                     <p class="mt-2 text-sm text-red-600 animate__animated animate__shakeX">{{ $message }}</p>
@@ -189,7 +227,6 @@
 
 @push('scripts')
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-
     <script>
         function previewAvatar(input) {
             const previewContainer = document.getElementById('avatar-preview');
@@ -201,6 +238,43 @@
                 reader.readAsDataURL(input.files[0]);
             } else {
                 previewContainer.innerHTML = `<i class="fa-solid fa-camera-retro text-7xl opacity-80"></i>`;
+            }
+        }
+        
+        let documentIndex = 1;
+
+        function addDocument() {
+            const container = document.getElementById('documents-container');
+            const newItem = document.createElement('div');
+            newItem.classList.add('document-item', 'bg-white', 'p-4', 'rounded-xl', 'border', 'border-gray-200');
+            newItem.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Nom du document</label>
+                        <input type="text" name="documents[${documentIndex}][name]" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-200 focus:border-red-500 transition-all"
+                                placeholder="Ex: Diplôme de Licence">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Fichier</label>
+                        <div class="flex items-center">
+                            <input type="file" name="documents[${documentIndex}][file]"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-200 focus:border-red-500 transition-all">
+                            <button type="button" onclick="removeDocument(this)" class="ml-2 p-2 text-red-600 hover:text-red-800 transition-colors">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(newItem);
+            documentIndex++;
+        }
+
+        function removeDocument(button) {
+            const item = button.closest('.document-item');
+            if (item) {
+                item.remove();
             }
         }
     </script>

@@ -57,7 +57,7 @@
                                 @endif
                             </div>
                             <label for="avatar" class="absolute bottom-0 right-0 bg-white rounded-full p-3 shadow-lg cursor-pointer hover:bg-gray-100 transition-colors duration-200 transform group-hover:scale-110">
-                                 <i class="fa-solid fa-camera"></i>
+                                <i class="fa-solid fa-camera"></i>
                             </label>
                             <input type="file" id="avatar" name="avatar" accept="image/*" class="hidden" onchange="previewAvatar(this)">
                         </div>
@@ -105,7 +105,55 @@
                         </div>
                     </div>
 
-                    <div class="bg-gray-50 rounded-2xl p-6 lg:p-8 border border-gray-100 shadow-sm animate__animated animate__fadeInRight" style="animation-delay: 0.4s;">
+                    {{-- Bloc pour les documents existants et nouveaux --}}
+                    <div class="bg-gray-50 rounded-2xl p-6 lg:p-8 border border-gray-100 shadow-sm animate__animated animate__fadeInRight" style="animation-delay: 0.6s;">
+                        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                            <i class="fa-solid fa-file-arrow-up text-red-700 mr-3 text-2xl"></i> Documents (Facultatif)
+                        </h3>
+
+                        <div id="documents-container" class="space-y-4">
+                            {{-- Afficher les documents existants --}}
+                            @if($user->documents)
+                                @foreach($user->documents as $index => $document)
+                                    <div class="document-item bg-white p-4 rounded-xl border border-gray-200 flex items-center justify-between">
+                                        <div class="flex items-center w-full md:w-auto">
+                                            @php
+                                                $icon = 'fa-file-alt';
+                                                if (isset($document['type'])) {
+                                                    if ($document['type'] == 'pdf') $icon = 'fa-file-pdf text-red-600';
+                                                    else if (in_array($document['type'], ['jpg', 'jpeg', 'png', 'gif'])) $icon = 'fa-file-image text-blue-600';
+                                                    else if (in_array($document['type'], ['doc', 'docx'])) $icon = 'fa-file-word text-blue-800';
+                                                }
+                                            @endphp
+                                            <i class="fa-solid {{ $icon }} text-2xl mr-4"></i>
+                                            <div class="flex-grow">
+                                                <label class="block text-sm font-semibold text-gray-700 mb-1">Nom du document</label>
+                                                <input type="text" name="documents[{{ $index }}][name]" value="{{ $document['name'] }}"
+                                                    class="w-full px-2 py-1 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-200 focus:border-red-500 transition-all"
+                                                    placeholder="Ex: Baccalauréat">
+                                            </div>
+                                        </div>
+                                        <a href="{{ asset('storage/' . $document['path']) }}" target="_blank" class="text-gray-500 hover:text-red-700 ml-4">
+                                            <i class="fa-solid fa-eye text-lg"></i>
+                                        </a>
+                                        <button type="button" onclick="removeDocument(this, '{{ $document['path'] }}')" class="ml-2 p-2 text-red-600 hover:text-red-800 transition-colors">
+                                            <i class="fa-solid fa-xmark text-lg"></i>
+                                        </button>
+                                        <input type="hidden" name="documents[{{ $index }}][id]" value="{{ $document['path'] }}">
+                                    </div>
+                                @endforeach
+                            @endif
+                        </div>
+                        
+                        <input type="hidden" name="removed_documents[]" id="removed-documents-input">
+
+                        <button type="button" onclick="addDocument()" class="mt-4 inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-full transition-colors duration-200">
+                            <i class="fa-solid fa-plus mr-2"></i> Ajouter un autre document
+                        </button>
+                    </div>
+
+
+                    <div class="bg-gray-50 rounded-2xl p-6 lg:p-8 border border-gray-100 shadow-sm animate__animated animate__fadeInRight" style="animation-delay: 0.8s;">
                         <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
                             <i class="fa-solid fa-users-gear text-red-700 mr-3 text-2xl"></i> Rôles et statut
                         </h3>
@@ -117,6 +165,7 @@
                                         class="w-full px-5 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-red-200 focus:border-red-500 transition-all duration-300 text-gray-800 @error('status') border-red-500 ring-red-100 @enderror">
                                     <option value="active" {{ old('status', $user->status) == 'active' ? 'selected' : '' }}>Actif</option>
                                     <option value="inactive" {{ old('status', $user->status) == 'inactive' ? 'selected' : '' }}>Inactif</option>
+                                    <option value="suspended" {{ old('status', $user->status) == 'suspended' ? 'selected' : '' }}>Suspendu</option>
                                 </select>
                                 @error('status')
                                     <p class="mt-2 text-sm text-red-600 animate__animated animate__shakeX">{{ $message }}</p>
@@ -192,7 +241,6 @@
 
 @push('scripts')
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-
     <script>
         function previewAvatar(input) {
             const previewContainer = document.getElementById('avatar-preview');
@@ -204,6 +252,50 @@
                 reader.readAsDataURL(input.files[0]);
             } else {
                 previewContainer.innerHTML = `<i class="fa-solid fa-camera-retro text-7xl opacity-80"></i>`;
+            }
+        }
+        
+        let documentIndex = {{ count($user->documents ?? []) }};
+        const removedDocuments = new Set();
+        
+        function addDocument() {
+            const container = document.getElementById('documents-container');
+            const newItem = document.createElement('div');
+            newItem.classList.add('document-item', 'bg-white', 'p-4', 'rounded-xl', 'border', 'border-gray-200');
+            newItem.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Nom du document</label>
+                        <input type="text" name="documents[${documentIndex}][name]" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-200 focus:border-red-500 transition-all"
+                                placeholder="Ex: Diplôme de Licence">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Fichier</label>
+                        <div class="flex items-center">
+                            <input type="file" name="documents[${documentIndex}][file]"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-200 focus:border-red-500 transition-all">
+                            <button type="button" onclick="removeDocument(this, '')" class="ml-2 p-2 text-red-600 hover:text-red-800 transition-colors">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(newItem);
+            documentIndex++;
+        }
+
+        function removeDocument(button, path) {
+            const item = button.closest('.document-item');
+            if (path) {
+                removedDocuments.add(path);
+                // Mettre à jour le champ hidden pour la suppression
+                const removedInput = document.getElementById('removed-documents-input');
+                removedInput.value = JSON.stringify(Array.from(removedDocuments));
+            }
+            if (item) {
+                item.remove();
             }
         }
     </script>

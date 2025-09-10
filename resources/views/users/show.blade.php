@@ -63,12 +63,51 @@
                             <p class="text-dark">{{ $user->updated_at->format('d/m/Y H:i') }}</p>
                         </div>
                     </div>
+
+                    {{-- Nouveau Bloc pour les Documents --}}
+                    @if($user->documents && count($user->documents) > 0)
+                    <hr class="my-4">
+                    <div class="animate__animated animate__fadeInUp">
+                        <h4 class="text-primary fw-bold mb-3"><i class="fas fa-folder-open me-2"></i> Documents</h4>
+                        <ul class="list-group list-group-flush text-start">
+                            @foreach($user->documents as $document)
+                                @if(isset($document['path']))
+                                    <li class="list-group-item d-flex justify-content-between align-items-center document-item">
+                                        <div class="d-flex align-items-center">
+                                            @php
+                                                $icon = 'fas fa-file-alt';
+                                                if (isset($document['type'])) {
+                                                    if ($document['type'] == 'pdf') $icon = 'fas fa-file-pdf text-danger';
+                                                    else if (in_array($document['type'], ['jpg', 'jpeg', 'png', 'gif'])) $icon = 'fas fa-file-image text-info';
+                                                    else if (in_array($document['type'], ['doc', 'docx'])) $icon = 'fas fa-file-word text-primary';
+                                                }
+                                            @endphp
+                                            <i class="{{ $icon }} me-2 document-icon"></i>
+                                            <span class="fw-medium">{{ $document['name'] ?? 'Document sans nom' }}</span>
+                                        </div>
+                                        <a href="{{ asset('storage/' . $document['path']) }}" 
+                                           target="_blank" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-eye me-1"></i> Voir
+                                        </a>
+                                    </li>
+                                @endif
+                            @endforeach
+                        </ul>
+                    </div>
+                    @else
+                    <hr class="my-4">
+                    <div class="alert alert-info text-center animate__animated animate__fadeIn">
+                        <i class="fas fa-info-circle me-2"></i> Aucun document n'a été téléchargé pour cet utilisateur.
+                    </div>
+                    @endif
                 </div>
+                
                 <div class="card-footer d-flex justify-content-between p-3 bg-light-subtle rounded-bottom-card">
-                    <a href="{{ route('users.index') }}" class="btn btn-outline-primary animated-button-outline"> {{-- Updated class for consistency --}}
+                    <a href="{{ route('users.index') }}" class="btn btn-outline-primary animated-button-outline">
                         <i class="fas fa-arrow-alt-circle-left me-2"></i> Retour à la liste
                     </a>
-                    <a href="{{ route('users.edit', $user->id) }}" class="btn btn-edit-gradient animated-button"> {{-- New class name --}}
+                    <a href="{{ route('users.edit', $user->id) }}" class="btn btn-edit-gradient animated-button">
                         <i class="fas fa-edit me-2"></i> Modifier l'utilisateur
                     </a>
                 </div>
@@ -87,19 +126,15 @@
         --dark-red: #D32F2F;
         --crimson-pink: #C2185B;
         --light-red-accent: #EF4444;
-
         /* Mapping to existing variables for global use */
         --primary-color: var(--dark-red);
         --primary-gradient-start: var(--light-red-accent); /* Using light red for gradient start */
         --primary-gradient-end: var(--dark-red); /* Using dark red for gradient end */
-
         --success-color: #28a745; /* Green, unchanged */
         --danger-color: var(--dark-red); /* Dark red for danger */
         --warning-color: #ffc107; /* Yellow, keeping for general warnings, not for the button */
-
         --edit-gradient-start: var(--light-red-accent); /* New gradient for edit button */
         --edit-gradient-end: var(--crimson-pink); /* New gradient for edit button */
-
         --info-color: var(--crimson-pink); /* Crimson pink for info/roles */
     }
 
@@ -248,6 +283,21 @@
     .status-badge-lg.bg-danger { background-color: var(--danger-color) !important; }
     .role-badge-lg.bg-info { background-color: var(--info-color) !important; }
     .role-badge-lg.bg-secondary { background-color: #6c757d !important; }
+    
+    .document-item {
+        border-bottom: 1px solid #eee;
+        transition: all 0.2s ease;
+    }
+    .document-item:hover {
+        background-color: #f8f9fa;
+    }
+    .document-icon {
+        font-size: 1.25em;
+    }
+
+    a.btn.btn-sm.btn-outline-secondary {
+    background-color: forestgreen;
+}
 </style>
 @endpush
 
