@@ -9,7 +9,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-4xl font-extrabold text-gray-900 mb-2">
-                        <i class="fa-solid fa-user-plus text-red-700 mr-3"></i> Créer un nouvel utilisateur
+                        <i class="fa-solid fa-user-plus text-red-700 mr-3"></i> Créer un uvel utilisateur
                     </h1>
                     <p class="text-gray-600 text-lg">Ajoutez un nouvel utilisateur au système rapidement et facilement.</p>
                 </div>
