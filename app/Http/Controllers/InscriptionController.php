@@ -266,10 +266,11 @@ public function show(Inscription $inscription)
         return view('inscriptions.edit', compact('inscription', 'formations', 'users'));
     }
 
-  public function update(Request $request, Inscription $inscription)
+  // In InscriptionController.php
+public function update(Request $request, Inscription $inscription)
 {
-    // Règle de validation pour le nouveau champ 'total_amount' et 'inscri_par'
     $validator = Validator::make($request->all(), [
+        'formation_id' => 'required|exists:formations,id', // Ajoutez cette règle de validation
         'status' => 'required|in:pending,active,completed,cancelled',
         'chosen_installments' => 'required|integer|min:1',
         'total_amount' => 'required|numeric|min:0',
@@ -279,7 +280,7 @@ public function show(Inscription $inscription)
         'notes' => 'nullable|string|max:1000',
         'access_restricted' => 'boolean',
         'next_installment_due_date' => 'nullable|date',
-        'inscri_par' => 'nullable|string|max:255', // Ajout de cette règle
+        'inscri_par' => 'nullable|string|max:255',
     ]);
 
     if ($validator->fails()) {
@@ -293,14 +294,12 @@ public function show(Inscription $inscription)
         $newTotalAmount = (float) $request->total_amount;
         $newPaidAmount = (float) $request->paid_amount;
         $chosenInstallments = (int) $request->chosen_installments;
-        $oldRemainingAmount = $inscription->total_amount - $inscription->paid_amount;
-
-        // --- DEBUT DU NOUVEAU LOGIQUE DE CALCUL ---
-        $remainingBalance = $newTotalAmount - $newPaidAmount;
         
-        $newAmountPerInstallment = ($remainingBalance > 0 && $chosenInstallments > 0) 
-                                 ? round($remainingBalance / $chosenInstallments, 2) 
-                                 : 0;
+        // La logique de calcul reste la même
+        $remainingBalance = $newTotalAmount - $newPaidAmount;
+        $newAmountPerInstallment = ($remainingBalance > 0 && $chosenInstallments > 0)
+                                     ? round($remainingBalance / $chosenInstallments, 2)
+                                     : 0;
         
         $newRemainingInstallments = $chosenInstallments;
 
@@ -308,9 +307,9 @@ public function show(Inscription $inscription)
             $newRemainingInstallments = 0;
         }
 
-        // --- FIN DU NOUVEAU LOGIQUE DE CALCUL ---
-
+        // Ajoutez 'formation_id' ici pour la mise à jour
         $inscription->fill([
+            'formation_id' => $request->formation_id, // Mise à jour de ce champ
             'status' => $request->status,
             'total_amount' => $newTotalAmount,
             'paid_amount' => $newPaidAmount,
@@ -320,7 +319,7 @@ public function show(Inscription $inscription)
             'notes' => $request->notes,
             'access_restricted' => $request->boolean('access_restricted'), 
             'next_installment_due_date' => $request->next_installment_due_date,
-            'inscri_par' => $request->inscri_par, // Mise à jour de ce champ
+            'inscri_par' => $request->inscri_par,
         ]);
         
         if ($newPaidAmount > $oldPaidAmount) {
