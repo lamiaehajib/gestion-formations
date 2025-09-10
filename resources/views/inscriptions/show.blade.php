@@ -408,9 +408,7 @@
                             <strong style="color: var(--primary-red);">Prix :</strong> 
                             <span class="amount-badge">{{ number_format($inscription->formation->price, 2) }} DH</span>
                         </li>
-                        <li class="custom-list-item">
-                            <strong style="color: var(--primary-red);">Capacité :</strong> {{ $inscription->formation->capacity ?? 'N/A' }}
-                        </li>
+                       
                         @if($inscription->formation->start_date)
                         <li class="custom-list-item">
                             <strong style="color: var(--primary-red);">Date de début :</strong> {{ $inscription->formation->start_date->format('d/m/Y') }}
@@ -547,7 +545,7 @@
                 </div>
             </div>
 
-            {{-- Quick Actions Card --}}
+            
             
         </div>
     </div>
@@ -556,14 +554,13 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Add stagger animation to list items
+    
     const listItems = document.querySelectorAll('.stagger-animation');
     listItems.forEach((item, index) => {
         item.style.animationDelay = `${index * 0.1}s`;
     });
 
-    // Add hover effects to buttons
-    const buttons = document.querySelectorAll('.animated-btn');
+        const buttons = document.querySelectorAll('.animated-btn');
     buttons.forEach(button => {
         button.addEventListener('mouseenter', function() {
             this.style.transform = 'translateY(-3px) scale(1.05)';
@@ -590,3 +587,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 @endpush
 @endsection
+
+
+
