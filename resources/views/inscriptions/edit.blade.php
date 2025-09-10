@@ -76,21 +76,18 @@
                                     </label>
                                     <div class="input-wrapper">
                                        <select name="formation_id" id="formation_id" class="form-select">
-    {{--  هنا زيد الخيارات ديال جميع التكوينات اللي بغيتي المستخدم يقدّر يختارهم --}}
-    @foreach($formations as $formation)
-        <option value="{{ $formation->id }}"
-                data-price="{{ $formation->price }}"
-                data-category="{{ $formation->category->name ?? '' }}"
-                data-available-options="{{ json_encode($formation->available_payment_options ?? [1]) }}"
-                {{ ($formation->id == old('formation_id', $inscription->formation->id)) ? 'selected' : '' }}>
-            {{ $formation->title }} ({{ number_format($formation->price, 2) }} DH)
-        </option>
-    @endforeach
-</select>
-{{-- حيد هاد الكود ديال الـ input:hidden حيت ما بقاش ضروري --}}
-{{-- <input type="hidden" name="formation_id" value="{{ $inscription->formation->id }}"> --}}
-                                        {{-- Champ caché pour envoyer la valeur réellement --}}
-                                        <input type="hidden" name="formation_id" value="{{ $inscription->formation->id }}">
+            {{-- هنا زيد الخيارات ديال جميع التكوينات اللي بغيتي المستخدم يقدّر يختارهم --}}
+            @foreach($formations as $formation)
+                <option value="{{ $formation->id }}"
+                        data-price="{{ $formation->price }}"
+                        data-category="{{ $formation->category->name ?? '' }}"
+                        data-available-options="{{ json_encode($formation->available_payment_options ?? [1]) }}"
+                        {{ ($formation->id == old('formation_id', $inscription->formation->id)) ? 'selected' : '' }}>
+                    {{ $formation->title }} ({{ number_format($formation->price, 2) }} DH)
+                </option>
+            @endforeach
+        </select>
+       
                                     </div>
                                 </div>
 
@@ -235,6 +232,21 @@
                                         <p class="error-message">{{ $message }}</p>
                                     @enderror
                                 </div>
+
+                                {{-- START of NEW CODE --}}
+                                <div class="form-group animate-fade-in-up">
+                                    <label for="inscri_par" class="form-label label-with-icon">
+                                        Inscrit par (Optionnel)
+                                        <i class="fas fa-signature input-icon-label"></i>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <input type="text" name="inscri_par" id="inscri_par" class="form-input" value="{{ old('inscri_par', $inscription->inscri_par) }}" placeholder="Nom de l'administrateur qui a effectué l'inscription">
+                                    </div>
+                                    @error('inscri_par')
+                                        <p class="error-message">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                {{-- END of NEW CODE --}}
 
                                 {{-- Champ Notes --}}
                                 <div class="md:col-span-2 form-group animate-fade-in">

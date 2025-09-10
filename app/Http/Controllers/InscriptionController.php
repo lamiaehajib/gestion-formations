@@ -104,7 +104,9 @@ public function store(Request $request)
         $rules['user_id'] = 'required|exists:users,id';
         $rules['status'] = 'required|in:pending,active,completed,cancelled';
         $rules['paid_amount'] = 'required|numeric|min:0';
-        $rules['total_amount_override'] = 'nullable|numeric|min:0'; // La nouvelle règle de validation
+        $rules['total_amount_override'] = 'nullable|numeric|min:0';
+        // Ajout de la règle pour le nouveau champ
+        $rules['inscri_par'] = 'nullable|string|max:255'; 
 
         if ($request->paid_amount > 0) {
             $rules['initial_receipt_file'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:2048';
@@ -142,11 +144,9 @@ public function store(Request $request)
     try {
         $chosenInstallments = $request->selected_payment_option;
         
-        // --- NEW LOGIC: Utiliser le prix modifié si l'admin l'a saisi ---
         $totalAmount = $isAdminOrFinanceOrSuperAdmin && $request->filled('total_amount_override') 
                      ? (float) $request->total_amount_override 
                      : $formation->price;
-        // --- FIN DE LA NOUVELLE LOGIQUE ---
         
         $initialPaidAmount = $isAdminOrFinanceOrSuperAdmin ? $request->paid_amount : 0;
         $receiptPathForInitialPayment = null;
@@ -156,7 +156,6 @@ public function store(Request $request)
             $fixedFee = 1600;
         }
 
-        // Le montant à diviser est basé sur le nouveau prix total
         $totalInstallmentAmount = ($fixedFee > 0) ? ($totalAmount - $fixedFee) : $totalAmount;
         
         $remainingAmountToPayForInstallments = $totalInstallmentAmount - max(0, $initialPaidAmount - $fixedFee);
@@ -164,8 +163,8 @@ public function store(Request $request)
         $numberOfRemainingInstallments = $chosenInstallments; 
 
         $amountPerInstallment = ($remainingAmountToPayForInstallments > 0 && $numberOfRemainingInstallments > 0)
-                                ? round($remainingAmountToPayForInstallments / $numberOfRemainingInstallments, 2)
-                                : 0;
+                                 ? round($remainingAmountToPayForInstallments / $numberOfRemainingInstallments, 2)
+                                 : 0;
         
         $inscriptionStatus = $isAdminOrFinanceOrSuperAdmin ? $request->status : 'pending';
 
@@ -174,18 +173,32 @@ public function store(Request $request)
             $receiptPathForInitialPayment = $initialReceiptFile->store('payment_receipts/' . $userToEnroll->id, 'public');
         }
 
+        // --- Ajout de la logique pour le champ 'inscri_par' ici ---
+        $inscriPar = null;
+        if ($isAdminOrFinanceOrSuperAdmin) {
+            // Si l'admin a saisi une valeur, on l'utilise
+            if ($request->filled('inscri_par')) {
+                $inscriPar = $request->inscri_par;
+            } else {
+                // Sinon, on met le nom de l'utilisateur admin qui a créé l'inscription
+                $inscriPar = Auth::user()->name; 
+            }
+        }
+        // -----------------------------------------------------------
+
         $inscription = Inscription::create([
             'user_id' => $userToEnroll->id,
             'formation_id' => $request->formation_id,
             'status' => $inscriptionStatus,
             'inscription_date' => now(),
-            'total_amount' => $totalAmount, // On enregistre le prix final
+            'total_amount' => $totalAmount,
             'paid_amount' => $initialPaidAmount,
             'chosen_installments' => $chosenInstallments,
             'amount_per_installment' => $amountPerInstallment,
             'remaining_installments' => $numberOfRemainingInstallments,
             'notes' => $request->notes,
             'documents' => [],
+            'inscri_par' => $inscriPar, // Ajout de ce champ
         ]);
 
         if (!$isAdminOrFinanceOrSuperAdmin && $request->hasFile('documents')) {
@@ -253,19 +266,20 @@ public function show(Inscription $inscription)
         return view('inscriptions.edit', compact('inscription', 'formations', 'users'));
     }
 
-   public function update(Request $request, Inscription $inscription)
+  public function update(Request $request, Inscription $inscription)
 {
-    // Règle de validation pour le nouveau champ 'total_amount'
+    // Règle de validation pour le nouveau champ 'total_amount' et 'inscri_par'
     $validator = Validator::make($request->all(), [
         'status' => 'required|in:pending,active,completed,cancelled',
         'chosen_installments' => 'required|integer|min:1',
-        'total_amount' => 'required|numeric|min:0', // Le montant total est maintenant un champ modifiable
+        'total_amount' => 'required|numeric|min:0',
         'paid_amount' => 'required|numeric|min:0', 
         'documents' => 'nullable|array', 
         'documents.*' => 'file|mimes:pdf,jpg,jpeg,png|max:8048',
         'notes' => 'nullable|string|max:1000',
         'access_restricted' => 'boolean',
         'next_installment_due_date' => 'nullable|date',
+        'inscri_par' => 'nullable|string|max:255', // Ajout de cette règle
     ]);
 
     if ($validator->fails()) {
@@ -282,22 +296,14 @@ public function show(Inscription $inscription)
         $oldRemainingAmount = $inscription->total_amount - $inscription->paid_amount;
 
         // --- DEBUT DU NOUVEAU LOGIQUE DE CALCUL ---
-        
-        // On calcule le montant total qui reste à diviser
         $remainingBalance = $newTotalAmount - $newPaidAmount;
         
-        // On recalcule le montant de chaque acompte basé sur le nouveau solde et le nouveau nombre d'acomptes
         $newAmountPerInstallment = ($remainingBalance > 0 && $chosenInstallments > 0) 
-                                ? round($remainingBalance / $chosenInstallments, 2) 
-                                : 0;
+                                 ? round($remainingBalance / $chosenInstallments, 2) 
+                                 : 0;
         
-        // Le nombre d'acomptes restants est maintenant le nombre total d'acomptes choisi
-        // La logique est simplifiée pour que l'acompte soit un calcul direct.
-        // Si la différence entre l'ancien paid_amount et le nouveau est positive,
-        // on peut ajouter un paiement, mais pour l'instant on garde la logique de base.
         $newRemainingInstallments = $chosenInstallments;
 
-        // Si le montant total est payé, on met les acomptes restants à 0.
         if (abs($newTotalAmount - $newPaidAmount) < 0.01) {
             $newRemainingInstallments = 0;
         }
@@ -306,20 +312,19 @@ public function show(Inscription $inscription)
 
         $inscription->fill([
             'status' => $request->status,
-            'total_amount' => $newTotalAmount, // Mise à jour du nouveau montant total
-            'paid_amount' => $newPaidAmount, // Mise à jour du nouveau montant payé
+            'total_amount' => $newTotalAmount,
+            'paid_amount' => $newPaidAmount,
             'chosen_installments' => $chosenInstallments,
-            'amount_per_installment' => $newAmountPerInstallment, // Mise à jour du montant par acompte
-            'remaining_installments' => $newRemainingInstallments, // Mise à jour des acomptes restants
+            'amount_per_installment' => $newAmountPerInstallment,
+            'remaining_installments' => $newRemainingInstallments,
             'notes' => $request->notes,
             'access_restricted' => $request->boolean('access_restricted'), 
             'next_installment_due_date' => $request->next_installment_due_date,
+            'inscri_par' => $request->inscri_par, // Mise à jour de ce champ
         ]);
         
-        // Gérer l'ajout d'un paiement si le montant payé a augmenté
         if ($newPaidAmount > $oldPaidAmount) {
             $newPaymentAmount = $newPaidAmount - $oldPaidAmount;
-            // Assurez-vous que la méthode addPayment() de votre modèle Inscription est correcte
             $inscription->addPayment($newPaymentAmount, 'cash', 'Paiement manuel via édition');
         }
 

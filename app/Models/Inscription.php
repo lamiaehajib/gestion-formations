@@ -22,6 +22,7 @@ class Inscription extends Model
         'remaining_installments',
         'documents',
         'notes',
+        'inscri_par',
         'access_restricted',      // أضف هذا
         'next_installment_due_date', // أضف هذا
     ];

@@ -107,7 +107,7 @@
                                     <i class="fas fa-percent input-icon-label text-green-500"></i>
                                 </label>
                                 <div class="input-wrapper">
-                                    <input type="number" step="0.01" min="0" name="total_amount_override" id="total_amount_override" class="form-input text-green-700 font-bold" value="" placeholder="Prix total normal de la formation">
+                                    <input type="number" step="0.01" min="0" name="total_amount_override" id="total_amount_override" class="form-input text-green-700 font-bold" value="{{ old('total_amount_override') }}" placeholder="Prix total normal de la formation">
                                 </div>
                                 @error('total_amount_override')
                                     <p class="error-message">{{ $message }}</p>
@@ -153,6 +153,21 @@
                                 @enderror
                             </div>
 
+                            {{-- START of NEW CODE --}}
+                            <div class="md:col-span-2 form-group animate-fade-in">
+                                <label for="inscri_par" class="form-label label-with-icon">
+                                    Inscrit par (Optionnel)
+                                    <i class="fas fa-signature input-icon-label"></i>
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="text" name="inscri_par" id="inscri_par" class="form-input" value="{{ old('inscri_par') }}" placeholder="Nom de l'administrateur qui a effectué l'inscription">
+                                </div>
+                                @error('inscri_par')
+                                    <p class="error-message">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            {{-- END of NEW CODE --}}
+
                             <div class="md:col-span-2 form-group animate-fade-in">
                                 <label for="notes" class="form-label label-with-icon">
                                     Notes (Optionnel)
@@ -165,7 +180,6 @@
                                     <p class="error-message">{{ $message }}</p>
                                 @enderror
                             </div>
-
                         </div>
                     </div>
 
@@ -272,7 +286,7 @@
             function updateInitialPaymentAmountAndReceiptVisibility() {
                 const selectedFormationOption = formationSelect.options[formationSelect.selectedIndex];
                 let formationPrice = parseFloat(selectedFormationOption.dataset.price || 0);
-                const formationCategory = selectedFormationOption.dataset.category; // Assurez-vous que cette ligne est présente
+                const formationCategory = selectedFormationOption.dataset.category;
                 const selectedPaymentOption = parseInt(paymentOptionSelect.value);
                 const initialPaidAmount = parseFloat(initialPaidAmountInput.value) || 0;
                 
@@ -298,8 +312,8 @@
                 
                 // Calculate the amount of each installment from the remaining balance
                 const amountPerInstallment = (remainingAmountToPayForInstallments > 0 && selectedPaymentOption > 0) 
-                                            ? (remainingAmountToPayForInstallments / selectedPaymentOption).toFixed(2)
-                                            : '0.00';
+                                                ? (remainingAmountToPayForInstallments / selectedPaymentOption).toFixed(2)
+                                                : '0.00';
                 
                 // --- END OF NEW LOGIC ---
 
