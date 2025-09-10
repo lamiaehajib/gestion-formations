@@ -111,7 +111,7 @@ class UserController extends Controller
             // Validation pour la structure de documents envoyée par le formulaire
             'documents' => 'nullable|array',
             'documents.*.name' => 'nullable|string|max:255',
-            'documents.*.file' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:5120',
+            'documents.*.file' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:10240',
         ]);
 
         // 2. Préparation des données de l'utilisateur
