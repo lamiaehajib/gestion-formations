@@ -213,7 +213,7 @@ class UserController extends Controller
             // Validation pour la structure de documents
             'documents' => 'nullable|array',
             'documents.*.name' => 'nullable|string|max:255',
-            'documents.*.file' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:5120',
+            'documents.*.file' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:10240',
             'documents.*.id' => 'nullable|string', // Pour identifier les documents existants
             'removed_documents' => 'nullable|array',
         ]);
