@@ -450,7 +450,7 @@
                             <tr class="table-row">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
-                                        <img src="{{ Storage::url($student->inscription->user->avatar) }}"
+                                        <img src="{{ Storage::url($student->user->avatar) }}"
                                                          class="avatar avatar-sm me-3 border-radius-lg hover-zoom" alt="user avatar">
                                         <div class="ml-4">
                                             <div class="text-sm font-semibold text-gray-900">{{ $student['user']->name }}</div>
