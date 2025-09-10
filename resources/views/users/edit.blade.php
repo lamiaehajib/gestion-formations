@@ -145,7 +145,8 @@
                             @endif
                         </div>
                         
-                        <input type="hidden" name="removed_documents[]" id="removed-documents-input">
+                        {{-- New hidden input for removed documents (no '[]' in the name) --}}
+                        <input type="hidden" name="removed_documents_paths" id="removed-documents-input">
 
                         <button type="button" onclick="addDocument()" class="mt-4 inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-full transition-colors duration-200">
                             <i class="fa-solid fa-plus mr-2"></i> Ajouter un autre document
@@ -255,6 +256,7 @@
             }
         }
         
+        // Initialisation de l'index des documents et du set des documents à supprimer
         let documentIndex = {{ count($user->documents ?? []) }};
         const removedDocuments = new Set();
         
@@ -262,6 +264,8 @@
             const container = document.getElementById('documents-container');
             const newItem = document.createElement('div');
             newItem.classList.add('document-item', 'bg-white', 'p-4', 'rounded-xl', 'border', 'border-gray-200');
+            
+            // Le HTML pour les nouveaux champs de documents
             newItem.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>

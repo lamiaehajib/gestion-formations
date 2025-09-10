@@ -210,12 +210,11 @@ class UserController extends Controller
             'status' => 'required|in:active,inactive,suspended',
             'role' => 'required|string|exists:roles,name',
 
-            // Validation pour la structure de documents
             'documents' => 'nullable|array',
             'documents.*.name' => 'nullable|string|max:255',
             'documents.*.file' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:10240',
-            'documents.*.id' => 'nullable|string', // Pour identifier les documents existants
-            'removed_documents' => 'nullable|array',
+            'documents.*.id' => 'nullable|string',
+            'removed_documents_paths' => 'nullable|string', // Nouvelle validation pour le champ caché
         ]);
 
         // 2. Préparation des données de l'utilisateur
@@ -226,12 +225,10 @@ class UserController extends Controller
             'status' => $request->status,
         ];
 
-        // Gérer la mise à jour du mot de passe si un nouveau est fourni
         if ($request->filled('password')) {
             $userData['password'] = Hash::make($request->password);
         }
 
-        // Gérer l'avatar
         if ($request->hasFile('avatar')) {
             if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
                 Storage::disk('public')->delete($user->avatar);
@@ -245,18 +242,18 @@ class UserController extends Controller
             $userData['avatar'] = null;
         }
 
-        // 3. Gestion des documents (Nouveau code)
-        // Ne pas utiliser json_decode(), le modèle User le fait pour toi grâce à $casts
+        // 3. Gestion des documents
         $updatedDocuments = $user->documents ?? [];
 
         // Gérer la suppression des documents existants
-        if ($request->has('removed_documents')) {
-            $removedPaths = $request->input('removed_documents');
+        if ($request->filled('removed_documents_paths')) {
+            // Décoder la chaîne JSON en tableau PHP
+            $removedPaths = json_decode($request->input('removed_documents_paths'), true);
+
             // Filtrer les documents existants pour ne garder que ceux qui ne sont pas à supprimer
             $updatedDocuments = array_filter($updatedDocuments, function ($doc) use ($removedPaths) {
                 $isRemoved = in_array($doc['path'], $removedPaths);
                 if ($isRemoved) {
-                    // Supprimer le fichier du stockage
                     if (Storage::disk('public')->exists($doc['path'])) {
                         Storage::disk('public')->delete($doc['path']);
                     }
@@ -274,7 +271,7 @@ class UserController extends Controller
                 if (isset($document['id']) && $document['id'] !== null) {
                     // Mettre à jour le nom du document existant s'il a changé
                     foreach ($updatedDocuments as &$doc) {
-                        if ($doc['path'] === $document['id']) {
+                        if (isset($doc['path']) && $doc['path'] === $document['id']) {
                             $doc['name'] = $document['name'] ?? $doc['name'];
                             break;
                         }
