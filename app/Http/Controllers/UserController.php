@@ -309,7 +309,7 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        // Permission is already checked by the middleware
+        
         // Prevent deleting the currently authenticated user
         if (Auth::id() === $user->id) {
             return redirect()->route('users.index')
