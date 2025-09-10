@@ -556,11 +556,42 @@
                     </h4>
                 </div>
                 <div class="card-body glass-card">
-                    @if($payment->receipt_path)
-                                                <a href="{{ Storage::url($payment->receipt_path) }}" target="_blank" class="text-blue-500 hover:text-blue-700 ml-2" title="Voir reçu"><i class="fas fa-file-download"></i> Voir reçu</a>
-                                            @else
-                                                <span class="text-gray-400 ml-2">(Pas de reçu)</span>
-                                            @endif
+                     @if($inscription->documents && count($user->documents) > 0)
+                    <hr class="my-4">
+                    <div class="animate__animated animate__fadeInUp">
+                        <h4 class="text-primary fw-bold mb-3"><i class="fas fa-folder-open me-2"></i> Documents</h4>
+                        <ul class="list-group list-group-flush text-start">
+                            @foreach($user->documents as $document)
+                                @if(isset($document['path']))
+                                    <li class="list-group-item d-flex justify-content-between align-items-center document-item">
+                                        <div class="d-flex align-items-center">
+                                            @php
+                                                $icon = 'fas fa-file-alt';
+                                                if (isset($document['type'])) {
+                                                    if ($document['type'] == 'pdf') $icon = 'fas fa-file-pdf text-danger';
+                                                    else if (in_array($document['type'], ['jpg', 'jpeg', 'png', 'gif'])) $icon = 'fas fa-file-image text-info';
+                                                    else if (in_array($document['type'], ['doc', 'docx'])) $icon = 'fas fa-file-word text-primary';
+                                                }
+                                            @endphp
+                                            <i class="{{ $icon }} me-2 document-icon"></i>
+                                            <span class="fw-medium">{{ $document['name'] ?? 'Document sans nom' }}</span>
+                                        </div>
+                                        <a href="{{ asset('storage/' . $document['path']) }}" 
+                                           target="_blank" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-eye me-1"></i> Voir
+                                        </a>
+                                    </li>
+                                @endif
+                            @endforeach
+                        </ul>
+                    </div>
+                    @else
+                    <hr class="my-4">
+                    <div class="alert alert-info text-center animate__animated animate__fadeIn">
+                        <i class="fas fa-info-circle me-2"></i> Aucun document n'a été téléchargé pour cet utilisateur.
+                    </div>
+                    @endif
                 </div>
             </div>
             
