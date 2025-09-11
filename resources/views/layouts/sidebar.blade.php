@@ -595,7 +595,7 @@
                     <li class="sidebar-menu__item">
                         <a href="{{ route('promotions.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-percent"></i></span>
-                            <span class="text">promotions</span>
+                            <span class="text">Suivi annuel</span>
                         </a>
                     </li>
                     @endcan

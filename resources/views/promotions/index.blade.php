@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Gestion des Promotions')
+@section('title', 'Gestion du suivi annuel')
 
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-pink-50 via-white to-red-50">
@@ -11,9 +11,9 @@
                 <div>
                     <h1 class="text-3xl font-bold text-gray-900 flex items-center">
                         <i class="fa-solid fa-graduation-cap text-[#D32F2F] text-2xl mr-3"></i>
-                        Gestion des Promotions
+                        Gestion du suivi annuel
                     </h1>
-                    <p class="mt-2 text-gray-600">Gérez les promotions et suivez les paiements des étudiants</p>
+                    <p class="mt-2 text-gray-600">Gérez le suivi annuel et suivez les paiements des étudiants</p>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-3 mt-4 md:mt-0">
                     <button onclick="openBulkCreateModal()" class="bg-gradient-to-r from-[#C2185B] to-[#D32F2F] hover:from-[#D32F2F] hover:to-[#C2185B] text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center">

@@ -96,54 +96,56 @@ class PromotionController extends Controller
     /**
      * Display the specified promotion with student payment details.
      */
-    public function show(Promotion $promotion)
-    {
-        $promotion->load([
-            'formation.category',
-            'users' => function ($query) use ($promotion) {
-                $query->with(['inscriptions' => function ($q) use ($promotion) {
-                    $q->where('formation_id', $promotion->formation_id)->with('payments');
-                }]);
-            },
-        ]);
+   public function show(Promotion $promotion)
+{
+    $promotion->load([
+        'formation.category',
+        'users' => function ($query) use ($promotion) {
+            $query->with(['inscriptions' => function ($q) use ($promotion) {
+                $q->where('formation_id', $promotion->formation_id)->with('payments');
+            }]); // <-- J'ai supprimé ', 'avatar''
+        },
+    ]);
 
-        $studentsData = [];
-        $totalRevenue = 0;
-        $totalPaid = 0;
-        $totalRemaining = 0;
+    $studentsData = [];
+    $totalRevenue = 0;
+    $totalPaid = 0;
+    $totalRemaining = 0;
 
-        foreach ($promotion->users as $user) {
-            $inscription = $user->inscriptions->first();
-            if ($inscription) {
-                $studentData = [
-                    'user' => $user,
-                    'inscription' => $inscription,
-                    'paid_amount' => $inscription->paid_amount,
-                    'remaining_amount' => $inscription->remaining_amount,
-                    'total_amount' => $inscription->total_amount,
-                    'payment_status' => $inscription->payment_status_label,
-                    'payment_type' => $inscription->payment_type,
-                    'last_payment_date' => $inscription->payments->max('paid_date'),
-                    'payments_count' => $inscription->payments->count(),
-                ];
+    foreach ($promotion->users as $user) {
+        $inscription = $user->inscriptions->first();
+        if ($inscription) {
+            $studentData = [
+                'user' => $user,
+                'inscription' => $inscription,
+                'paid_amount' => $inscription->paid_amount,
+                'remaining_amount' => $inscription->remaining_amount,
+                'total_amount' => $inscription->total_amount,
+                'payment_status' => $inscription->payment_status_label,
+                'payment_type' => $inscription->payment_type,
+                'last_payment_date' => $inscription->payments->max('paid_date'),
+                'payments_count' => $inscription->payments->count(),
+                // Ajoute le chemin de l'avatar ici
+                'avatar_url' => $user->avatar ? asset('storage/' . $user->avatar) : null,
+            ];
 
-                $studentsData[] = $studentData;
-                $totalRevenue += $inscription->total_amount;
-                $totalPaid += $inscription->paid_amount;
-                $totalRemaining += $inscription->remaining_amount;
-            }
+            $studentsData[] = $studentData;
+            $totalRevenue += $inscription->total_amount;
+            $totalPaid += $inscription->paid_amount;
+            $totalRemaining += $inscription->remaining_amount;
         }
-
-        $statistics = [
-            'total_students' => count($studentsData),
-            'total_revenue' => $totalRevenue,
-            'total_paid' => $totalPaid,
-            'total_remaining' => $totalRemaining,
-            'completion_percentage' => $totalRevenue > 0 ? round(($totalPaid / $totalRevenue) * 100, 2) : 0,
-        ];
-
-        return view('promotions.show', compact('promotion', 'studentsData', 'statistics'));
     }
+
+    $statistics = [
+        'total_students' => count($studentsData),
+        'total_revenue' => $totalRevenue,
+        'total_paid' => $totalPaid,
+        'total_remaining' => $totalRemaining,
+        'completion_percentage' => $totalRevenue > 0 ? round(($totalPaid / $totalRevenue) * 100, 2) : 0,
+    ];
+
+    return view('promotions.show', compact('promotion', 'studentsData', 'statistics'));
+}
 
     /**
      * Show the form for editing the specified promotion.
