@@ -59,7 +59,7 @@ public function index(Request $request)
     $sortDirection = $request->get('sort_direction', 'desc');
     $query->orderBy($sortBy, $sortDirection);
 
-    $users = $query->paginate(2);
+    $users = $query->paginate(10);
 
     // Statistics
     $stats = [
