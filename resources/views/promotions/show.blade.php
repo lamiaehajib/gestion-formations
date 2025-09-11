@@ -450,9 +450,9 @@
                             <tr class="table-row">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
-                                     <img class="student-avatar" 
-     src="{{ asset($student['user']->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($student['user']->name) . '&background=ef4444&color=ffffff') }}" 
-     alt="">
+       <img class="student-avatar" 
+    src="{{ $student['user']->avatar ? asset('storage/' . $student['user']->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($student['user']->name) . '&background=ef4444&color=ffffff' }}" 
+    alt="Photo de {{ $student['user']->name }}">
                                         <div class="ml-4">
                                             <div class="text-sm font-semibold text-gray-900">{{ $student['user']->name }}</div>
                                             <div class="text-sm text-gray-500">{{ $student['user']->email }}</div>
