@@ -657,6 +657,12 @@
                 requestAnimationFrame(update);
             });
         }
+
+
+
+
+
+        
         function updateGridView(users) {
             const gridContainer = document.getElementById('gridContainer');
             gridContainer.innerHTML = '';

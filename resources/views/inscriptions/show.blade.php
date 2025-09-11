@@ -540,9 +540,10 @@
                     @if($inscription->notes)
                         <p class="card-text text-white">{{ $inscription->notes }}</p>
                     @else
-                     <strong style="color: var(--primary-red);">inscri par :</strong> {{ $inscription->inscri_par }}
+                 
                         <p class="text-light opacity-75">Aucune note pour cette inscription.</p>
                     @endif
+                        <strong class="card-text text-white">inscrit par : {{ $inscription->inscri_par }}</strong> 
                 </div>
             </div>
 

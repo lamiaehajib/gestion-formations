@@ -204,6 +204,7 @@
                                 <li><strong>Versements:</strong> {{ $inscription->chosen_installments }}</li>
                                 <li><strong>Montant Total:</strong> {{ number_format($inscription->total_amount, 2) }} DH</li>
                                 <li><strong>Montant Restant:</strong> {{ number_format($inscription->total_amount - $inscription->paid_amount, 2) }} DH</li>
+                                <li><strong>inscrit par:</strong> {{ $inscription->inscri_par }}</li>
                             </ul>
                         </div>
 
