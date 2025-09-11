@@ -319,8 +319,19 @@
         @endif
 
     </div>
+   
 </div>
-
+ @if($isAdminOrFinanceOrSuperAdmin)
+    <div class="stats-card mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        @foreach($inscriptionCountsByAgent as $agent => $count)
+            <div class="bg-white p-4 rounded-lg shadow-md text-center border-l-4 border-red-500">
+                <p class="text-sm text-gray-500 font-semibold">{{ $agent }}</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1">{{ $count }}</p>
+                <p class="text-xs text-gray-400">Inscriptions</p>
+            </div>
+        @endforeach
+    </div>
+@endif
 {{-- MODAL DE CONFIRMATION UNIVERSEL --}}
 <div id="confirmation-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden animate-fade-in" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity animate-fade-in-bg" aria-hidden="true"></div>

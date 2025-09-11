@@ -31,49 +31,67 @@ class InscriptionController extends Controller
     }
 
     public function index(Request $request)
-    {
-        $user = Auth::user();
-        $query = Inscription::with(['user', 'formation', 'formation.category'])
-            ->orderBy('created_at', 'desc');
+{
+    $user = Auth::user();
+    $isAdminOrFinanceOrSuperAdmin = $user->hasAnyRole(['Admin', 'Finance', 'Super Admin']);
+    
+    // Initialiser la requête principale des inscriptions
+    $query = Inscription::with(['user', 'formation', 'formation.category'])
+        ->orderBy('created_at', 'desc');
 
-        // *** C'est la ligne importante qui doit être modifiée ***
-        // Si l'utilisateur n'est pas 'admin' ou 'finance' ou 'super admin', seules ses propres inscriptions seront affichées
-        // Sinon, toutes les inscriptions seront affichées
-        if (!$user->hasAnyRole(['Admin', 'Finance', 'Super Admin'])) {
-            $query->where('user_id', $user->id);
-        }
-        // ***********************************************
-        
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('formation_id')) {
-            $query->where('formation_id', $request->formation_id);
-        }
-
-        // Le champ de recherche d'étudiant n'apparaît que pour les utilisateurs avec des autorisations administratives et financières
-        // Cette condition a été laissée ici pour déterminer qui peut utiliser le champ de recherche pour d'autres étudiants
-        if ($request->filled('search') && $user->hasAnyRole(['Admin', 'Finance', 'Super Admin'])) {
-            $search = $request->search;
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-        // Remarque : Si un étudiant ordinaire peut rechercher ses propres inscriptions, la condition de rôle doit être supprimée de l'instruction if
-        // et la recherche doit être limitée à ses propres inscriptions.
-
-
-        $inscriptions = $query->paginate(15);
-        
-        $availableStatuses = ['pending', 'active', 'completed', 'cancelled'];
-        $availableFormations = Formation::all();
-
-        $isAdminOrFinanceOrSuperAdmin = $user->hasAnyRole(['Admin', 'Finance', 'Super Admin']);
-
-        return view('inscriptions.index', compact('inscriptions', 'isAdminOrFinanceOrSuperAdmin', 'availableStatuses', 'availableFormations'));
+    // Limiter les résultats si l'utilisateur n'est pas un admin
+    if (!$isAdminOrFinanceOrSuperAdmin) {
+        $query->where('user_id', $user->id);
     }
+    
+    // Filtres
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    if ($request->filled('formation_id')) {
+        $query->where('formation_id', $request->formation_id);
+    }
+
+    // Recherche d'étudiant
+    if ($request->filled('search') && $isAdminOrFinanceOrSuperAdmin) {
+        $search = $request->search;
+        $query->whereHas('user', function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('email', 'like', "%{$search}%");
+        });
+    }
+
+    // ✨ Le nouveau code pour calculer le nombre d'inscriptions par agent
+    $inscriptionCountsByAgent = [];
+    if ($isAdminOrFinanceOrSuperAdmin) {
+        // Définir la liste des agents
+        $agents = ['Sara BELKASSEH', 'Ghizlane LAFKIR', 'Lamiae HAJIB', 'Abdellatif LEZHARI', 'Khalid Katkout'];
+
+        // Compter le nombre d'inscriptions pour chaque agent
+        foreach ($agents as $agent) {
+            $count = Inscription::where('inscrit_par', $agent)->count();
+            $inscriptionCountsByAgent[$agent] = $count;
+        }
+        
+        // Ou en utilisant une requête groupée pour plus d'efficacité
+        // $counts = Inscription::select('inscrit_par', DB::raw('count(*) as total'))
+        //                       ->whereIn('inscrit_par', $agents)
+        //                       ->groupBy('inscrit_par')
+        //                       ->pluck('total', 'inscrit_par')
+        //                       ->toArray();
+        // $inscriptionCountsByAgent = array_merge(array_fill_keys($agents, 0), $counts);
+    }
+    // ***********************************************
+
+    $inscriptions = $query->paginate(15);
+    
+    $availableStatuses = ['pending', 'active', 'completed', 'cancelled'];
+    $availableFormations = Formation::all();
+
+    // Passer les données à la vue
+    return view('inscriptions.index', compact('inscriptions', 'isAdminOrFinanceOrSuperAdmin', 'availableStatuses', 'availableFormations', 'inscriptionCountsByAgent'));
+}
 
     // ... Le reste de votre code de contrôleur reste le même que précédemment ...
 
