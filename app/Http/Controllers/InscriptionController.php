@@ -88,6 +88,7 @@ public function create(Request $request)
 }
 
  // InscriptionController.php
+// InscriptionController.php
 public function store(Request $request)
 {
     $user = Auth::user();
@@ -105,8 +106,9 @@ public function store(Request $request)
         $rules['status'] = 'required|in:pending,active,completed,cancelled';
         $rules['paid_amount'] = 'required|numeric|min:0';
         $rules['total_amount_override'] = 'nullable|numeric|min:0';
-        // Ajout de la règle pour le nouveau champ
-        $rules['inscri_par'] = 'nullable|string|max:255'; 
+        
+        // ✨ Le nouveau champ inscrit_par avec la validation enum
+        $rules['inscrit_par'] = 'nullable|in:Sara BELKASSEH,Ghizlane LAFKIR,Lamiae HAJIB,Abdellatif LEZHARI,Khalid Katkout'; 
 
         if ($request->paid_amount > 0) {
             $rules['initial_receipt_file'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:2048';
@@ -145,8 +147,8 @@ public function store(Request $request)
         $chosenInstallments = $request->selected_payment_option;
         
         $totalAmount = $isAdminOrFinanceOrSuperAdmin && $request->filled('total_amount_override') 
-                     ? (float) $request->total_amount_override 
-                     : $formation->price;
+                    ? (float) $request->total_amount_override 
+                    : $formation->price;
         
         $initialPaidAmount = $isAdminOrFinanceOrSuperAdmin ? $request->paid_amount : 0;
         $receiptPathForInitialPayment = null;
@@ -163,8 +165,8 @@ public function store(Request $request)
         $numberOfRemainingInstallments = $chosenInstallments; 
 
         $amountPerInstallment = ($remainingAmountToPayForInstallments > 0 && $numberOfRemainingInstallments > 0)
-                                 ? round($remainingAmountToPayForInstallments / $numberOfRemainingInstallments, 2)
-                                 : 0;
+                                    ? round($remainingAmountToPayForInstallments / $numberOfRemainingInstallments, 2)
+                                    : 0;
         
         $inscriptionStatus = $isAdminOrFinanceOrSuperAdmin ? $request->status : 'pending';
 
@@ -173,19 +175,12 @@ public function store(Request $request)
             $receiptPathForInitialPayment = $initialReceiptFile->store('payment_receipts/' . $userToEnroll->id, 'public');
         }
 
-        // --- Ajout de la logique pour le champ 'inscri_par' ici ---
-        $inscriPar = null;
+        // ✨ Nouvelle logique pour le champ 'inscrit_par'
+        $inscritPar = null;
         if ($isAdminOrFinanceOrSuperAdmin) {
-            // Si l'admin a saisi une valeur, on l'utilise
-            if ($request->filled('inscri_par')) {
-                $inscriPar = $request->inscri_par;
-            } else {
-                // Sinon, on met le nom de l'utilisateur admin qui a créé l'inscription
-                $inscriPar = Auth::user()->name; 
-            }
+            $inscritPar = $request->inscrit_par;
         }
-        // -----------------------------------------------------------
-
+        
         $inscription = Inscription::create([
             'user_id' => $userToEnroll->id,
             'formation_id' => $request->formation_id,
@@ -198,7 +193,7 @@ public function store(Request $request)
             'remaining_installments' => $numberOfRemainingInstallments,
             'notes' => $request->notes,
             'documents' => [],
-            'inscri_par' => $inscriPar, // Ajout de ce champ
+            'inscrit_par' => $inscritPar, // ✨ Le nouveau champ
         ]);
 
         if (!$isAdminOrFinanceOrSuperAdmin && $request->hasFile('documents')) {
@@ -266,11 +261,13 @@ public function show(Inscription $inscription)
         return view('inscriptions.edit', compact('inscription', 'formations', 'users'));
     }
 
-  // In InscriptionController.php
+
+
 public function update(Request $request, Inscription $inscription)
 {
+    // ✨ Étape 1: Mettre à jour la règle de validation
     $validator = Validator::make($request->all(), [
-        'formation_id' => 'required|exists:formations,id', // Ajoutez cette règle de validation
+        'formation_id' => 'required|exists:formations,id', 
         'status' => 'required|in:pending,active,completed,cancelled',
         'chosen_installments' => 'required|integer|min:1',
         'total_amount' => 'required|numeric|min:0',
@@ -280,7 +277,8 @@ public function update(Request $request, Inscription $inscription)
         'notes' => 'nullable|string|max:1000',
         'access_restricted' => 'boolean',
         'next_installment_due_date' => 'nullable|date',
-        'inscri_par' => 'nullable|string|max:255',
+        // Remplacer la règle pour 'inscri_par' par la nouvelle
+        'inscrit_par' => 'nullable|in:Sara BELKASSEH,Ghizlane LAFKIR,Lamiae HAJIB,Abdellatif LEZHARI,Khalid Katkout',
     ]);
 
     if ($validator->fails()) {
@@ -298,8 +296,8 @@ public function update(Request $request, Inscription $inscription)
         // La logique de calcul reste la même
         $remainingBalance = $newTotalAmount - $newPaidAmount;
         $newAmountPerInstallment = ($remainingBalance > 0 && $chosenInstallments > 0)
-                                     ? round($remainingBalance / $chosenInstallments, 2)
-                                     : 0;
+                                    ? round($remainingBalance / $chosenInstallments, 2)
+                                    : 0;
         
         $newRemainingInstallments = $chosenInstallments;
 
@@ -307,9 +305,9 @@ public function update(Request $request, Inscription $inscription)
             $newRemainingInstallments = 0;
         }
 
-        // Ajoutez 'formation_id' ici pour la mise à jour
+        // ✨ Étape 2: Remplacer le champ 'inscri_par' par 'inscrit_par' lors de la mise à jour
         $inscription->fill([
-            'formation_id' => $request->formation_id, // Mise à jour de ce champ
+            'formation_id' => $request->formation_id, 
             'status' => $request->status,
             'total_amount' => $newTotalAmount,
             'paid_amount' => $newPaidAmount,
@@ -319,7 +317,7 @@ public function update(Request $request, Inscription $inscription)
             'notes' => $request->notes,
             'access_restricted' => $request->boolean('access_restricted'), 
             'next_installment_due_date' => $request->next_installment_due_date,
-            'inscri_par' => $request->inscri_par,
+            'inscrit_par' => $request->inscrit_par, // Le champ a été mis à jour ici
         ]);
         
         if ($newPaidAmount > $oldPaidAmount) {

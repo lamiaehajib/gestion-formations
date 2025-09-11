@@ -4,7 +4,7 @@
 
 @section('content')
 
-    <div >
+    <div class="container mx-auto px-4">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <div class="glass-card overflow-hidden shadow-2xl sm:rounded-lg p-8 animated-form relative">
                 <div class="absolute inset-0 bg-gradient-to-br from-red-50 to-pink-50 opacity-50 rounded-lg -z-10 pattern-dots"></div>
@@ -155,14 +155,21 @@
 
                             {{-- START of NEW CODE --}}
                             <div class="md:col-span-2 form-group animate-fade-in">
-                                <label for="inscri_par" class="form-label label-with-icon">
-                                    Inscrit par (Optionnel)
+                                <label for="inscrit_par" class="form-label label-with-icon">
+                                    Inscrit par <span class="text-red-500">*</span>
                                     <i class="fas fa-signature input-icon-label"></i>
                                 </label>
                                 <div class="input-wrapper">
-                                    <input type="text" name="inscri_par" id="inscri_par" class="form-input" value="{{ old('inscri_par') }}" placeholder="Nom de l'administrateur qui a effectué l'inscription">
+                                    <select name="inscrit_par" id="inscrit_par" class="form-select" required>
+                                        <option value="">Sélectionner la personne qui a inscrit</option>
+                                        <option value="Sara BELKASSEH" {{ old('inscrit_par') == 'Sara BELKASSEH' ? 'selected' : '' }}>Madame Sara BELKASSEH</option>
+                                        <option value="Ghizlane LAFKIR" {{ old('inscrit_par') == 'Ghizlane LAFKIR' ? 'selected' : '' }}>Madame Ghizlane LAFKIR</option>
+                                        <option value="Lamiae HAJIB" {{ old('inscrit_par') == 'Lamiae HAJIB' ? 'selected' : '' }}>Madame Lamiae HAJIB</option>
+                                        <option value="Abdellatif LEZHARI" {{ old('inscrit_par') == 'Abdellatif LEZHARI' ? 'selected' : '' }}>Monsieur Abdellatif LEZHARI</option>
+                                        <option value="Khalid Katkout" {{ old('inscrit_par') == 'Khalid Katkout' ? 'selected' : '' }}>Monsieur Khalid Katkout</option>
+                                    </select>
                                 </div>
-                                @error('inscri_par')
+                                @error('inscrit_par')
                                     <p class="error-message">{{ $message }}</p>
                                 @enderror
                             </div>
@@ -312,8 +319,8 @@
                 
                 // Calculate the amount of each installment from the remaining balance
                 const amountPerInstallment = (remainingAmountToPayForInstallments > 0 && selectedPaymentOption > 0) 
-                                                ? (remainingAmountToPayForInstallments / selectedPaymentOption).toFixed(2)
-                                                : '0.00';
+                                             ? (remainingAmountToPayForInstallments / selectedPaymentOption).toFixed(2)
+                                             : '0.00';
                 
                 // --- END OF NEW LOGIC ---
 

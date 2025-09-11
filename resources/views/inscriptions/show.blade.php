@@ -543,7 +543,7 @@
                  
                         <p class="text-light opacity-75">Aucune note pour cette inscription.</p>
                     @endif
-                        <strong class="card-text text-white">inscrit par : {{ $inscription->inscri_par }}</strong> 
+                        <strong class="card-text text-white">inscrit par : {{ $inscription->inscrit_par }}</strong> 
                 </div>
             </div>
 
