@@ -113,7 +113,7 @@
                             <div class="grid grid-cols-2 gap-4 mb-6">
                                 <div class="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
                                     <i class="fa-solid fa-users text-2xl text-gray-800 mb-2"></i>
-                                    <div class="text-lg font-bold text-gray-900">{{ $studentsCount }}</div>
+                                   <div class="text-lg font-bold text-gray-900">{{ $promotion->users_count }}</div>
                                     <div class="text-xs text-gray-600 uppercase tracking-wide">Étudiants</div>
                                 </div>
                                 <div class="text-center p-3 bg-green-50 rounded-lg border border-green-200">

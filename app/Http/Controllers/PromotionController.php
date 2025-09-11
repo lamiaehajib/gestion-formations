@@ -20,21 +20,22 @@ class PromotionController extends Controller
      * Display a listing of promotions.
      */
     public function index()
-    {
-        $promotions = Promotion::with(['formation', 'formation.category', 'users'])
-            ->orderBy('year', 'desc')
-            ->orderBy('name')
-            ->paginate(15);
+{
+    $promotions = Promotion::with(['formation', 'formation.category'])
+        ->withCount('users') // This is the change
+        ->orderBy('year', 'desc')
+        ->orderBy('name')
+        ->paginate(15);
 
-        return view('promotions.index', compact('promotions'));
-    }
+    return view('promotions.index', compact('promotions'));
+}
 
     /**
      * Show the form for creating a new promotion.
      */
     public function create()
     {
-        $eligibleCategories = Category::whereIn('name', ['Licence Professionnelle', 'Master Professionnelle'])
+        $eligibleCategories = Category::whereIn('name', ['Licence Professionnelle', 'Master Professionnelle','LICENCE PROFESSIONNELLE RECONNU'])
             ->pluck('id');
 
         $formations = Formation::whereIn('category_id', $eligibleCategories)
@@ -355,12 +356,13 @@ class PromotionController extends Controller
         }
     }
     
+
     /**
      * Get formations eligible for promotion creation (licence/master categories).
      */
     public function getEligibleFormations()
     {
-        $eligibleCategories = Category::whereIn('name', ['Licence Professionnelle', 'Master Professionnelle'])
+        $eligibleCategories = Category::whereIn('name', ['Licence Professionnelle', 'Master Professionnelle','LICENCE PROFESSIONNELLE RECONNU'])
             ->pluck('id');
 
         $formations = Formation::whereIn('category_id', $eligibleCategories)
