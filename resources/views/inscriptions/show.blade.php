@@ -540,6 +540,7 @@
                     @if($inscription->notes)
                         <p class="card-text text-white">{{ $inscription->notes }}</p>
                     @else
+                     <strong style="color: var(--primary-red);">inscri par :</strong> {{ $inscription->inscri_par }}
                         <p class="text-light opacity-75">Aucune note pour cette inscription.</p>
                     @endif
                 </div>
@@ -570,6 +571,8 @@
                 <p class="text-muted">Aucun document joint pour ce client.</p>
             @endif
         </div>
+
+        
     </div>
             
         </div>
@@ -612,6 +615,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 @endpush
 @endsection
-
-
-

@@ -29,60 +29,63 @@ class UserController extends Controller
     /**
      * Display a listing of the users.
      */
-    public function index(Request $request)
-    {
-        // Permission is already checked by the middleware in the constructor
-        $query = User::with('roles'); // Eager load roles for display and filtering
+public function index(Request $request)
+{
+    // Permission is already checked by the middleware in the constructor
+    $query = User::with('roles'); // Eager load roles for display and filtering
 
-        // Filters
-        if ($request->filled('search')) {
-            $search = $request->get('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('email', 'like', '%' . $search . '%')
-                    ->orWhere('phone', 'like', '%' . $search . '%');
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->get('status'));
-        }
-
-        if ($request->filled('role')) {
-            $query->whereHas('roles', function ($q) use ($request) {
-                $q->where('name', $request->get('role'));
-            });
-        }
-
-        // Sorting
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortDirection = $request->get('sort_direction', 'desc');
-        $query->orderBy($sortBy, $sortDirection);
-
-        $users = $query->paginate(10);
-
-        // Statistics
-        $stats = [
-            'total' => User::count(),
-            'active' => User::where('status', 'active')->count(),
-            'inactive' => User::where('status', 'inactive')->count(),
-            'suspended' => User::where('status', 'suspended')->count(), // Added suspended status
-            'recent' => User::where('created_at', '>=', now()->subDays(30))->count(),
-        ];
-        
-        // Fetch all roles for the filter dropdown
-        $allRoles = Role::all();
-
-        if ($request->ajax()) {
-            return response()->json([
-                'users' => $users,
-                'stats' => $stats,
-                'html' => view('users.partials.table', compact('users'))->render()
-            ]);
-        }
-
-        return view('users.index', compact('users', 'stats', 'allRoles'));
+    // Filters
+    if ($request->filled('search')) {
+        $search = $request->get('search');
+        $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', '%' . $search . '%')
+              ->orWhere('email', 'like', '%' . $search . '%')
+              ->orWhere('phone', 'like', '%' . $search . '%');
+        });
     }
+
+    if ($request->filled('status')) {
+        $query->where('status', $request->get('status'));
+    }
+
+    if ($request->filled('role')) {
+        $query->whereHas('roles', function ($q) use ($request) {
+            $q->where('name', $request->get('role'));
+        });
+    }
+
+    // Sorting
+    $sortBy = $request->get('sort_by', 'created_at');
+    $sortDirection = $request->get('sort_direction', 'desc');
+    $query->orderBy($sortBy, $sortDirection);
+
+    $users = $query->paginate(2);
+
+    // Statistics
+    $stats = [
+        'total' => User::count(),
+        'active' => User::where('status', 'active')->count(),
+        'inactive' => User::where('status', 'inactive')->count(),
+        'suspended' => User::where('status', 'suspended')->count(),
+        'recent' => User::where('created_at', '>=', now()->subDays(30))->count(),
+    ];
+    
+    // Fetch all roles for the filter dropdown
+    $allRoles = Role::all();
+
+    if ($request->ajax()) {
+        return response()->json([
+            'users' => $users,
+            'stats' => $stats,
+            'html' => view('users.partials.table', compact('users'))->render(),
+            // C'est la ligne qui manquait ou qui était incorrecte.
+            // On envoie les liens de pagination en tant que HTML.
+            'pagination' => $users->appends($request->except('page'))->links('vendor.pagination.bootstrap-5')->toHtml(),
+        ]);
+    }
+
+    return view('users.index', compact('users', 'stats', 'allRoles'));
+}
 
     /**
      * Show the form for creating a new user.
