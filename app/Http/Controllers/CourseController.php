@@ -18,7 +18,7 @@ class CourseController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->authorizeResource(Course::class, 'course'); 
+       
         $this->middleware('permission:course-join', ['only' => ['join']]);
         $this->middleware('permission:course-download-document', ['only' => ['downloadDocument']]);
     }
@@ -26,16 +26,17 @@ class CourseController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+     public function index(Request $request)
     {
         $user = Auth::user();
 
-        // On charge la relation 'formations' et les autres relations
-        $query = Course::with(['formations', 'consultant']);
+        // On charge la relation 'formations' et les autres relations.
+        // On prépare la requête sans la limiter pour les formations, on le fera plus tard pour l'étudiant.
+        $query = Course::with(['consultant', 'formations']);
 
-        // --- تطبيق فلاتر الرؤية بناءً على الدور (كما تم تعديله سابقاً) ---
-        if ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance') ) {
-            
+        // --- تطبيق فلاتر الرؤية بناءً على الدور ---
+        if ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance')) {
+            // Pas de filtre sur les cours pour ces rôles.
         } elseif ($user->hasRole('Consultant')) {
             $query->where('consultant_id', $user->id);
         } elseif ($user->hasRole('Etudiant')) {
@@ -45,21 +46,28 @@ class CourseController extends Controller
                 ->pluck('formation_id');
 
             if ($enrolledFormationIds->isEmpty()) {
+                // S'il n'est inscrit à aucune formation, ne lui montrer aucun cours.
                 $query->whereRaw('1 = 0');
             } else {
                 // Modifié pour utiliser whereHas sur la relation belongsToMany
                 $query->whereHas('formations', function ($q) use ($enrolledFormationIds) {
                     $q->whereIn('formation_id', $enrolledFormationIds);
                 });
+                
+                // C'est ici qu'on filtre les formations chargées pour n'afficher que celles
+                // auxquelles l'étudiant est inscrit.
+                $query->with(['formations' => function ($q) use ($enrolledFormationIds) {
+                    $q->whereIn('formations.id', $enrolledFormationIds);
+                }]);
             }
         } else {
+            // Ne rien montrer si le rôle n'est pas reconnu.
             $query->whereRaw('1 = 0');
         }
         // --- End role-based visibility filters ---
 
         // --- Apply general search and filter options ---
         if ($request->has('filter_formation_id') && $request->filter_formation_id) {
-            // Modifié pour utiliser whereHas sur la relation belongsToMany
             $query->whereHas('formations', function ($q) use ($request) {
                 $q->where('formation_id', $request->filter_formation_id);
             });
@@ -106,7 +114,6 @@ class CourseController extends Controller
 
         return view('courses.index', compact('courses', 'formationsForModals', 'formationsForFilter', 'consultants'));
     }
-
     /**
      * Show the form for creating a new resource.
      */
