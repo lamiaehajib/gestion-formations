@@ -195,59 +195,57 @@ class CourseController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, Course $course)
-    {
-        $validator = Validator::make($request->all(), [
-            // Validation mise à jour pour un tableau d'IDs
-            'formations' => 'required|array',
-            'formations.*' => 'exists:formations,id',
-            'consultant_id' => 'nullable|exists:users,id',
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'course_date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-            'zoom_link' => 'nullable|url',
-            'recording_url' => 'nullable|url',
-            'documents.*' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:10240'
-        ]);
-        
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput()->with('edit_course_id', $course->id);
-        }
-        
-        $documentPaths = $course->documents ?? [];
-        
-        if ($request->hasFile('documents')) {
-            foreach ($request->file('documents') as $file) {
-                $path = $file->store('courses/documents', 'public');
-                $documentPaths[] = [
-                    'name' => $file->getClientOriginalName(),
-                    'path' => $path,
-                    'size' => $file->getSize(),
-                    'type' => $file->getMimeType()
-                ];
-            }
-        }
-        
-        $course->update([
-            // Suppression de la ligne 'formation_id'
-            'consultant_id' => $request->consultant_id,
-            'title' => $request->title,
-            'description' => $request->description,
-            'course_date' => $request->course_date,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
-            'zoom_link' => $request->zoom_link,
-            'recording_url' => $request->recording_url,
-            'documents' => $documentPaths
-        ]);
-
-        // Ajout de la synchronisation des formations
-        $course->formations()->sync($request->formations);
-        
-        return redirect()->route('courses.show', $course)
-            ->with('success', 'Course updated successfully.');
+{
+    $validator = Validator::make($request->all(), [
+        'formation_ids' => 'required|array', // Hna bdelt smit "formations" b "formation_ids"
+        'formation_ids.*' => 'exists:formations,id', // Hna bdelt smit "formations.*" b "formation_ids.*"
+        'consultant_id' => 'nullable|exists:users,id',
+        'title' => 'required|string|max:255',
+        'description' => 'required|string',
+        'course_date' => 'required|date',
+        'start_time' => 'required|date_format:H:i',
+        'end_time' => 'required|date_format:H:i|after:start_time',
+        'zoom_link' => 'nullable|url',
+        'recording_url' => 'nullable|url',
+        'documents.*' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:10240'
+    ]);
+    
+    if ($validator->fails()) {
+        return redirect()->back()->withErrors($validator)->withInput()->with('edit_course_id', $course->id);
     }
+    
+    $documentPaths = $course->documents ?? [];
+    
+    if ($request->hasFile('documents')) {
+        foreach ($request->file('documents') as $file) {
+            $path = $file->store('courses/documents', 'public');
+            $documentPaths[] = [
+                'name' => $file->getClientOriginalName(),
+                'path' => $path,
+                'size' => $file->getSize(),
+                'type' => $file->getMimeType()
+            ];
+        }
+    }
+    
+    $course->update([
+        'consultant_id' => $request->consultant_id,
+        'title' => $request->title,
+        'description' => $request->description,
+        'course_date' => $request->course_date,
+        'start_time' => $request->start_time,
+        'end_time' => $request->end_time,
+        'zoom_link' => $request->zoom_link,
+        'recording_url' => $request->recording_url,
+        'documents' => $documentPaths
+    ]);
+
+    // Hna ghadi n-bedlou "formations" b "formation_ids"
+    $course->formations()->sync($request->formation_ids);
+    
+    return redirect()->route('courses.show', $course)
+        ->with('success', 'Course updated successfully.');
+}
 
     /**
      * Remove the specified resource from storage.
