@@ -762,22 +762,42 @@
                             <table class="table table-subtle-depth">
                                 <thead>
                                     <tr>
+                                         <th>Cours</th>
                                         <th>Formation</th>
-                                        <th>Cours</th>
                                         <th>Heure</th>
-                                        <th>Actions</th>
+                                        <th>Consultant</th>
+                                        <th>Lien Zoom</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($coursesToday as $course)
-                                        <tr>
-                                            <td><strong>{{ $course->formation->title }}</strong></td>
-                                            <td>{{ $course->title }}</td>
-                                            <td><span class="badge bg-info">{{ Carbon\Carbon::parse($course->start_time)->format('H:i') }} - {{ Carbon\Carbon::parse($course->end_time)->format('H:i') }}</span></td>
-                                            <td>
-                                                <a href="{{ $course->zoom_link }}" target="_blank" class="btn btn-success btn-sm"><i class="fas fa-video"></i> Rejoindre</a>
-                                            </td>
-                                        </tr>
+                                   @foreach($coursesToday as $course)
+                                    <tr>
+                                        <td><strong>{{ $course->title }}</strong></td>
+                                       @if($course->formations->isNotEmpty())
+                                                            <td class="course-formation">
+                                                                @foreach($course->formations as $formation)
+                                                                    <span class="badge bg-secondary">{{ $formation->title }}</span>
+                                                                @endforeach
+                                                            </td>
+                                                        @else
+                                                            -
+                                                        @endif
+                                        <td>
+                                            <span class="badge bg-secondary">{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }}</span>
+                                            -
+                                            <span class="badge bg-secondary">{{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}</span>
+                                        </td>
+                                        <td>{{ $course->consultant->name ?? 'N/A' }}</td>
+                                        <td>
+                                            @if($course->zoom_link)
+                                                <a href="{{ $course->zoom_link }}" target="_blank" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-video"></i> Rejoindre
+                                                </a>
+                                            @else
+                                                <span class="badge bg-secondary"><i class="fas fa-link-slash"></i> Indisponible</span>
+                                            @endif
+                                        </td>
+                                    </tr>
                                     @endforeach
                                 </tbody>
                             </table>
