@@ -10,7 +10,7 @@ class Course extends Model
     use HasFactory;
 
     protected $fillable = [
-        'formation_id',
+      
         'title',
         'description',
         'course_date',
@@ -30,6 +30,14 @@ class Course extends Model
         'documents' => 'array',
         
     ];
+
+
+       public function formations()
+    {
+        // La relation a été changée belongsTo à belongsToMany pour supporter
+        // plusieurs formations par cours.
+        return $this->belongsToMany(Formation::class);
+    }
 
     // Relations
     public function formation()

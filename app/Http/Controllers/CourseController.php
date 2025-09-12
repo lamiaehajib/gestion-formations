@@ -9,50 +9,29 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Carbon\Carbon; // Import Carbon for date/time handling
-use Illuminate\Support\Facades\Mail; // Ajout de la facade Mail
-use App\Mail\NewCourseNotification; // Ajout de la nouvelle Mailable
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NewCourseNotification;
+
 class CourseController extends Controller
 {
-    // Constructor to apply policies and basic authorization
-    // app/Http/Controllers/CourseController.php
-
-// In the constructor for class-wide middleware
-public function __construct()
+    public function __construct()
     {
-        $this->middleware('auth'); // Ensure user is logged in for all course actions
-
-        // --- التعديل هنا: استخدام authorizeResource لضمان تطبيق السياسات ---
-        // هذا السطر يطبق سياسة CoursePolicy على دوال CRUD تلقائياً
-        // viewAny -> index
-        // view -> show
-        // create -> create, store
-        // update -> edit, update
-        // delete -> destroy
+        $this->middleware('auth');
         $this->authorizeResource(Course::class, 'course'); 
-        // ------------------------------------------------------------------
-
-        // الصلاحيات المخصصة التي لا تغطيها authorizeResource بشكل مباشر
-        // هذه تبقى كما هي لأنها ليست جزءاً من CRUD الأساسي
         $this->middleware('permission:course-join', ['only' => ['join']]);
         $this->middleware('permission:course-download-document', ['only' => ['downloadDocument']]);
-        
-        // يمكنك إزالة هذه الأسطر إذا كنت تعتمد بالكامل على authorizeResource
-        // $this->middleware('permission:course-list', ['only' => ['index']]);
-        // $this->middleware('permission:course-create', ['only' => ['create', 'store']]);
-        // $this->middleware('permission:course-edit', ['only' => ['edit', 'update']]);
-        // $this->middleware('permission:course-delete', ['only' => ['destroy']]);
-        // $this->middleware('permission:course-view', ['only' => ['show']]); // هذا السطر يصبح زائداً مع authorizeResource
     }
 
     /**
      * Display a listing of the resource.
      */
-     public function index(Request $request)
+    public function index(Request $request)
     {
         $user = Auth::user();
 
-        $query = Course::with(['formation', 'formation.consultant', 'consultant']);
+        // On charge la relation 'formations' et les autres relations
+        $query = Course::with(['formations', 'consultant']);
 
         // --- تطبيق فلاتر الرؤية بناءً على الدور (كما تم تعديله سابقاً) ---
         if ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance') ) {
@@ -60,15 +39,18 @@ public function __construct()
         } elseif ($user->hasRole('Consultant')) {
             $query->where('consultant_id', $user->id);
         } elseif ($user->hasRole('Etudiant')) {
-            $enrolledFormations = $user->inscriptions()
-                                       ->whereIn('status', ['active', 'completed'])
-                                       ->where('access_restricted', false) // هنا الشرط الجديد
-                                       ->pluck('formation_id');
+            $enrolledFormationIds = $user->inscriptions()
+                ->whereIn('status', ['active', 'completed'])
+                ->where('access_restricted', false)
+                ->pluck('formation_id');
 
-            if ($enrolledFormations->isEmpty()) {
+            if ($enrolledFormationIds->isEmpty()) {
                 $query->whereRaw('1 = 0');
             } else {
-                $query->whereIn('formation_id', $enrolledFormations);
+                // Modifié pour utiliser whereHas sur la relation belongsToMany
+                $query->whereHas('formations', function ($q) use ($enrolledFormationIds) {
+                    $q->whereIn('formation_id', $enrolledFormationIds);
+                });
             }
         } else {
             $query->whereRaw('1 = 0');
@@ -77,7 +59,10 @@ public function __construct()
 
         // --- Apply general search and filter options ---
         if ($request->has('filter_formation_id') && $request->filter_formation_id) {
-            $query->where('formation_id', $request->filter_formation_id);
+            // Modifié pour utiliser whereHas sur la relation belongsToMany
+            $query->whereHas('formations', function ($q) use ($request) {
+                $q->where('formation_id', $request->filter_formation_id);
+            });
         }
         if ($request->has('start_date') && $request->start_date) {
             $query->where('course_date', '>=', $request->start_date);
@@ -87,18 +72,18 @@ public function __construct()
         }
 
         // --- Time-based visibility ---
-        if ($user && $user->hasRole('Etudiant')) { // Removed the 'Consultant' role
-    $now = Carbon::now();
-    $query->where(function ($q) use ($now) {
-        $q->where('course_date', '<', $now->toDateString())
-          ->orWhere(function ($q2) use ($now) {
-              $q2->where('course_date', $now->toDateString())
-                 ->whereRaw("TIME_TO_SEC(CONCAT(course_date, ' ', start_time)) <= TIME_TO_SEC(?)", [
-                     $now->copy()->addMinutes(5)->toDateTimeString()
-                 ]);
-          });
-    });
-}
+        if ($user && $user->hasRole('Etudiant')) {
+            $now = Carbon::now();
+            $query->where(function ($q) use ($now) {
+                $q->where('course_date', '<', $now->toDateString())
+                    ->orWhere(function ($q2) use ($now) {
+                        $q2->where('course_date', $now->toDateString())
+                           ->whereRaw("TIME_TO_SEC(CONCAT(course_date, ' ', start_time)) <= TIME_TO_SEC(?)", [
+                                $now->copy()->addMinutes(5)->toDateTimeString()
+                           ]);
+                    });
+            });
+        }
         // --- End time-based visibility ---
 
         $courses = $query->orderBy('created_at', 'desc')->paginate(15);
@@ -108,26 +93,25 @@ public function __construct()
         if ($user && ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance'))) {
             $formationsForFilter = Formation::all();
         } elseif ($user && $user->hasRole('Etudiant')) {
-             $enrolledFormations = $user->inscriptions()
-                                        ->whereIn('status', ['active', 'completed'])
-                                        ->where('access_restricted', false)
-                                        ->pluck('formation_id');
-             if ($enrolledFormations->isNotEmpty()) {
-                 $formationsForFilter = Formation::whereIn('id', $enrolledFormations)->get();
-             }
+            $enrolledFormationIds = $user->inscriptions()
+                ->whereIn('status', ['active', 'completed'])
+                ->where('access_restricted', false)
+                ->pluck('formation_id');
+            if ($enrolledFormationIds->isNotEmpty()) {
+                $formationsForFilter = Formation::whereIn('id', $enrolledFormationIds)->get();
+            }
         }
         
         $consultants = User::role('Consultant')->get();
 
         return view('courses.index', compact('courses', 'formationsForModals', 'formationsForFilter', 'consultants'));
     }
+
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        // Policy check: Only users with 'course-create' permission can access this.
-        // Handled by $this->authorizeResource(Course::class, 'course');
         $formationsForModals = Formation::where('status', 'published')->get();
         $consultants = User::role('Consultant')->get();
         return view('courses.create', compact('formationsForModals', 'consultants'));
@@ -137,10 +121,10 @@ public function __construct()
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-{
-    // ... (Ton code de validation) ...
-    $validator = Validator::make($request->all(), [
-        'formation_id' => 'required|exists:formations,id',
+    {
+         $validator = Validator::make($request->all(), [
+     'formation_ids' => 'required|array',
+'formation_ids.*' => 'exists:formations,id',
         'consultant_id' => 'nullable|exists:users,id',
         'title' => 'required|string|max:255',
         'description' => 'required|string',
@@ -150,57 +134,50 @@ public function __construct()
         'zoom_link' => 'nullable|url',
         'documents.*' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:10240'
     ]);
-    
-    if ($validator->fails()) {
-        return redirect()->back()->withErrors($validator)->withInput();
-    }
-    
-    $documentPaths = [];
-    
-    if ($request->hasFile('documents')) {
-        foreach ($request->file('documents') as $file) {
-            $path = $file->store('courses/documents', 'public');
-            $documentPaths[] = [
-                'name' => $file->getClientOriginalName(),
-                'path' => $path,
-                'size' => $file->getSize(),
-                'type' => $file->getMimeType()
-            ];
+        
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
         }
+        
+        $documentPaths = [];
+        
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $file) {
+                $path = $file->store('courses/documents', 'public');
+                $documentPaths[] = [
+                    'name' => $file->getClientOriginalName(),
+                    'path' => $path,
+                    'size' => $file->getSize(),
+                    'type' => $file->getMimeType()
+                ];
+            }
+        }
+        
+        $course = Course::create([
+            'consultant_id' => $request->consultant_id,
+            'title' => $request->title,
+            'description' => $request->description,
+            'course_date' => $request->course_date,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+            'zoom_link' => $request->zoom_link,
+            'documents' => $documentPaths
+        ]);
+
+        // MODIFICATION ICI : On utilise `formation_ids` pour la synchronisation
+       $course->formations()->sync($request->formation_ids);
+        
+        return redirect()->route('courses.index')
+            ->with('success', 'Course created successfully.');
     }
-    
-    $course = Course::create([
-        'formation_id' => $request->formation_id,
-        'consultant_id' => $request->consultant_id,
-        'title' => $request->title,
-        'description' => $request->description,
-        'course_date' => $request->course_date,
-        'start_time' => $request->start_time,
-        'end_time' => $request->end_time,
-        'zoom_link' => $request->zoom_link,
-        'documents' => $documentPaths
-    ]);
-
-    // HNA KAN7EYYOU L'CODE LI KAYSEFT L'EMAIL
-    // Had les lignes khassem ytkounou f'l'commande dial l'robot
-    // if ($course->consultant_id) { ... }
-    // $students = User::whereHas('inscriptions', ...)
-    // foreach ($students as $student) { ... }
-
-    return redirect()->route('courses.index')
-        ->with('success', 'Course created successfully.');
-}
 
     /**
      * Display the specified resource.
      */
-   public function show(Course $course)
+    public function show(Course $course)
     {
-        // Policy check: Handled by $this->authorizeResource(Course::class, 'course');
-        // هذا السطر لم يعد ضرورياً هنا لأن authorizeResource يتكفل به
-        // $this->authorize('view', $course); 
-        
-        $course->load(['formation', 'formation.consultant', 'consultant', 'evaluations']);
+        // La relation a été changée de 'formation' à 'formations'
+        $course->load(['formations', 'consultant', 'evaluations']);
         return view('courses.show', compact('course'));
     }
 
@@ -209,7 +186,6 @@ public function __construct()
      */
     public function edit(Course $course)
     {
-        // Policy check: Handled by $this->authorizeResource(Course::class, 'course');
         $formationsForModals = Formation::where('status', 'published')->get();
         $consultants = User::role('Consultant')->get();
         return view('courses.edit', compact('course', 'formationsForModals', 'consultants'));
@@ -220,9 +196,10 @@ public function __construct()
      */
     public function update(Request $request, Course $course)
     {
-        // Policy check: Handled by $this->authorizeResource(Course::class, 'course');
         $validator = Validator::make($request->all(), [
-            'formation_id' => 'required|exists:formations,id',
+            // Validation mise à jour pour un tableau d'IDs
+            'formations' => 'required|array',
+            'formations.*' => 'exists:formations,id',
             'consultant_id' => 'nullable|exists:users,id',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -253,7 +230,7 @@ public function __construct()
         }
         
         $course->update([
-            'formation_id' => $request->formation_id,
+            // Suppression de la ligne 'formation_id'
             'consultant_id' => $request->consultant_id,
             'title' => $request->title,
             'description' => $request->description,
@@ -264,6 +241,9 @@ public function __construct()
             'recording_url' => $request->recording_url,
             'documents' => $documentPaths
         ]);
+
+        // Ajout de la synchronisation des formations
+        $course->formations()->sync($request->formations);
         
         return redirect()->route('courses.show', $course)
             ->with('success', 'Course updated successfully.');
@@ -274,7 +254,6 @@ public function __construct()
      */
     public function destroy(Course $course)
     {
-        // Policy check: Handled by $this->authorizeResource(Course::class, 'course');
         if ($course->documents) {
             foreach ($course->documents as $document) {
                 if (isset($document['path'])) {
@@ -290,24 +269,19 @@ public function __construct()
     }
     
     /**
-     * Get courses for a specific formation (AJAX)
+     * Get courses for a specific formation (AJAX) - Removed, as a course can now have many formations.
+     * This method is no longer relevant with the many-to-many relationship.
      */
-    public function getByFormation(Formation $formation)
-    {
-        // This method might need its own policy check if it's accessible directly
-        $courses = $formation->courses()
-            ->orderBy('course_date', 'asc')
-            ->get(['id', 'title', 'course_date', 'start_time', 'end_time']);
-            
-        return response()->json($courses);
-    }
+    // public function getByFormation(Formation $formation)
+    // {
+    //     // ... Code supprimé
+    // }
     
     /**
      * Remove a document from course
      */
     public function removeDocument(Course $course, Request $request)
     {
-        // Policy check: Uses 'update' ability on CoursePolicy
         $this->authorize('update', $course);
 
         $documentIndex = $request->get('document_index');
@@ -334,7 +308,6 @@ public function __construct()
      */
     public function downloadDocument(Course $course, Request $request)
     {
-        // Policy check: Handled by middleware('can:course-download-document,course') in constructor
         $documentIndex = $request->get('document_index');
         $documents = $course->documents ?? [];
         
@@ -355,16 +328,10 @@ public function __construct()
      */
     public function join(Course $course)
     {
-        // Policy check: Handled by middleware('can:course-join,course') in constructor
-        // The detailed enrollment check is part of the 'join' policy method.
-        
         if ($course->zoom_link) {
             return redirect($course->zoom_link);
         }
         
         return redirect()->back()->with('error', 'No meeting link available for this course.');
     }
-
-
-    
 }

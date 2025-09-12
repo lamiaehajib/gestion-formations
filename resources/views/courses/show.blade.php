@@ -332,9 +332,15 @@
     <div class="course-header-section">
         <div>
             <h1>{{ $course->title }}</h1>
-            <p class="course-meta">
-                Dans la formation: <strong class="text-primary">{{ $course->formation->title }}</strong>
-            </p>
+            @if($course->formations->isNotEmpty())
+                                                            <p class="course-formation">
+                                                                @foreach($course->formations as $formation)
+                                                                    <span class="badge bg-secondary">{{ $formation->title }}</span>
+                                                                @endforeach
+                                                            </p>
+                                                        @else
+                                                            <p class="course-formation">Aucune formation associée</p>
+                                                        @endif
             <div class="consultant-info">
                
                 {{-- Changed to display $course->consultant->name directly --}}

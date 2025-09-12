@@ -31,7 +31,7 @@ class PromotionController extends Controller
 }
 
     /**
-     * Show the form for creating a new promotion.
+     * Show the form for creating  new promotion.
      */
     public function create()
     {
@@ -50,9 +50,16 @@ class PromotionController extends Controller
         return view('promotions.create', compact('formations', 'availableYears'));
     }
 
+
+
+
     /**
      * Store a newly created promotion and automatically populate it with students.
      */
+
+
+
+
     public function store(Request $request)
     {
         $request->validate([
