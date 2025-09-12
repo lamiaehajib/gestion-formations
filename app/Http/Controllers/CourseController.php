@@ -34,7 +34,7 @@ class CourseController extends Controller
         // On prépare la requête sans la limiter pour les formations, on le fera plus tard pour l'étudiant.
         $query = Course::with(['consultant', 'formations']);
 
-        // --- تطبيق فلاتر الرؤية بناءً على الدور ---
+   
         if ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance')) {
             // Pas de filtre sur les cours pour ces rôles.
         } elseif ($user->hasRole('Consultant')) {

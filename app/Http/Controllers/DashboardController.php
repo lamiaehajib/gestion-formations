@@ -328,183 +328,175 @@ class DashboardController extends Controller
 // ... (all the other code in your controller remains the same)
 
     private function getEtudiantDashboardData(User $user, Request $request): array
-    {
-        // For students, filtering by month for their own data might be less critical on the dashboard
-        // but if needed, you'd apply similar logic to the admin/consultant methods.
-        $selectedMonth = $request->input('selected_month');
-        $selectedYear = $request->input('selected_year', Carbon::now()->year);
+{
+    $selectedMonth = $request->input('selected_month');
+    $selectedYear = $request->input('selected_year', Carbon::now()->year);
 
-        $startDate = null;
-        $endDate = null;
+    $startDate = null;
+    $endDate = null;
 
-        if ($selectedMonth) {
-            $startDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfDay();
-            $endDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth()->endOfDay();
-        }
+    if ($selectedMonth) {
+        $startDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfDay();
+        $endDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth()->endOfDay();
+    }
 
-        $months = [];
-        for ($i = 1; $i <= 12; $i++) {
-            $months[$i] = Carbon::create()->month($i)->translatedFormat('F');
-        }
+    $months = [];
+    for ($i = 1; $i <= 12; $i++) {
+        $months[$i] = Carbon::create()->month($i)->translatedFormat('F');
+    }
 
-        // Fetch all inscriptions for the student for the blade to handle the counts (active/pending)
-        $inscriptions = Inscription::where('user_id', $user->id)
+    $inscriptions = Inscription::where('user_id', $user->id)
+        ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        })
+        ->with('formation')
+        ->get();
+
+    $currentInscriptions = $inscriptions->where('status', 'active');
+    $pendingInscriptions = $inscriptions->where('status', 'pending');
+
+    $totalPaid = Payment::whereHas('inscription', function($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })
+        ->where('status', 'paid')
+        ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+            $query->whereBetween('paid_date', [$startDate, $endDate]);
+        })->sum('amount');
+
+    $totalOutstanding = Payment::whereHas('inscription', function($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })
+        ->whereIn('status', ['pending', 'late'])
+        ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+            $query->whereBetween('due_date', [$startDate, $endDate]);
+        })->sum('amount');
+
+    $upcomingPayments = Payment::whereHas('inscription', function($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })
+        ->where('status', 'pending')
+        ->where('due_date', '>=', Carbon::now())
+        ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+            $query->whereBetween('due_date', [$startDate, $endDate]);
+        })
+        ->with('inscription.formation')
+        ->orderBy('due_date', 'asc')
+        ->get();
+
+    $recentPayments = Payment::whereHas('inscription', function($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })
+        ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        })
+        ->orderBy('created_at', 'desc')
+        ->take(5)
+        ->with('inscription.formation')
+        ->get();
+
+    // MISE À JOUR IMPORTANTE POUR LES COURS DU JOUR
+    $enrolledFormationIds = $user->inscriptions()
+        ->where('status', 'active')
+        ->where('access_restricted', false)
+        ->pluck('formation_id');
+
+    $today = Carbon::today();
+    $coursesToday = Course::whereDate('course_date', $today)
+        ->orderBy('start_time', 'asc')
+        ->whereHas('formations', function ($q) use ($enrolledFormationIds) {
+            $q->whereIn('formations.id', $enrolledFormationIds);
+        })
+        ->with(['consultant', 'formations' => function ($q) use ($enrolledFormationIds) {
+            $q->whereIn('formations.id', $enrolledFormationIds);
+        }])
+        ->get();
+
+    // NOUVELLE: Récupérer les récentes reprogrammations de cours
+    $recentCourseReschedules = CourseReschedule::whereHas('course.formations', function ($q) use ($enrolledFormationIds) {
+            $q->whereIn('formations.id', $enrolledFormationIds);
+        })
+        ->orderBy('created_at', 'desc')
+        ->take(5)
+        ->with('course')
+        ->get();
+
+    // Données pour les graphiques
+    $paymentStatusDistribution = Payment::whereHas('inscription', function($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })
+        ->select('status', DB::raw('count(*) as count'), DB::raw('sum(amount) as total'))
+        ->groupBy('status')
+        ->get();
+
+    $paymentChartLabels = $paymentStatusDistribution->pluck('status')->map(fn($status) => ucfirst($status))->toArray();
+    $paymentChartData = $paymentStatusDistribution->pluck('total')->toArray();
+    $paymentChartColors = [
+        'paid' => '#28a745', 
+        'pending' => '#ffc107',
+        'late' => '#dc3545',
+    ];
+    $paymentChartBackgroundColors = $paymentStatusDistribution->pluck('status')->map(fn($status) => $paymentChartColors[$status] ?? '#6c757d')->toArray();
+
+    $inscriptionStatusDistribution = Inscription::where('user_id', $user->id)
+        ->select('status', DB::raw('count(*) as count'))
+        ->groupBy('status')
+        ->get();
+
+    $inscriptionChartLabels = $inscriptionStatusDistribution->pluck('status')->map(fn($status) => ucfirst($status))->toArray();
+    $inscriptionChartData = $inscriptionStatusDistribution->pluck('count')->toArray();
+    $inscriptionChartColors = [
+        'active' => '#17a2b8',
+        'pending' => '#ffc107',
+        'completed' => '#28a745',
+        'cancelled' => '#6c757d',
+    ];
+    $inscriptionChartBackgroundColors = $inscriptionStatusDistribution->pluck('status')->map(fn($status) => $inscriptionChartColors[$status] ?? '#007bff')->toArray();
+
+    $progressByFormation = Inscription::where('user_id', $user->id)
+        ->whereIn('status', ['active', 'completed'])
+        ->with(['formation.courses'])
+        ->get()
+        ->map(function($inscription) {
+            $totalCourses = $inscription->formation->courses->count();
+            $completedCourses = 0; // Requires logic to track completed courses
+            $inscription->progress = $totalCourses > 0 ? ($completedCourses / $totalCourses) * 100 : 0;
+            return $inscription;
+        });
+
+    return [
+        'activeInscriptions' => $currentInscriptions,
+        'pendingInscriptions' => $pendingInscriptions,
+        'totalPaid' => $totalPaid,
+        'totalOutstanding' => $totalOutstanding,
+        'inscriptions' => $inscriptions,
+        'completedFormations' => Inscription::where('user_id', $user->id)
+            ->where('status', 'completed')
             ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                $query->whereBetween('created_at', [$startDate, $endDate]);
-            })
-            ->with('formation')
-            ->get();
-
-        $currentInscriptions = $inscriptions->where('status', 'active');
-        $pendingInscriptions = $inscriptions->where('status', 'pending');
-
-        // Total paid amount
-        $totalPaid = Payment::whereHas('inscription', function($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
-            ->where('status', 'paid')
-            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                $query->whereBetween('paid_date', [$startDate, $endDate]);
-            })->sum('amount');
-
-        // Total outstanding amount (sum of pending and late payments)
-        $totalOutstanding = Payment::whereHas('inscription', function($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
-            ->whereIn('status', ['pending', 'late'])
-            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                $query->whereBetween('due_date', [$startDate, $endDate]);
-            })->sum('amount');
-
-        // Upcoming payments list
-        $upcomingPayments = Payment::whereHas('inscription', function($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
-            ->where('status', 'pending')
-            ->where('due_date', '>=', Carbon::now()) // Only truly upcoming
-            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                $query->whereBetween('due_date', [$startDate, $endDate]);
-            })
-            ->with('inscription.formation')
-            ->orderBy('due_date', 'asc')
-            ->get();
-
-        // Recent payments list (can include paid and pending/due payments)
-        $recentPayments = Payment::whereHas('inscription', function($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
+                $query->whereBetween('updated_at', [$startDate, $endDate]);
+            })->count(),
+        'myReclamations' => Reclamation::where('user_id', $user->id)
             ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('created_at', [$startDate, $endDate]);
             })
             ->orderBy('created_at', 'desc')
             ->take(5)
-            ->with('inscription.formation')
-            ->get();
-
-        // Courses for today (already added)
-        $today = Carbon::today();
-        $coursesToday = Course::whereHas('formation.inscriptions', function($q) use ($user) {
-                $q->where('user_id', $user->id)
-                  ->where('status', 'active') // Only active inscriptions
-                  ->where('access_restricted', false); // And not restricted
-            })
-            ->whereDate('course_date', $today)
-            ->orderBy('start_time', 'asc')
-            ->with('formation', 'consultant') // Load related formation and consultant
-            ->get();
-
-        // NEW: Fetch recent course reschedules for the student's enrolled courses
-        $recentCourseReschedules = CourseReschedule::whereHas('course.formation.inscriptions', function ($q) use ($user) {
-                                                $q->where('user_id', $user->id)
-                                                  ->where('status', 'active'); // Only for active courses
-                                            })
-                                            ->orderBy('created_at', 'desc')
-                                            ->take(5)
-                                            ->with('course') // Load the related course for display
-                                            ->get();
-
-        // Data for charts
-        $paymentStatusDistribution = Payment::whereHas('inscription', function($q) use ($user) {
-                                                $q->where('user_id', $user->id);
-                                            })
-                                            ->select('status', DB::raw('count(*) as count'), DB::raw('sum(amount) as total'))
-                                            ->groupBy('status')
-                                            ->get();
-
-        // Prepare data for the Payment Status Pie Chart
-        $paymentChartLabels = $paymentStatusDistribution->pluck('status')->map(fn($status) => ucfirst($status))->toArray();
-        $paymentChartData = $paymentStatusDistribution->pluck('total')->toArray();
-        $paymentChartColors = [
-            'paid' => '#28a745',    // Green
-            'pending' => '#ffc107', // Yellow
-            'late' => '#dc3545',    // Red
-            // Add more colors if you have other payment statuses
-        ];
-        $paymentChartBackgroundColors = $paymentStatusDistribution->pluck('status')->map(fn($status) => $paymentChartColors[$status] ?? '#6c757d')->toArray();
-
-
-        // Data for Inscription Status Pie Chart
-        $inscriptionStatusDistribution = Inscription::where('user_id', $user->id)
-            ->select('status', DB::raw('count(*) as count'))
-            ->groupBy('status')
-            ->get();
-
-        $inscriptionChartLabels = $inscriptionStatusDistribution->pluck('status')->map(fn($status) => ucfirst($status))->toArray();
-        $inscriptionChartData = $inscriptionStatusDistribution->pluck('count')->toArray();
-        $inscriptionChartColors = [
-            'active' => '#17a2b8',    // Info blue
-            'pending' => '#ffc107',  // Yellow
-            'completed' => '#28a745', // Green
-            'cancelled' => '#6c757d', // Grey
-        ];
-        $inscriptionChartBackgroundColors = $inscriptionStatusDistribution->pluck('status')->map(fn($status) => $inscriptionChartColors[$status] ?? '#007bff')->toArray();
-
-
-        return [
-            'activeInscriptions' => $currentInscriptions,
-            'pendingInscriptions' => $pendingInscriptions,
-            'totalPaid' => $totalPaid,
-            'totalOutstanding' => $totalOutstanding,
-            'inscriptions' => $inscriptions,
-            'completedFormations' => Inscription::where('user_id', $user->id)
-                ->where('status', 'completed')
-                ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('updated_at', [$startDate, $endDate]);
-                })->count(),
-            'myReclamations' => Reclamation::where('user_id', $user->id)
-                ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
-                })
-                ->orderBy('created_at', 'desc')
-                ->take(5)
-                ->get(),
-            'progressByFormation' => Inscription::where('user_id', $user->id)
-                ->whereIn('status', ['active', 'completed'])
-                ->with(['formation', 'formation.courses'])
-                ->get()
-                ->map(function($inscription) {
-                    $totalCourses = $inscription->formation->courses->count();
-                    $completedCourses = 0; // Adjust this if you implement actual course completion tracking
-                    $inscription->progress = $totalCourses > 0 ?
-                        ($completedCourses / $totalCourses) * 100 : 0;
-                    return $inscription;
-                }),
-            'months' => $months,
-            'selectedMonth' => $selectedMonth,
-            'selectedYear' => $selectedYear,
-            'upcomingPayments' => $upcomingPayments,
-            'recentPayments' => $recentPayments,
-            'coursesToday' => $coursesToday,
-            'recentCourseReschedules' => $recentCourseReschedules,
-            'paymentChartLabels' => $paymentChartLabels,
-            'paymentChartData' => $paymentChartData,
-            'paymentChartBackgroundColors' => $paymentChartBackgroundColors,
-            'inscriptionChartLabels' => $inscriptionChartLabels,
-            'inscriptionChartData' => $inscriptionChartData,
-            'inscriptionChartBackgroundColors' => $inscriptionChartBackgroundColors,
-        ];
-    }
-
+            ->get(),
+        'progressByFormation' => $progressByFormation,
+        'months' => $months,
+        'selectedMonth' => $selectedMonth,
+        'selectedYear' => $selectedYear,
+        'upcomingPayments' => $upcomingPayments,
+        'recentPayments' => $recentPayments,
+        'coursesToday' => $coursesToday,
+        'recentCourseReschedules' => $recentCourseReschedules,
+        'paymentChartLabels' => $paymentChartLabels,
+        'paymentChartData' => $paymentChartData,
+        'paymentChartBackgroundColors' => $paymentChartBackgroundColors,
+        'inscriptionChartLabels' => $inscriptionChartLabels,
+        'inscriptionChartData' => $inscriptionChartData,
+        'inscriptionChartBackgroundColors' => $inscriptionChartBackgroundColors,
+    ];
+}
    private function getFinanceDashboardData(Request $request): array
 {
     $selectedMonth = $request->input('selected_month');
