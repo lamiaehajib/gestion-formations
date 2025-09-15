@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up()
     {
-        // Gha nzido l'column dial 'documents'
+      
         Schema::table('users', function (Blueprint $table) {
             $table->json('documents')->nullable();
         });
@@ -26,7 +26,7 @@ return new class extends Migration
      */
     public function down()
     {
-        // Gha nhaydo l'column dial 'documents' ila kan khasna ndiro rollback
+       
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('documents');
         });

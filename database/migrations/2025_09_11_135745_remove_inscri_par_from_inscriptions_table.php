@@ -26,7 +26,7 @@ return new class extends Migration
     public function down()
     {
         Schema::table('inscriptions', function (Blueprint $table) {
-            // You can optionally add the column back in the `down` method if you need to rollback this migration later.
+           
             $table->string('inscri_par')->nullable()->after('notes');
         });
     }

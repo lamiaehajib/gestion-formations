@@ -44,6 +44,11 @@ class User extends Authenticatable
         return $this->hasMany(Formation::class, 'consultant_id');
     }
 
+    public function modules()
+{
+    return $this->hasMany(Module::class);
+}
+
     public function inscriptions()
     {
         return $this->hasMany(Inscription::class);

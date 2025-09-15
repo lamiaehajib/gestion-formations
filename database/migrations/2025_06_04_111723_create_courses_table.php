@@ -17,12 +17,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('formation_id')->constrained()->onDelete('cascade');
             
-            // Add the consultant_id column
-            // Assuming your consultants are in the 'users' table
+            
             $table->foreignId('consultant_id')
-                  ->nullable() // Make it nullable if a course can temporarily exist without a consultant
-                  ->constrained('users') // References the 'users' table
-                  ->onDelete('set null'); // If a consultant is deleted, set this field to null
+                  ->nullable() 
+                  ->constrained('users') 
+                  ->onDelete('set null'); 
 
             $table->string('title');
             $table->text('description')->nullable();

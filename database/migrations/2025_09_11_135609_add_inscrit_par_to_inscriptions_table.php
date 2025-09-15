@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('inscriptions', function (Blueprint $table) {
-            // Option 1: Using an enum column (recommended for a fixed list)
+            
             $table->enum('inscrit_par', ['Sara BELKASSEH', 'Ghizlane LAFKIR', 'Lamiae HAJIB', 'Abdellatif LEZHARI', 'Khalid Katkout'])->nullable()->after('notes');
 
             

@@ -146,7 +146,7 @@
                                 @enderror
                             </div>
 
-                            {{-- Champ Montant Payé --}}
+                            {{-- Champ Montant  Payé --}}
                             <div class="form-group animate-bounce-in">
                                 <label for="paid_amount" class="form-label label-with-icon">
                                     Montant Total Payé <span class="text-red-500">*</span>

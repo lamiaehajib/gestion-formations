@@ -43,8 +43,12 @@ class CourseRescheduleController extends Controller
             });
         } elseif ($user->hasRole('Etudiant')) {
             // Student: Only see reschedules for courses they are enrolled in
-            $query->whereHas('course.formation.inscriptions', function ($q) use ($user) {
-                $q->where('user_id', $user->id)->where('status', 'active');
+            $query->whereHas('course.formations', function ($q) use ($user) {
+                // Hna l'ajustement: b-delle l-`course.formation.inscriptions` b-`course.formations`.
+                // o men ba3d kanzidou whereHas 3la l-`inscriptions`
+                $q->whereHas('inscriptions', function ($q2) use ($user) {
+                    $q2->where('user_id', $user->id)->where('status', 'active');
+                });
             });
         }
         // If the user has 'course-manage-all' permission (e.g., Admin),
@@ -77,8 +81,12 @@ class CourseRescheduleController extends Controller
         $courses = collect();
         if ($user->hasRole('Etudiant')) {
             // For students, the filter dropdown should only show courses they are enrolled in
-            $courses = Course::whereHas('formation.inscriptions', function ($query) use ($user) {
-                $query->where('user_id', $user->id)->where('status', 'active');
+            $courses = Course::whereHas('formations', function ($q) use ($user) {
+                // Hna l'ajustement: b-delle l-`formation.inscriptions` b-`formations`.
+                // o men ba3d kanzidou whereHas 3la l-`inscriptions`
+                $q->whereHas('inscriptions', function ($q2) use ($user) {
+                    $q2->where('user_id', $user->id)->where('status', 'active');
+                });
             })->select('id', 'title')->get();
         } elseif ($user->hasRole('Consultant') && !$user->can('course-manage-all')) {
             // For consultants, the filter dropdown should only show their courses

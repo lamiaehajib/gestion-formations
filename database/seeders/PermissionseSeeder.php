@@ -100,6 +100,8 @@ class PermissionseSeeder extends Seeder
             'reclamation-update-status',  // Ability to update reclamation status
 
             'promotions',
+
+            'test'
             
 
         ];

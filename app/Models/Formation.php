@@ -64,6 +64,12 @@ class Formation extends Model
         return $this->belongsTo(Category::class);
     }
 
+
+
+    public function modules()
+{
+    return $this->hasMany(Module::class);
+}
     public function consultant()
     {
         return $this->belongsTo(User::class, 'consultant_id');

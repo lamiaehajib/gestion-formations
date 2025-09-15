@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('reclamations', function (Blueprint $table) {
-            $table->softDeletes(); // Adds the deleted_at column
+            $table->softDeletes(); 
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('reclamations', function (Blueprint $table) {
-            $table->dropSoftDeletes(); // Removes the deleted_at column
+            $table->dropSoftDeletes();
         });
     }
 };

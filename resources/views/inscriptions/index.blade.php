@@ -363,7 +363,7 @@
 
 @push('styles')
 <style>
-    /* Variables CSS Modernes */
+   
     :root {
         --primary-color: #D32F2F; /* Red-700 */
         --secondary-color: #C2185B; /* Pink-700 */
@@ -550,8 +550,7 @@
         margin-top: 32px;
     }
 
-    /* Individual Inscription Card */
-    .inscription-card {
+j    .inscription-card {
         background: var(--card-bg);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);

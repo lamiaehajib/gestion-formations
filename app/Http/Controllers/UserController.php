@@ -102,7 +102,6 @@ public function index(Request $request)
      */
     public function store(Request $request)
     {
-        // 1. Validation des données, y compris les documents
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -111,13 +110,11 @@ public function index(Request $request)
             'status' => 'required|in:active,inactive,suspended',
             'role' => 'required|string|exists:roles,name',
 
-            // Validation pour la structure de documents envoyée par le formulaire
             'documents' => 'nullable|array',
             'documents.*.name' => 'nullable|string|max:255',
             'documents.*.file' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:10240',
         ]);
 
-        // 2. Préparation des données de l'utilisateur
         $temporaryPassword = \Illuminate\Support\Str::random(10);
         $userData = [
             'name' => $request->name,
@@ -128,17 +125,14 @@ public function index(Request $request)
             'email_verified_at' => now(),
         ];
 
-        // 3. Gestion de l'avatar
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
             $userData['avatar'] = $avatarPath;
         }
 
-        // 4. Gestion des documents (Nouveau code)
         $documentsData = [];
         if ($request->has('documents')) {
             foreach ($request->input('documents') as $index => $document) {
-                // Vérifier s'il y a un fichier correspondant pour cet index
                 if ($request->hasFile("documents.{$index}.file")) {
                     $file = $request->file("documents.{$index}.file");
 

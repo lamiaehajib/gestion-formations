@@ -14,9 +14,9 @@ return new class extends Migration
     {
         Schema::table('payments', function (Blueprint $table) {
             $table->foreignId('created_by_user_id')
-                  ->nullable() // Make it nullable if old payments might not have this
-                  ->constrained('users') // Assumes your users table is 'users'
-                  ->onDelete('set null'); // Or 'cascade' if you want to delete payments if the creator user is deleted
+                  ->nullable() 
+                  ->constrained('users') 
+                  ->onDelete('set null'); 
         });
     }
 

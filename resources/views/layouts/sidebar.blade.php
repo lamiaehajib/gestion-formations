@@ -570,6 +570,14 @@
                         </a>
                     </li>
                     @endcan
+
+                    <li class="sidebar-menu__item">
+                        <a href="{{ route('modules.index') }}" class="sidebar-menu__link">
+                            <span class="icon"><i class="ph ph-squares-four"></i></span>
+                            <span class="text">modules</span>
+                        </a>
+                    </li>
+
                     <li class="sidebar-menu__item">
                         <a href="{{ route('courses.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-book"></i></span>

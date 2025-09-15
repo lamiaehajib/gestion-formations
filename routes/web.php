@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EtudiantController; // تأكد من استيراد EtudiantController
 use App\Http\Controllers\FormationController;
 use App\Http\Controllers\InscriptionController;
+use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
@@ -245,6 +246,29 @@ Route::get('promotions/{promotion}/report', [PromotionController::class, 'genera
 
 Route::get('promotions/{promotion}/student/{user}/payments', [PromotionController::class, 'showStudentPayments'])
      ->name('promotions.studentPaymentHistory');
+
+
+    Route::get('/modules/create', [ModuleController::class, 'create'])->name('modules.create');
+Route::post('/modules', [ModuleController::class, 'store'])->name('modules.store');
+
+// Routes dyal CRUD dyal les modules
+Route::get('/modules/{module}/edit', [ModuleController::class, 'edit'])->name('modules.edit');
+Route::put('/modules/{module}', [ModuleController::class, 'update'])->name('modules.update');
+Route::delete('/modules/{module}', [ModuleController::class, 'destroy'])->name('modules.destroy');
+
+// Route bach tchouf les modules dyal une formation
+Route::get('/formations/{formation}/modules', [ModuleController::class, 'show'])->name('modules.show');
+
+// Route bach l'consultant y'update l'progress
+Route::post('/modules/{module}/progress', [ModuleController::class, 'updateProgress'])->name('modules.updateProgress');
+
+// Route bach l'admin ychouf l'list dyal les formations m3a le count dyal les modules
+Route::get('/modules', [ModuleController::class, 'index'])->name('modules.index');
+
+Route::post('/modules/{module}/update-ajax', [ModuleController::class, 'updateAjax'])->name('modules.updateAjax');
+Route::delete('/modules/{module}/destroy-ajax', [ModuleController::class, 'destroyAjax'])->name('modules.destroyAjax');
+Route::get('/modules/{module}/get-data', [ModuleController::class, 'getModuleData'])->name('modules.getData');
+
 });
 
 require __DIR__.'/auth.php';

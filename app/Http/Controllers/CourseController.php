@@ -23,20 +23,16 @@ class CourseController extends Controller
         $this->middleware('permission:course-download-document', ['only' => ['downloadDocument']]);
     }
 
-    /**
-     * Display a listing of the resource.
-     */
+   
      public function index(Request $request)
     {
         $user = Auth::user();
 
-        // On charge la relation 'formations' et les autres relations.
-        // On prépare la requête sans la limiter pour les formations, on le fera plus tard pour l'étudiant.
         $query = Course::with(['consultant', 'formations']);
 
    
         if ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance')) {
-            // Pas de filtre sur les cours pour ces rôles.
+        
         } elseif ($user->hasRole('Consultant')) {
             $query->where('consultant_id', $user->id);
         } elseif ($user->hasRole('Etudiant')) {
@@ -46,27 +42,24 @@ class CourseController extends Controller
                 ->pluck('formation_id');
 
             if ($enrolledFormationIds->isEmpty()) {
-                // S'il n'est inscrit à aucune formation, ne lui montrer aucun cours.
+               
                 $query->whereRaw('1 = 0');
             } else {
-                // Modifié pour utiliser whereHas sur la relation belongsToMany
+              
                 $query->whereHas('formations', function ($q) use ($enrolledFormationIds) {
                     $q->whereIn('formation_id', $enrolledFormationIds);
                 });
                 
-                // C'est ici qu'on filtre les formations chargées pour n'afficher que celles
-                // auxquelles l'étudiant est inscrit.
+              
                 $query->with(['formations' => function ($q) use ($enrolledFormationIds) {
                     $q->whereIn('formations.id', $enrolledFormationIds);
                 }]);
             }
         } else {
-            // Ne rien montrer si le rôle n'est pas reconnu.
+            
             $query->whereRaw('1 = 0');
         }
-        // --- End role-based visibility filters ---
 
-        // --- Apply general search and filter options ---
         if ($request->has('filter_formation_id') && $request->filter_formation_id) {
             $query->whereHas('formations', function ($q) use ($request) {
                 $q->where('formation_id', $request->filter_formation_id);
@@ -79,7 +72,6 @@ class CourseController extends Controller
             $query->where('title', 'like', '%' . $request->search . '%');
         }
 
-        // --- Time-based visibility ---
         if ($user && $user->hasRole('Etudiant')) {
             $now = Carbon::now();
             $query->where(function ($q) use ($now) {
@@ -92,7 +84,6 @@ class CourseController extends Controller
                     });
             });
         }
-        // --- End time-based visibility ---
 
         $courses = $query->orderBy('created_at', 'desc')->paginate(15);
 
@@ -124,9 +115,7 @@ class CourseController extends Controller
         return view('courses.create', compact('formationsForModals', 'consultants'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+ 
     public function store(Request $request)
     {
          $validator = Validator::make($request->all(), [
@@ -171,7 +160,7 @@ class CourseController extends Controller
             'documents' => $documentPaths
         ]);
 
-        // MODIFICATION ICI : On utilise `formation_ids` pour la synchronisation
+       
        $course->formations()->sync($request->formation_ids);
         
         return redirect()->route('courses.index')
@@ -183,7 +172,7 @@ class CourseController extends Controller
      */
     public function show(Course $course)
     {
-        // La relation a été changée de 'formation' à 'formations'
+        
         $course->load(['formations', 'consultant', 'evaluations']);
         return view('courses.show', compact('course'));
     }
@@ -204,8 +193,8 @@ class CourseController extends Controller
     public function update(Request $request, Course $course)
 {
     $validator = Validator::make($request->all(), [
-        'formation_ids' => 'required|array', // Hna bdelt smit "formations" b "formation_ids"
-        'formation_ids.*' => 'exists:formations,id', // Hna bdelt smit "formations.*" b "formation_ids.*"
+        'formation_ids' => 'required|array', 
+        'formation_ids.*' => 'exists:formations,id', 
         'consultant_id' => 'nullable|exists:users,id',
         'title' => 'required|string|max:255',
         'description' => 'required|string',
@@ -247,7 +236,6 @@ class CourseController extends Controller
         'documents' => $documentPaths
     ]);
 
-    // Hna ghadi n-bedlou "formations" b "formation_ids"
     $course->formations()->sync($request->formation_ids);
     
     return redirect()->route('courses.show', $course)
