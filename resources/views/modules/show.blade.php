@@ -1,159 +1,651 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
-    <div class="card">
-        <div class="card-header">
-            Formation: {{ $formation->title }}
-        </div>
-        <div class="card-body">
-            <p><strong>Description:</strong> {{ $formation->description }}</p>
-            <p><strong>Duration:</strong> {{ $formation->duration_hours }} hours</p>
+<style>
+    :root {
+        --primary-color: #C2185B;
+        --secondary-color: #D32F2F;
+        --accent-color: #ef4444;
+        --light-pink: #fce4ec;
+        --gradient-bg: linear-gradient(135deg, #C2185B 0%, #D32F2F 50%, #ef4444 100%);
+    }
 
-            <hr>
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="mb-0">Modules for this Formation ({{ $formation->modules->count() }})</h4>
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createModuleModal">
-                    <i class="fas fa-plus"></i> Add New Module
-                </button>
+    .custom-container {
+       
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+
+    .main-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(194, 24, 91, 0.15);
+        overflow: hidden;
+        border: none;
+    }
+
+    .formation-header {
+        background: var(--gradient-bg);
+        color: white;
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .formation-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+        animation: float 20s infinite linear;
+    }
+
+    @keyframes float {
+        0% { transform: translateX(0) translateY(0) rotate(0deg); }
+        100% { transform: translateX(-100px) translateY(-100px) rotate(360deg); }
+    }
+
+    .formation-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .formation-info {
+        background: rgba(255,255,255,0.1);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .modules-section {
+        padding: 2rem;
+    }
+
+    .section-title {
+        color: var(--primary-color);
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .add-module-btn {
+        background: var(--gradient-bg);
+        border: none;
+        border-radius: 15px;
+        padding: 0.75rem 1.5rem;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(194, 24, 91, 0.3);
+    }
+
+    .add-module-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(194, 24, 91, 0.4);
+        color: white;
+    }
+
+    .module-card {
+        border: none;
+        border-radius: 18px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        background: linear-gradient(145deg, #ffffff 0%, #fafafa 100%);
+    }
+
+    .module-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(194, 24, 91, 0.2);
+    }
+
+    .module-header {
+        background: var(--gradient-bg);
+        color: white;
+        padding: 1.5rem;
+        position: relative;
+    }
+
+    .module-header::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    }
+
+    .module-title {
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin: 0;
+    }
+
+    .module-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-edit {
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.3);
+        color: white;
+        border-radius: 10px;
+        padding: 0.5rem 0.75rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-edit:hover {
+        background: rgba(255,255,255,0.3);
+        color: white;
+        transform: scale(1.05);
+    }
+
+    .btn-delete {
+        background: var(--accent-color);
+        border: none;
+        color: white;
+        border-radius: 10px;
+        padding: 0.5rem 0.75rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-delete:hover {
+        background: #dc2626;
+        transform: scale(1.05);
+        color: white;
+    }
+
+    .module-body {
+        padding: 2rem;
+    }
+
+    .info-item {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: var(--light-pink);
+        border-radius: 12px;
+        border-left: 4px solid var(--primary-color);
+    }
+
+    
+.info-label {
+    font-weight: 600;
+    color: #000000;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.85rem;
+    }
+
+    .status-published {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+    }
+
+    .status-draft {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+    }
+
+    .content-list {
+        background: #f8fafc;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+    }
+
+    .content-item {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: background 0.2s ease;
+    }
+
+    .content-item:hover {
+        background: var(--light-pink);
+    }
+
+    .content-item:last-child {
+        border-bottom: none;
+    }
+
+    .progress-section {
+        background: #f1f5f9;
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin-top: 1rem;
+    }
+
+    .custom-progress {
+        height: 30px;
+        border-radius: 15px;
+        background: #e2e8f0;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .custom-progress-bar {
+        background: var(--gradient-bg);
+        height: 100%;
+        border-radius: 15px;
+        transition: width 0.6s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .custom-progress-bar::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255,255,255,0.3),
+            transparent
+        );
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+
+    .progress-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-weight: 600;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+
+    .update-progress-form {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-top: 1rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .progress-input {
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 0.75rem;
+        transition: border-color 0.3s ease;
+    }
+
+    .progress-input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(194, 24, 91, 0.1);
+    }
+
+    .btn-update-progress {
+        background: var(--primary-color);
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 1.5rem;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-update-progress:hover {
+        background: var(--secondary-color);
+        transform: translateY(-1px);
+        color: white;
+    }
+
+    .back-btn {
+        background: #6b7280;
+        border: none;
+        border-radius: 15px;
+        padding: 0.75rem 2rem;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin-top: 2rem;
+    }
+
+    .back-btn:hover {
+        background: #4b5563;
+        transform: translateY(-2px);
+        color: white;
+    }
+
+    .alert-custom {
+        border: none;
+        border-radius: 15px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .alert-success {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+    }
+
+    .alert-info {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+    }
+
+    .no-modules {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--primary-color);
+    }
+
+    .no-modules i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+
+<div class="custom-container">
+    <div class="container">
+        <div class="main-card">
+            <div class="formation-header">
+                <h1 class="formation-title">
+                    <i class="fas fa-graduation-cap"></i>
+                    Formation: {{ $formation->title }}
+                </h1>
+                <div class="formation-info">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-label">
+                                <i class="fas fa-align-left"></i>
+                                Description:
+                            </div>
+                            <p class="mb-0">{{ $formation->description }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">
+                                <i class="fas fa-clock"></i>
+                                Duration:
+                            </div>
+                            <p class="mb-0">{{ $formation->duration_hours }} mois</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div id="alert-container"></div>
+            <div class="modules-section">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="section-title mb-0">
+                        <i class="fas fa-cubes"></i>
+                        Modules for this Formation ({{ $formation->modules->count() }})
+                    </h4>
+                    @can('module-create')
+                    <button type="button" class="add-module-btn" data-bs-toggle="modal" data-bs-target="#createModuleModal">
+                        <i class="fas fa-plus-circle"></i> Add New Module
+                    </button>
+                    @endcan
+                </div>
 
-            @if ($formation->modules->isEmpty())
-                <div class="alert alert-info">No modules have been added to this formation yet.</div>
-            @else
-                <div class="row row-cols-1 g-4" id="modules-list">
-                    @foreach($formation->modules->sortBy('order') as $module)
+                <div id="alert-container"></div>
+
+                @if ($formation->modules->isEmpty())
+                    <div class="no-modules">
+                        <i class="fas fa-inbox"></i>
+                        <h5>No modules have been added to this formation yet.</h5>
+                        <p class="text-muted">Start building your formation by adding the first module!</p>
+                    </div>
+                @else
+                    <div class="row row-cols-1 g-4" id="modules-list">
+                        @foreach($formation->modules->sortBy('order') as $module)
                         <div class="col" id="module-card-{{ $module->id }}">
-                            <div class="card border-primary h-100">
-                                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                                    <span class="module-title">Module {{ $module->order }}: {{ $module->title }}</span>
-                                    <div>
-                                        <button class="btn btn-sm btn-light edit-btn" data-bs-toggle="modal" data-bs-target="#editModuleModal" data-id="{{ $module->id }}">
-                                            <i class="fas fa-edit"></i> Edit
-                                        </button>
-                                        <button class="btn btn-sm btn-danger delete-btn" data-id="{{ $module->id }}">
-                                            <i class="fas fa-trash"></i> Delete
-                                        </button>
+                            <div class="module-card h-100">
+                                <div class="module-header">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="module-title">
+                                            <i class="fas fa-cube"></i>
+                                            Module {{ $module->order }}: {{ $module->title }}
+                                        </h5>
+                                        <div class="module-actions">
+                                            @can('module-edit')
+                                            <button class="btn-edit edit-btn" data-bs-toggle="modal" data-bs-target="#editModuleModal" data-id="{{ $module->id }}">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </button>
+                                            @endcan
+                                            @can('module-delete')
+                                            <button class="btn-delete delete-btn" data-id="{{ $module->id }}">
+                                                <i class="fas fa-trash-alt"></i> Delete
+                                            </button>
+                                            @endcan
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="card-body">
-                                    <p><strong>Assigned Consultant:</strong> <span class="module-consultant">{{ $module->user->name ?? 'N/A' }}</span></p>
-                                    <p><strong>Status:</strong> <span class="badge module-status bg-{{ $module->status == 'published' ? 'success' : 'warning' }}" data-status="{{ $module->status }}">{{ $module->status }}</span></p>
+                                <div class="module-body">
+                                    <div class="info-item">
+                                        <div class="info-label">
+                                            <i class="fas fa-user-tie"></i>
+                                            Assigned Consultant:
+                                        </div>
+                                        <span class="module-consultant">{{ $module->user->name ?? 'N/A' }}</span>
+                                    </div>
 
-                                    <div class="mb-3">
-                                        <strong>Content:</strong>
-                                        <ul class="list-group list-group-flush mt-2 module-content">
+                                    <div class="info-item">
+                                        <div class="info-label">
+                                            <i class="fas fa-flag"></i>
+                                            Status:
+                                        </div>
+                                        <span class="status-badge module-status {{ $module->status == 'published' ? 'status-published' : 'status-draft' }}" data-status="{{ $module->status }}">
+                                            <i class="fas {{ $module->status == 'published' ? 'fa-check-circle' : 'fa-edit' }}"></i>
+                                            {{ $module->status }}
+                                        </span>
+                                    </div>
+
+                                    <div class="info-item">
+                                        <div class="info-label">
+                                            <i class="fas fa-list-ul"></i>
+                                            Content:
+                                        </div>
+                                        <ul class="content-list module-content">
                                             @forelse($module->content as $item)
-                                                <li class="list-group-item">{{ $item }}</li>
+                                            <li class="content-item">
+                                                <i class="fas fa-chevron-right text-primary"></i>
+                                                {{ $item }}
+                                            </li>
                                             @empty
-                                                <li class="list-group-item text-muted">No content available.</li>
+                                            <li class="content-item text-muted">
+                                                <i class="fas fa-info-circle"></i>
+                                                No content available.
+                                            </li>
                                             @endforelse
                                         </ul>
                                     </div>
 
-                                    <hr>
-                                    <strong>Module Progress:</strong>
-                                    <div class="progress mt-2" style="height: 25px;">
-                                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ $module->progress }}%;" aria-valuenow="{{ $module->progress }}" aria-valuemin="0" aria-valuemax="100">{{ $module->progress }}%</div>
+                                    <div class="progress-section">
+                                        <div class="info-label">
+                                            <i class="fas fa-chart-line"></i>
+                                            Module Progress:
+                                        </div>
+                                        <div class="custom-progress">
+                                            <div class="custom-progress-bar" style="width: {{ $module->progress }}%;">
+                                                <div class="progress-text">{{ $module->progress }}%</div>
+                                            </div>
+                                        </div>
+
+                                        @if(Auth::check() && $module->user_id === Auth::id() && Auth::user()->can('module-update-progress'))
+                                        <div class="update-progress-form">
+                                            <form action="{{ route('modules.updateProgress', $module->id) }}" method="POST" class="progress-form">
+                                                @csrf
+                                                <div class="input-group">
+                                                    <input type="number" name="progress" class="form-control progress-input" placeholder="Update progress (0-100)" min="0" max="100" value="{{ $module->progress }}" required>
+                                                    <button type="submit" class="btn-update-progress">
+                                                        <i class="fas fa-sync-alt"></i> Update Progress
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    @endforeach
-                </div>
-            @endif
+                        @endforeach
+                    </div>
+                @endif
 
-            <div class="mt-4">
-                <a href="{{ route('modules.index') }}" class="btn btn-secondary">Back to Formations List</a>
+                <div class="text-center">
+                    <a href="{{ route('modules.index') }}" class="back-btn">
+                        <i class="fas fa-arrow-left"></i> Back to Formations List
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Create Module Modal -->
 <div class="modal fade" id="createModuleModal" tabindex="-1" aria-labelledby="createModuleModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="createModuleModalLabel">Add New Module</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(194, 24, 91, 0.3);">
+            <div class="modal-header" style="background: var(--gradient-bg); color: white; border-radius: 20px 20px 0 0;">
+                <h5 class="modal-title" id="createModuleModalLabel">
+                    <i class="fas fa-plus-circle"></i> Add New Module
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="createModuleForm">
-                <div class="modal-body">
-                    <input type="hidden" name="formation_id" value="{{ $formation->id }}">
+            <div class="modal-body" style="padding: 2rem;">
+                <form id="createModuleForm">
                     <div class="mb-3">
-                        <label for="create-title" class="form-label">Module Title</label>
-                        <input type="text" class="form-control" id="create-title" required>
+                        <label for="create-title" class="form-label" style="color: var(--primary-color); font-weight: 600;">
+                            <i class="fas fa-heading"></i> Module Title
+                        </label>
+                        <input type="text" class="form-control" id="create-title" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
                     </div>
                     <div class="mb-3">
-                        <label for="create-status" class="form-label">Status</label>
-                        <select class="form-select" id="create-status">
+                        <label for="create-status" class="form-label" style="color: var(--primary-color); font-weight: 600;">
+                            <i class="fas fa-flag"></i> Status
+                        </label>
+                        <select class="form-control" id="create-status" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
                             <option value="draft">Draft</option>
                             <option value="published">Published</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="create-content" class="form-label">Content</label>
-                        <textarea class="form-control" id="create-content" rows="3" placeholder="Enter one item per line" required></textarea>
+                        <label for="create-user" class="form-label" style="color: var(--primary-color); font-weight: 600;">
+                            <i class="fas fa-user-tie"></i> Assigned Consultant
+                        </label>
+                        <select class="form-control" id="create-user" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
+                            <!-- Options will be populated via JavaScript -->
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label for="create-user" class="form-label">Assign Consultant</label>
-                        <select class="form-select" id="create-user" required></select>
+                        <label for="create-content" class="form-label" style="color: var(--primary-color); font-weight: 600;">
+                            <i class="fas fa-list-ul"></i> Content (one per line)
+                        </label>
+                        <textarea class="form-control" id="create-content" rows="4" placeholder="Enter content items, one per line..." style="border-radius: 10px; border: 2px solid #e2e8f0;"></textarea>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Save Module</button>
-                </div>
-            </form>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 10px; margin-right: 0.5rem;">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn" style="background: var(--gradient-bg); color: white; border: none; border-radius: 10px;">
+                            <i class="fas fa-save"></i> Create Module
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- Edit Module Modal -->
 <div class="modal fade" id="editModuleModal" tabindex="-1" aria-labelledby="editModuleModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editModuleModalLabel">Edit Module</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(194, 24, 91, 0.3);">
+            <div class="modal-header" style="background: var(--gradient-bg); color: white; border-radius: 20px 20px 0 0;">
+                <h5 class="modal-title" id="editModuleModalLabel">
+                    <i class="fas fa-edit"></i> Edit Module
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="editModuleForm">
-                <div class="modal-body">
+            <div class="modal-body" style="padding: 2rem;">
+                <form id="editModuleForm">
                     <input type="hidden" id="edit-module-id">
                     <div class="mb-3">
-                        <label for="edit-title" class="form-label">Module Title</label>
-                        <input type="text" class="form-control" id="edit-title" required>
+                        <label for="edit-title" class="form-label" style="color: var(--primary-color); font-weight: 600;">
+                            <i class="fas fa-heading"></i> Module Title
+                        </label>
+                        <input type="text" class="form-control" id="edit-title" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
                     </div>
                     <div class="mb-3">
-                        <label for="edit-order" class="form-label">Order</label>
-                        <input type="number" class="form-control" id="edit-order" required>
+                        <label for="edit-order" class="form-label" style="color: var(--primary-color); font-weight: 600;">
+                            <i class="fas fa-sort-numeric-up"></i> Order
+                        </label>
+                        <input type="number" class="form-control" id="edit-order" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
                     </div>
                     <div class="mb-3">
-                        <label for="edit-status" class="form-label">Status</label>
-                        <select class="form-select" id="edit-status">
+                        <label for="edit-status" class="form-label" style="color: var(--primary-color); font-weight: 600;">
+                            <i class="fas fa-flag"></i> Status
+                        </label>
+                        <select class="form-control" id="edit-status" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
                             <option value="draft">Draft</option>
                             <option value="published">Published</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="edit-content" class="form-label">Content</label>
-                        <textarea class="form-control" id="edit-content" rows="3" required></textarea>
+                        <label for="edit-user" class="form-label" style="color: var(--primary-color); font-weight: 600;">
+                            <i class="fas fa-user-tie"></i> Assigned Consultant
+                        </label>
+                        <select class="form-control" id="edit-user" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
+                            <!-- Options will be populated via JavaScript -->
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label for="edit-user" class="form-label">Assign Consultant</label>
-                        <select class="form-select" id="edit-user" required></select>
+                        <label for="edit-content" class="form-label" style="color: var(--primary-color); font-weight: 600;">
+                            <i class="fas fa-list-ul"></i> Content (one per line)
+                        </label>
+                        <textarea class="form-control" id="edit-content" rows="4" style="border-radius: 10px; border: 2px solid #e2e8f0;"></textarea>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Save changes</button>
-                </div>
-            </form>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 10px; margin-right: 0.5rem;">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn" style="background: var(--gradient-bg); color: white; border: none; border-radius: 10px;">
+                            <i class="fas fa-save"></i> Update Module
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
-
 
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
@@ -161,8 +653,16 @@
     document.addEventListener('DOMContentLoaded', function () {
         const modulesList = document.getElementById('modules-list');
         const alertContainer = document.getElementById('alert-container');
-        const editModuleModal = new bootstrap.Modal(document.getElementById('editModuleModal'));
-        const createModuleModal = new bootstrap.Modal(document.getElementById('createModuleModal'));
+        // Initialize modals properly
+        const editModalElement = document.getElementById('editModuleModal');
+        const createModalElement = document.getElementById('createModuleModal');
+        
+        if (editModalElement) {
+            const editModuleModal = new bootstrap.Modal(editModalElement);
+        }
+        if (createModalElement) {
+            const createModuleModal = new bootstrap.Modal(createModalElement);
+        }
         const editModuleForm = document.getElementById('editModuleForm');
         const createModuleForm = document.getElementById('createModuleForm');
         // Kanjibo les consultants men l'backend w kan7awlohom l'JavaScript object
@@ -183,31 +683,35 @@
         }
 
         // Listener to handle Edit and Delete button clicks
-        modulesList.addEventListener('click', function(e) {
-            // Delete a module
-            if (e.target.closest('.delete-btn')) {
-                e.preventDefault();
-                if (confirm('Are you sure you want to delete this module?')) {
-                    const moduleId = e.target.closest('.delete-btn').dataset.id;
-                    deleteModule(moduleId);
+        if (modulesList) {
+            modulesList.addEventListener('click', function(e) {
+                // Delete a module
+                if (e.target.closest('.delete-btn')) {
+                    e.preventDefault();
+                    if (confirm('Are you sure you want to delete this module?')) {
+                        const moduleId = e.target.closest('.delete-btn').dataset.id;
+                        deleteModule(moduleId);
+                    }
                 }
-            }
 
-            // Open the edit modal
-            if (e.target.closest('.edit-btn')) {
-                const moduleId = e.target.closest('.edit-btn').dataset.id;
-                fetchModuleData(moduleId);
-            }
-        });
+                // Open the edit modal
+                if (e.target.closest('.edit-btn')) {
+                    const moduleId = e.target.closest('.edit-btn').dataset.id;
+                    fetchModuleData(moduleId);
+                }
+            });
+        }
 
         // Listener to open the create modal
         const createBtn = document.querySelector('[data-bs-target="#createModuleModal"]');
         if(createBtn) {
             createBtn.addEventListener('click', function() {
-                populateConsultantsSelect(document.getElementById('create-user'));
+                const createUserSelect = document.getElementById('create-user');
+                if (createUserSelect) {
+                    populateConsultantsSelect(createUserSelect);
+                }
             });
         }
-
 
         // Function to fetch module data via AJAX and populate the modal
         function fetchModuleData(moduleId) {
@@ -233,71 +737,74 @@
         }
         
         // Handle form submission for creating a new module
-        createModuleForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = {
-                formation_id: '{{ $formation->id }}', // Kanstkhdem ID dyal l'formation l'actuelle
-                modules: [
-                    {
-                        title: document.getElementById('create-title').value,
-                        status: document.getElementById('create-status').value,
-                        content: document.getElementById('create-content').value,
-                        user_id: document.getElementById('create-user').value
-                    }
-                ]
-            };
-            
-            axios.post('{{ route('modules.store') }}', formData)
-                .then(response => {
-                    createModuleModal.hide();
-                    location.reload(); // Hadchi ghadi y3awd ychargi l'page bach yban l'module l'jdid
-                    showAlert('Module created successfully!', 'success');
-                })
-                .catch(error => {
-                    console.error('Create error:', error);
-                    showAlert('Failed to create module.', 'danger');
-                });
-        });
-
+        if (createModuleForm) {
+            createModuleForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    formation_id: '{{ $formation->id }}', // Kanstkhdem ID dyal l'formation l'actuelle
+                    modules: [
+                        {
+                            title: document.getElementById('create-title').value,
+                            status: document.getElementById('create-status').value,
+                            content: document.getElementById('create-content').value,
+                            user_id: document.getElementById('create-user').value
+                        }
+                    ]
+                };
+                
+                axios.post('{{ route('modules.store') }}', formData)
+                    .then(response => {
+                        createModuleModal.hide();
+                        location.reload(); // Hadshi ghadi y3awd ychargi l'page bach yban l'module l'jdid
+                        showAlert('Module created successfully!', 'success');
+                    })
+                    .catch(error => {
+                        console.error('Create error:', error);
+                        showAlert('Failed to create module.', 'danger');
+                    });
+            });
+        }
 
         // Handle form submission for editing
-        editModuleForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const moduleId = document.getElementById('edit-module-id').value;
-            const url = `/modules/${moduleId}`;
-            
-            const formData = {
-                title: document.getElementById('edit-title').value,
-                order: document.getElementById('edit-order').value,
-                status: document.getElementById('edit-status').value,
-                content: document.getElementById('edit-content').value,
-                user_id: document.getElementById('edit-user').value
-            };
-            
-            axios.put(url, formData)
-                .then(response => {
-                    const updatedModules = response.data.modules;
-                    updateModulesList(updatedModules);
-                    editModuleModal.hide();
-                    showAlert('Module updated successfully!', 'success');
-                })
-                .catch(error => {
-                    console.error('Update error:', error);
-                    
-                    // Kan7awlou nbyenou les erreurs li jaw men backend
-                    if (error.response && error.response.data.errors) {
-                        const errors = error.response.data.errors;
-                        let errorMessage = 'Failed to update module:<br>';
-                        for (const key in errors) {
-                            errorMessage += `- ${errors[key][0]}<br>`;
+        if (editModuleForm) {
+            editModuleForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const moduleId = document.getElementById('edit-module-id').value;
+                const url = `/modules/${moduleId}`;
+                
+                const formData = {
+                    title: document.getElementById('edit-title').value,
+                    order: document.getElementById('edit-order').value,
+                    status: document.getElementById('edit-status').value,
+                    content: document.getElementById('edit-content').value,
+                    user_id: document.getElementById('edit-user').value
+                };
+                
+                axios.put(url, formData)
+                    .then(response => {
+                        const updatedModules = response.data.modules;
+                        updateModulesList(updatedModules);
+                        editModuleModal.hide();
+                        showAlert('Module updated successfully!', 'success');
+                    })
+                    .catch(error => {
+                        console.error('Update error:', error);
+                        
+                        // Kan7awlou nbyenou les erreurs li jaw men backend
+                        if (error.response && error.response.data.errors) {
+                            const errors = error.response.data.errors;
+                            let errorMessage = 'Failed to update module:<br>';
+                            for (const key in errors) {
+                                errorMessage += `- ${errors[key][0]}<br>`;
+                            }
+                            showAlert(errorMessage, 'danger');
+                        } else {
+                            showAlert('An unknown error occurred. Please try again.', 'danger');
                         }
-                        showAlert(errorMessage, 'danger');
-                    } else {
-                        showAlert('An unknown error occurred. Please try again.', 'danger');
-                    }
-                });
-        });
+                    });
+            });
+        }
 
         // Function to update the modules list on the page
         function updateModulesList(modules) {
@@ -307,33 +814,60 @@
             modules.forEach(module => {
                 const moduleHtml = `
                     <div class="col" id="module-card-${module.id}">
-                        <div class="card border-primary h-100">
-                            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                                <span class="module-title">Module ${module.order}: ${module.title}</span>
-                                <div>
-                                    <button class="btn btn-sm btn-light edit-btn" data-bs-toggle="modal" data-bs-target="#editModuleModal" data-id="${module.id}">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </button>
-                                    <button class="btn btn-sm btn-danger delete-btn" data-id="${module.id}">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
+                        <div class="module-card h-100">
+                            <div class="module-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="module-title">
+                                        <i class="fas fa-cube"></i>
+                                        Module ${module.order}: ${module.title}
+                                    </h5>
+                                    <div class="module-actions">
+                                        <button class="btn-edit edit-btn" data-bs-toggle="modal" data-bs-target="#editModuleModal" data-id="${module.id}">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                        <button class="btn-delete delete-btn" data-id="${module.id}">
+                                            <i class="fas fa-trash-alt"></i> Delete
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="card-body">
-                                <p><strong>Assigned Consultant:</strong> <span class="module-consultant">${module.user.name ?? 'N/A'}</span></p>
-                                <p><strong>Status:</strong> <span class="badge module-status bg-${module.status === 'published' ? 'success' : 'warning'}" data-status="${module.status}">${module.status}</span></p>
-                                
-                                <div class="mb-3">
-                                    <strong>Content:</strong>
-                                    <ul class="list-group list-group-flush mt-2 module-content">
-                                        ${module.content.map(item => `<li class="list-group-item">${item}</li>`).join('')}
+                            <div class="module-body">
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="fas fa-user-tie"></i>
+                                        Assigned Consultant:
+                                    </div>
+                                    <span class="module-consultant">${module.user.name ?? 'N/A'}</span>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="fas fa-flag"></i>
+                                        Status:
+                                    </div>
+                                    <span class="status-badge module-status ${module.status === 'published' ? 'status-published' : 'status-draft'}" data-status="${module.status}">
+                                        <i class="fas ${module.status === 'published' ? 'fa-check-circle' : 'fa-edit'}"></i>
+                                        ${module.status}
+                                    </span>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="fas fa-list-ul"></i>
+                                        Content:
+                                    </div>
+                                    <ul class="content-list module-content">
+                                        ${module.content.map(item => `<li class="content-item"><i class="fas fa-chevron-right text-primary"></i>${item}</li>`).join('')}
                                     </ul>
                                 </div>
-                                
-                                <hr>
-                                <strong>Module Progress:</strong>
-                                <div class="progress mt-2" style="height: 25px;">
-                                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: ${module.progress}%;" aria-valuenow="${module.progress}" aria-valuemin="0" aria-valuemax="100">${module.progress}%</div>
+                                <div class="progress-section">
+                                    <div class="info-label">
+                                        <i class="fas fa-chart-line"></i>
+                                        Module Progress:
+                                    </div>
+                                    <div class="custom-progress">
+                                        <div class="custom-progress-bar" style="width: ${module.progress}%;">
+                                            <div class="progress-text">${module.progress}%</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -359,7 +893,11 @@
 
         // Show a temporary alert message
         function showAlert(message, type) {
-            const alertHtml = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
+            const alertHtml = `<div class="alert alert-${type} alert-custom alert-dismissible fade show" role="alert">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'danger' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>`;
             alertContainer.innerHTML = alertHtml;
         }
     });
