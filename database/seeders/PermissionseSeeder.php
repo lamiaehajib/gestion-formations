@@ -101,7 +101,16 @@ class PermissionseSeeder extends Seeder
 
             'promotions',
 
-            'teskmlt'
+            'teskmlt',
+
+             'module-list',              // Permet de voir la liste des formations avec leurs modules
+    'module-create',            // Permet d'ajouter de nouveaux modules à une formation
+    'module-edit',              // Permet de modifier un module existant
+    'module-delete',            // Permet de supprimer un module
+    'module-view-own',          // Permet au consultant de voir ses propres modules
+    'module-update-progress',   // Permet au consultant de mettre à jour le progress de son module
+    'module-manage-all',        // Pour un rôle admin, permet de gérer tous les modules
+    'module-swap-order',        // Pour gérer le changement de l'ordre des modules
             
 
         ];
