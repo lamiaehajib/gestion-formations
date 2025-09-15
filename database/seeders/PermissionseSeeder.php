@@ -101,7 +101,7 @@ class PermissionseSeeder extends Seeder
 
             'promotions',
 
-            'test'
+            'teskmlt'
             
 
         ];
