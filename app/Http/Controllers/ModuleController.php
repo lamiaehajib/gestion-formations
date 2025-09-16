@@ -124,12 +124,13 @@ class ModuleController extends Controller
             'modules.*.status' => 'required|in:draft,published',
             'modules.*.content' => 'required|string',
             'modules.*.user_id' => 'required|exists:users,id',
+            'modules.*.duration_hours' => 'nullable|integer|min:0', // Zidna had l'validation l'jdida
         ]);
-        
+
         $formationId = $validatedData['formation_id'];
         $lastModule = Module::where('formation_id', $formationId)
-                            ->orderBy('order', 'desc')
-                            ->first();
+            ->orderBy('order', 'desc')
+            ->first();
 
         $startOrder = $lastModule ? $lastModule->order + 1 : 1;
 
@@ -144,6 +145,7 @@ class ModuleController extends Controller
                 'user_id' => $moduleData['user_id'],
                 'order' => $startOrder + $index,
                 'progress' => 0,
+                'duration_hours' => $moduleData['duration_hours'] ?? 0, // Zidna had l'parti bach nsavew la valeur
             ]);
         }
 
@@ -163,42 +165,52 @@ class ModuleController extends Controller
     /**
      * Update the specified module in storage.
      */
-    public function update(Request $request, Module $module)
-    {
-        $validatedData = $request->validate([
-            'title' => 'required|string|max:255',
-            'order' => 'required|integer|min:1',
-            'status' => 'required|in:draft,published',
-            'content' => 'required|string',
-            'user_id' => 'required|exists:users,id',
-        ]);
-        
-        $oldOrder = $module->order;
-        $newOrder = $validatedData['order'];
+   // In app/Http/Controllers/ModuleController.php
 
-        if ($oldOrder != $newOrder) {
-            $otherModule = Module::where('formation_id', $module->formation_id)
-                                 ->where('order', $newOrder)
-                                 ->first();
-            
-            if ($otherModule) {
-                $otherModule->order = $oldOrder;
-                $otherModule->save();
-            }
+public function update(Request $request, Module $module)
+{
+    // Validate the incoming data from the AJAX request
+    $validatedData = $request->validate([
+        'title' => 'required|string|max:255',
+        'duration_hours' => 'nullable|integer|min:0', // Zidna had l'validation l'jdida
+        'order' => 'required|integer|min:1',
+        'status' => 'required|in:draft,published',
+        'content' => 'required|string',
+        'user_id' => 'required|exists:users,id',
+    ]);
+    
+    // Convert the string content to an array of lines
+    $contentArray = explode("\n", $validatedData['content']);
+
+    // Get the old order before updating
+    $oldOrder = $module->order;
+    $newOrder = $validatedData['order'];
+
+    // Swap the orders if the order has been changed
+    if ($oldOrder != $newOrder) {
+        $otherModule = Module::where('formation_id', $module->formation_id)
+                             ->where('order', $newOrder)
+                             ->first();
+        
+        if ($otherModule) {
+            $otherModule->order = $oldOrder;
+            $otherModule->save();
         }
-        
-        $contentArray = explode("\n", $validatedData['content']);
-        $module->update(array_merge($validatedData, ['content' => $contentArray]));
-        
-        $formation = Formation::find($module->formation_id);
-        $formation->load('modules.user');
-        
-        return response()->json([
-            'success' => 'Module updated successfully!', 
-            'modules' => $formation->modules->sortBy('order')->values()
-        ]);
     }
-
+    
+    // Update the current module
+    $module->update(array_merge($validatedData, ['content' => $contentArray]));
+    
+    // Return all modules for the formation to re-render the list
+    $formation = Formation::find($module->formation_id);
+    $formation->load('modules.user');
+    
+    // Return a JSON response with the success message and the updated list of modules
+    return response()->json([
+        'success' => 'Module updated successfully!', 
+        'modules' => $formation->modules->sortBy('order')->values()
+    ]);
+}
     /**
      * Remove the specified module from storage.
      */

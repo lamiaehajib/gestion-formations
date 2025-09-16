@@ -2,6 +2,7 @@
 
 @section('content')
 <style>
+    /* Your existing CSS styles go here, no changes needed */
     .gradient-bg {
         background: linear-gradient(135deg, #C2185B 0%, #D32F2F 50%, #ef4444 100%);
     }
@@ -56,12 +57,15 @@
         40% { transform: translateY(-10px); }
         60% { transform: translateY(-5px); }
     }
+    .form-label, .fw-semibold {
+        font-weight: 600;
+        color: #555;
+    }
 </style>
 
 <div class="container-fluid py-5" style="background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 50%, #fecaca 100%); min-height: 100vh;">
     <div class="container">
         <div class="card shadow-xl border-0 overflow-hidden" style="border-radius: 20px;">
-            <!-- Beautiful Header -->
             <div class="gradient-bg text-white p-5">
                 <div class="d-flex align-items-center">
                     <div class="me-4 p-3 bg-red bg-opacity-20 rounded-3 icon-bounce">
@@ -87,7 +91,6 @@
                 <form action="{{ route('modules.store') }}" method="POST">
                     @csrf
 
-                    <!-- Formation Selection -->
                     <div class="mb-4 p-4 rounded-4 shadow-sm" style="background: linear-gradient(145deg, #ffffff, #fdf2f8);">
                         <label for="formation_id" class="form-label fw-bold text-dark mb-3">
                             <i class="fas fa-graduation-cap me-2" style="color: #C2185B;"></i>Choose Formation:
@@ -105,7 +108,6 @@
                     </div>
 
                     <div id="modules-container">
-                        <!-- First Module -->
                         <div class="module-card rounded-4 p-4 mb-4 shadow-lg">
                             <div class="d-flex align-items-center mb-4">
                                 <div class="me-3 p-2 rounded-3" style="background: linear-gradient(45deg, #C2185B, #D32F2F);">
@@ -122,14 +124,21 @@
                                     <input type="text" name="modules[0][title]" class="form-control form-control-lg rounded-3 shadow-sm" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="modules[0][status]" class="form-label fw-semibold">
-                                        <i class="fas fa-toggle-on me-2" style="color: #ef4444;"></i>Status:
+                                    <label for="modules[0][duration_hours]" class="form-label fw-semibold">
+                                        <i class="fas fa-clock me-2" style="color: #C2185B;"></i>Duration (in hours):
                                     </label>
-                                    <select name="modules[0][status]" class="form-select form-select-lg rounded-3 shadow-sm">
-                                        <option value="draft"><i class="fas fa-edit"></i> Draft</option>
-                                        <option value="published"><i class="fas fa-globe"></i> Published</option>
-                                    </select>
+                                    <input type="number" name="modules[0][duration_hours]" class="form-control form-control-lg rounded-3 shadow-sm" min="0">
                                 </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="modules[0][status]" class="form-label fw-semibold">
+                                    <i class="fas fa-toggle-on me-2" style="color: #ef4444;"></i>Status:
+                                </label>
+                                <select name="modules[0][status]" class="form-select form-select-lg rounded-3 shadow-sm">
+                                    <option value="draft"><i class="fas fa-edit"></i> Draft</option>
+                                    <option value="published"><i class="fas fa-globe"></i> Published</option>
+                                </select>
                             </div>
                             
                             <div class="mb-3">
@@ -156,7 +165,6 @@ Advanced Concepts" required></textarea>
                         </div>
                     </div>
                     
-                    <!-- Action Buttons -->
                     <div class="d-flex justify-content-center gap-3 mt-5">
                         <button type="button" id="add-module" class="btn btn-secondary-custom btn-lg px-5 py-3 rounded-3 fw-bold">
                             <i class="fas fa-plus-circle me-2"></i>Add Another Module
@@ -193,14 +201,21 @@ Advanced Concepts" required></textarea>
                         <input type="text" name="modules[${index}][title]" class="form-control form-control-lg rounded-3 shadow-sm" required>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="modules[${index}][status]" class="form-label fw-semibold">
-                            <i class="fas fa-toggle-on me-2" style="color: #ef4444;"></i>Status:
+                        <label for="modules[${index}][duration_hours]" class="form-label fw-semibold">
+                            <i class="fas fa-clock me-2" style="color: #C2185B;"></i>Duration (in hours):
                         </label>
-                        <select name="modules[${index}][status]" class="form-select form-select-lg rounded-3 shadow-sm">
-                            <option value="draft">Draft</option>
-                            <option value="published">Published</option>
-                        </select>
+                        <input type="number" name="modules[${index}][duration_hours]" class="form-control form-control-lg rounded-3 shadow-sm" min="0">
                     </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="modules[${index}][status]" class="form-label fw-semibold">
+                        <i class="fas fa-toggle-on me-2" style="color: #ef4444;"></i>Status:
+                    </label>
+                    <select name="modules[${index}][status]" class="form-select form-select-lg rounded-3 shadow-sm">
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                    </select>
                 </div>
                 
                 <div class="mb-3">

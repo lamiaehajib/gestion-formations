@@ -2,6 +2,7 @@
 
 @section('content')
 <style>
+    /* Your CSS styles, no changes needed */
     :root {
         --primary-color: #C2185B;
         --secondary-color: #D32F2F;
@@ -11,7 +12,6 @@
     }
 
     .custom-container {
-       
         min-height: 100vh;
         padding: 2rem 0;
     }
@@ -176,16 +176,15 @@
         border-radius: 12px;
         border-left: 4px solid var(--primary-color);
     }
-
     
-.info-label {
-    font-weight: 600;
-    color: #000000;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-}
+    .info-label {
+        font-weight: 600;
+        color: #000000;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
 
     .status-badge {
         padding: 0.5rem 1rem;
@@ -372,6 +371,9 @@
         margin-bottom: 1rem;
         opacity: 0.5;
     }
+
+    .module-card:nth-child(even) .module-header { background: linear-gradient(135deg, #D32F2F, #ef4444); }
+    .module-card:nth-child(even) .info-item { border-left-color: #ef4444; }
 </style>
 
 <div class="custom-container">
@@ -429,23 +431,21 @@
                         <div class="col" id="module-card-{{ $module->id }}">
                             <div class="module-card h-100">
                                 <div class="module-header">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h5 class="module-title">
-                                            <i class="fas fa-cube"></i>
-                                            Module {{ $module->order }}: {{ $module->title }}
-                                        </h5>
-                                        <div class="module-actions">
-                                            @can('module-edit')
-                                            <button class="btn-edit edit-btn" data-bs-toggle="modal" data-bs-target="#editModuleModal" data-id="{{ $module->id }}">
-                                                <i class="fas fa-edit"></i> Edit
-                                            </button>
-                                            @endcan
-                                            @can('module-delete')
-                                            <button class="btn-delete delete-btn" data-id="{{ $module->id }}">
-                                                <i class="fas fa-trash-alt"></i> Delete
-                                            </button>
-                                            @endcan
-                                        </div>
+                                    <h5 class="module-title">
+                                        <i class="fas fa-cube"></i>
+                                        Module {{ $module->order }}: {{ $module->title }}
+                                    </h5>
+                                    <div class="module-actions">
+                                        @can('module-edit')
+                                        <button class="btn-edit edit-btn" data-bs-toggle="modal" data-bs-target="#editModuleModal" data-id="{{ $module->id }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        @endcan
+                                        @can('module-delete')
+                                        <button class="btn-delete delete-btn" data-id="{{ $module->id }}">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                        @endcan
                                     </div>
                                 </div>
                                 <div class="module-body">
@@ -456,7 +456,6 @@
                                         </div>
                                         <span class="module-consultant">{{ $module->user->name ?? 'N/A' }}</span>
                                     </div>
-
                                     <div class="info-item">
                                         <div class="info-label">
                                             <i class="fas fa-flag"></i>
@@ -466,6 +465,14 @@
                                             <i class="fas {{ $module->status == 'published' ? 'fa-check-circle' : 'fa-edit' }}"></i>
                                             {{ $module->status }}
                                         </span>
+                                    </div>
+                                    
+                                    <div class="info-item">
+                                        <div class="info-label">
+                                            <i class="fas fa-clock"></i>
+                                            Duration:
+                                        </div>
+                                        <span class="module-duration">{{ $module->duration_hours ?? 'N/A' }} hours</span>
                                     </div>
 
                                     <div class="info-item">
@@ -498,10 +505,10 @@
                                                 <div class="progress-text">{{ $module->progress }}%</div>
                                             </div>
                                         </div>
-
+                                        
                                         @if(Auth::check() && $module->user_id === Auth::id() && Auth::user()->can('module-update-progress'))
                                         <div class="update-progress-form">
-                                            <form action="{{ route('modules.updateProgress', $module->id) }}" method="POST" class="progress-form">
+                                            <form action="{{ route('modules.updateProgress', $module->id) }}" method="POST">
                                                 @csrf
                                                 <div class="input-group">
                                                     <input type="number" name="progress" class="form-control progress-input" placeholder="Update progress (0-100)" min="0" max="100" value="{{ $module->progress }}" required>
@@ -530,7 +537,7 @@
     </div>
 </div>
 
-<!-- Create Module Modal -->
+{{-- Create Module Modal --}}
 <div class="modal fade" id="createModuleModal" tabindex="-1" aria-labelledby="createModuleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(194, 24, 91, 0.3);">
@@ -542,17 +549,25 @@
             </div>
             <div class="modal-body" style="padding: 2rem;">
                 <form id="createModuleForm">
+                    @csrf
+                    <input type="hidden" name="formation_id" value="{{ $formation->id }}">
                     <div class="mb-3">
                         <label for="create-title" class="form-label" style="color: var(--primary-color); font-weight: 600;">
                             <i class="fas fa-heading"></i> Module Title
                         </label>
-                        <input type="text" class="form-control" id="create-title" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
+                        <input type="text" class="form-control" id="create-title" name="title" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="create-duration_hours" class="form-label" style="color: var(--primary-color); font-weight: 600;">
+                            <i class="fas fa-clock"></i> Duration (in hours)
+                        </label>
+                        <input type="number" class="form-control" id="create-duration_hours" name="duration_hours" min="0" style="border-radius: 10px; border: 2px solid #e2e8f0;">
                     </div>
                     <div class="mb-3">
                         <label for="create-status" class="form-label" style="color: var(--primary-color); font-weight: 600;">
                             <i class="fas fa-flag"></i> Status
                         </label>
-                        <select class="form-control" id="create-status" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
+                        <select class="form-control" id="create-status" name="status" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
                             <option value="draft">Draft</option>
                             <option value="published">Published</option>
                         </select>
@@ -561,17 +576,15 @@
                         <label for="create-user" class="form-label" style="color: var(--primary-color); font-weight: 600;">
                             <i class="fas fa-user-tie"></i> Assigned Consultant
                         </label>
-                        <select class="form-control" id="create-user" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
-                            <!-- Options will be populated via JavaScript -->
-                        </select>
+                        <select class="form-control" id="create-user" name="user_id" required style="border-radius: 10px; border: 2px solid #e2e8f0;"></select>
                     </div>
                     <div class="mb-3">
                         <label for="create-content" class="form-label" style="color: var(--primary-color); font-weight: 600;">
                             <i class="fas fa-list-ul"></i> Content (one per line)
                         </label>
-                        <textarea class="form-control" id="create-content" rows="4" placeholder="Enter content items, one per line..." style="border-radius: 10px; border: 2px solid #e2e8f0;"></textarea>
+                        <textarea class="form-control" id="create-content" name="content" rows="4" placeholder="Enter content items, one per line..." style="border-radius: 10px; border: 2px solid #e2e8f0;"></textarea>
                     </div>
-                    <div class="text-end">
+                    <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 10px; margin-right: 0.5rem;">
                             <i class="fas fa-times"></i> Cancel
                         </button>
@@ -585,7 +598,7 @@
     </div>
 </div>
 
-<!-- Edit Module Modal -->
+{{-- Edit Module Modal --}}
 <div class="modal fade" id="editModuleModal" tabindex="-1" aria-labelledby="editModuleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(194, 24, 91, 0.3);">
@@ -597,24 +610,32 @@
             </div>
             <div class="modal-body" style="padding: 2rem;">
                 <form id="editModuleForm">
-                    <input type="hidden" id="edit-module-id">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" id="edit-module-id" name="id">
                     <div class="mb-3">
                         <label for="edit-title" class="form-label" style="color: var(--primary-color); font-weight: 600;">
                             <i class="fas fa-heading"></i> Module Title
                         </label>
-                        <input type="text" class="form-control" id="edit-title" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
+                        <input type="text" class="form-control" id="edit-title" name="title" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-duration_hours" class="form-label" style="color: var(--primary-color); font-weight: 600;">
+                            <i class="fas fa-clock"></i> Duration (in hours)
+                        </label>
+                        <input type="number" class="form-control" id="edit-duration_hours" name="duration_hours" min="0" style="border-radius: 10px; border: 2px solid #e2e8f0;">
                     </div>
                     <div class="mb-3">
                         <label for="edit-order" class="form-label" style="color: var(--primary-color); font-weight: 600;">
                             <i class="fas fa-sort-numeric-up"></i> Order
                         </label>
-                        <input type="number" class="form-control" id="edit-order" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
+                        <input type="number" class="form-control" id="edit-order" name="order" required min="1" style="border-radius: 10px; border: 2px solid #e2e8f0;">
                     </div>
                     <div class="mb-3">
                         <label for="edit-status" class="form-label" style="color: var(--primary-color); font-weight: 600;">
                             <i class="fas fa-flag"></i> Status
                         </label>
-                        <select class="form-control" id="edit-status" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
+                        <select class="form-control" id="edit-status" name="status" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
                             <option value="draft">Draft</option>
                             <option value="published">Published</option>
                         </select>
@@ -623,17 +644,15 @@
                         <label for="edit-user" class="form-label" style="color: var(--primary-color); font-weight: 600;">
                             <i class="fas fa-user-tie"></i> Assigned Consultant
                         </label>
-                        <select class="form-control" id="edit-user" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
-                            <!-- Options will be populated via JavaScript -->
-                        </select>
+                        <select class="form-control" id="edit-user" name="user_id" required style="border-radius: 10px; border: 2px solid #e2e8f0;"></select>
                     </div>
                     <div class="mb-3">
                         <label for="edit-content" class="form-label" style="color: var(--primary-color); font-weight: 600;">
                             <i class="fas fa-list-ul"></i> Content (one per line)
                         </label>
-                        <textarea class="form-control" id="edit-content" rows="4" style="border-radius: 10px; border: 2px solid #e2e8f0;"></textarea>
+                        <textarea class="form-control" id="edit-content" name="content" rows="4" style="border-radius: 10px; border: 2px solid #e2e8f0;"></textarea>
                     </div>
-                    <div class="text-end">
+                    <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 10px; margin-right: 0.5rem;">
                             <i class="fas fa-times"></i> Cancel
                         </button>
@@ -648,27 +667,22 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const modulesList = document.getElementById('modules-list');
         const alertContainer = document.getElementById('alert-container');
-        // Initialize modals properly
         const editModalElement = document.getElementById('editModuleModal');
         const createModalElement = document.getElementById('createModuleModal');
         
-        if (editModalElement) {
-            const editModuleModal = new bootstrap.Modal(editModalElement);
-        }
-        if (createModalElement) {
-            const createModuleModal = new bootstrap.Modal(createModalElement);
-        }
+        const editModuleModal = new bootstrap.Modal(editModalElement);
+        const createModuleModal = new bootstrap.Modal(createModalElement);
+        
         const editModuleForm = document.getElementById('editModuleForm');
         const createModuleForm = document.getElementById('createModuleForm');
-        // Kanjibo les consultants men l'backend w kan7awlohom l'JavaScript object
-        const consultants = @json($consultants); 
+        
+        const consultants = @json($consultants);
 
-        // Function bach t3ammar select dyal les consultants
         function populateConsultantsSelect(selectElement, selectedUserId = null) {
             selectElement.innerHTML = '';
             consultants.forEach(consultant => {
@@ -682,10 +696,13 @@
             });
         }
 
-        // Listener to handle Edit and Delete button clicks
+        document.querySelector('[data-bs-target="#createModuleModal"]').addEventListener('click', function () {
+            populateConsultantsSelect(document.getElementById('create-user'));
+            createModuleForm.reset();
+        });
+
         if (modulesList) {
-            modulesList.addEventListener('click', function(e) {
-                // Delete a module
+            modulesList.addEventListener('click', function (e) {
                 if (e.target.closest('.delete-btn')) {
                     e.preventDefault();
                     if (confirm('Are you sure you want to delete this module?')) {
@@ -694,7 +711,6 @@
                     }
                 }
 
-                // Open the edit modal
                 if (e.target.closest('.edit-btn')) {
                     const moduleId = e.target.closest('.edit-btn').dataset.id;
                     fetchModuleData(moduleId);
@@ -702,133 +718,113 @@
             });
         }
 
-        // Listener to open the create modal
-        const createBtn = document.querySelector('[data-bs-target="#createModuleModal"]');
-        if(createBtn) {
-            createBtn.addEventListener('click', function() {
-                const createUserSelect = document.getElementById('create-user');
-                if (createUserSelect) {
-                    populateConsultantsSelect(createUserSelect);
-                }
-            });
-        }
-
-        // Function to fetch module data via AJAX and populate the modal
         function fetchModuleData(moduleId) {
             const url = `/modules/${moduleId}/get-data`;
             axios.get(url)
                 .then(response => {
-                    const { module, consultants } = response.data;
-                    
+                    const { module } = response.data;
                     document.getElementById('edit-module-id').value = module.id;
                     document.getElementById('edit-title').value = module.title;
+                    document.getElementById('edit-duration_hours').value = module.duration_hours;
                     document.getElementById('edit-order').value = module.order;
                     document.getElementById('edit-status').value = module.status;
                     document.getElementById('edit-content').value = module.content.join('\n');
                     
                     populateConsultantsSelect(document.getElementById('edit-user'), module.user_id);
-
                     editModuleModal.show();
                 })
                 .catch(error => {
                     console.error('Error fetching module data:', error);
-                    showAlert('Failed to load module data. Please try again.', 'danger');
+                    handleFormError(error);
                 });
         }
-        
-        // Handle form submission for creating a new module
-        if (createModuleForm) {
-            createModuleForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const formData = {
-                    formation_id: '{{ $formation->id }}', // Kanstkhdem ID dyal l'formation l'actuelle
-                    modules: [
-                        {
-                            title: document.getElementById('create-title').value,
-                            status: document.getElementById('create-status').value,
-                            content: document.getElementById('create-content').value,
-                            user_id: document.getElementById('create-user').value
-                        }
-                    ]
-                };
-                
-                axios.post('{{ route('modules.store') }}', formData)
-                    .then(response => {
-                        createModuleModal.hide();
-                        location.reload(); // Hadshi ghadi y3awd ychargi l'page bach yban l'module l'jdid
-                        showAlert('Module created successfully!', 'success');
-                    })
-                    .catch(error => {
-                        console.error('Create error:', error);
-                        showAlert('Failed to create module.', 'danger');
-                    });
-            });
-        }
 
-        // Handle form submission for editing
-        if (editModuleForm) {
-            editModuleForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const moduleId = document.getElementById('edit-module-id').value;
-                const url = `/modules/${moduleId}`;
-                
-                const formData = {
-                    title: document.getElementById('edit-title').value,
-                    order: document.getElementById('edit-order').value,
-                    status: document.getElementById('edit-status').value,
-                    content: document.getElementById('edit-content').value,
-                    user_id: document.getElementById('edit-user').value
-                };
-                
-                axios.put(url, formData)
-                    .then(response => {
-                        const updatedModules = response.data.modules;
-                        updateModulesList(updatedModules);
-                        editModuleModal.hide();
-                        showAlert('Module updated successfully!', 'success');
-                    })
-                    .catch(error => {
-                        console.error('Update error:', error);
-                        
-                        // Kan7awlou nbyenou les erreurs li jaw men backend
-                        if (error.response && error.response.data.errors) {
-                            const errors = error.response.data.errors;
-                            let errorMessage = 'Failed to update module:<br>';
-                            for (const key in errors) {
-                                errorMessage += `- ${errors[key][0]}<br>`;
-                            }
-                            showAlert(errorMessage, 'danger');
-                        } else {
-                            showAlert('An unknown error occurred. Please try again.', 'danger');
-                        }
-                    });
-            });
-        }
+        createModuleForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const formData = {
+                formation_id: '{{ $formation->id }}',
+                modules: [
+                    {
+                        title: document.getElementById('create-title').value,
+                        duration_hours: document.getElementById('create-duration_hours').value,
+                        order: document.getElementById('create-order').value,
+                        status: document.getElementById('create-status').value,
+                        content: document.getElementById('create-content').value,
+                        user_id: document.getElementById('create-user').value
+                    }
+                ]
+            };
+            
+            axios.post('{{ route('modules.store') }}', formData)
+                .then(response => {
+                    createModuleModal.hide();
+                    updateModulesList(response.data.modules);
+                    showAlert('Module created successfully!', 'success');
+                })
+                .catch(error => {
+                    handleFormError(error);
+                });
+        });
 
-        // Function to update the modules list on the page
+        editModuleForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const moduleId = document.getElementById('edit-module-id').value;
+            const url = `/modules/${moduleId}`;
+            const formData = {
+                title: document.getElementById('edit-title').value,
+                duration_hours: document.getElementById('edit-duration_hours').value,
+                order: document.getElementById('edit-order').value,
+                status: document.getElementById('edit-status').value,
+                content: document.getElementById('edit-content').value,
+                user_id: document.getElementById('edit-user').value,
+            };
+
+            axios.put(url, formData)
+                .then(response => {
+                    editModuleModal.hide();
+                    updateModulesList(response.data.modules);
+                    showAlert('Module updated successfully!', 'success');
+                })
+                .catch(error => {
+                    handleFormError(error);
+                });
+        });
+
         function updateModulesList(modules) {
             const modulesList = document.getElementById('modules-list');
             modulesList.innerHTML = '';
+            
+            if (modules.length === 0) {
+                modulesList.innerHTML = `<div class="no-modules">
+                    <i class="fas fa-inbox"></i>
+                    <h5>No modules have been added to this formation yet.</h5>
+                    <p class="text-muted">Start building your formation by adding the first module!</p>
+                </div>`;
+            } else {
+                modules.forEach((module, index) => {
+                    const contentHtml = module.content.length > 0
+                        ? module.content.map(item => `<li class="content-item"><i class="fas fa-chevron-right text-primary"></i>${item}</li>`).join('')
+                        : `<li class="content-item text-muted"><i class="fas fa-info-circle"></i> No content available.</li>`;
 
-            modules.forEach(module => {
-                const moduleHtml = `
+                    const moduleHtml = `
                     <div class="col" id="module-card-${module.id}">
                         <div class="module-card h-100">
                             <div class="module-header">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h5 class="module-title">
-                                        <i class="fas fa-cube"></i>
-                                        Module ${module.order}: ${module.title}
-                                    </h5>
-                                    <div class="module-actions">
-                                        <button class="btn-edit edit-btn" data-bs-toggle="modal" data-bs-target="#editModuleModal" data-id="${module.id}">
-                                            <i class="fas fa-edit"></i> Edit
-                                        </button>
-                                        <button class="btn-delete delete-btn" data-id="${module.id}">
-                                            <i class="fas fa-trash-alt"></i> Delete
-                                        </button>
-                                    </div>
+                                <h5 class="module-title">
+                                    <i class="fas fa-cube"></i>
+                                    Module ${module.order}: ${module.title}
+                                </h5>
+                                <div class="module-actions">
+                                    @can('module-edit')
+                                    <button class="btn-edit edit-btn" data-bs-toggle="modal" data-bs-target="#editModuleModal" data-id="${module.id}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    @endcan
+                                    @can('module-delete')
+                                    <button class="btn-delete delete-btn" data-id="${module.id}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                    @endcan
                                 </div>
                             </div>
                             <div class="module-body">
@@ -837,7 +833,7 @@
                                         <i class="fas fa-user-tie"></i>
                                         Assigned Consultant:
                                     </div>
-                                    <span class="module-consultant">${module.user.name ?? 'N/A'}</span>
+                                    <span class="module-consultant">${module.user ? module.user.name : 'N/A'}</span>
                                 </div>
                                 <div class="info-item">
                                     <div class="info-label">
@@ -851,11 +847,18 @@
                                 </div>
                                 <div class="info-item">
                                     <div class="info-label">
+                                        <i class="fas fa-clock"></i>
+                                        Duration:
+                                    </div>
+                                    <span class="module-duration">${module.duration_hours ?? 'N/A'} hours</span>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">
                                         <i class="fas fa-list-ul"></i>
                                         Content:
                                     </div>
                                     <ul class="content-list module-content">
-                                        ${module.content.map(item => `<li class="content-item"><i class="fas fa-chevron-right text-primary"></i>${item}</li>`).join('')}
+                                        ${contentHtml}
                                     </ul>
                                 </div>
                                 <div class="progress-section">
@@ -868,38 +871,115 @@
                                             <div class="progress-text">${module.progress}%</div>
                                         </div>
                                     </div>
+                                    @if(Auth::check() && $module->user_id === Auth::id() && Auth::user()->can('module-update-progress'))
+                                    <div class="update-progress-form">
+                                        <form action="{{ route('modules.updateProgress', $module->id) }}" method="POST">
+                                            @csrf
+                                            <div class="input-group">
+                                                <input type="number" name="progress" class="form-control progress-input" placeholder="Update progress (0-100)" min="0" max="100" value="${module.progress}" required>
+                                                <button type="submit" class="btn-update-progress"><i class="fas fa-sync-alt"></i> Update Progress</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
                     </div>
-                `;
-                modulesList.insertAdjacentHTML('beforeend', moduleHtml);
-            });
+                    `;
+                    modulesList.insertAdjacentHTML('beforeend', moduleHtml);
+                });
+            }
+            updateModulesCount(modules.length);
         }
-
-        // Function to handle module deletion
+        
         function deleteModule(moduleId) {
             const url = `/modules/${moduleId}`;
             axios.delete(url)
                 .then(response => {
-                    document.getElementById('module-card-' + moduleId).remove();
-                    showAlert('Module deleted successfully!', 'success');
+                    const moduleCard = document.getElementById('module-card-' + moduleId);
+                    if (moduleCard) {
+                        moduleCard.style.animation = 'fadeOutUp 0.5s ease';
+                        setTimeout(() => {
+                            moduleCard.remove();
+                            updateModulesCount();
+                            showAlert('<i class="fas fa-check-circle"></i> Module deleted successfully!', 'success');
+                            if (document.querySelectorAll('.module-card').length === 0) {
+                                document.getElementById('modules-list').innerHTML = `<div class="no-modules">
+                                    <i class="fas fa-inbox"></i>
+                                    <h5>No modules have been added to this formation yet.</h5>
+                                    <p class="text-muted">Start building your formation by adding the first module!</p>
+                                </div>`;
+                            }
+                        }, 500);
+                    }
                 })
                 .catch(error => {
                     console.error('Deletion error:', error);
-                    showAlert('Failed to delete module.', 'danger');
+                    showAlert('<i class="fas fa-exclamation-triangle"></i> Failed to delete module.', 'danger');
                 });
         }
 
-        // Show a temporary alert message
+        function updateModulesCount(count) {
+            const countElement = document.querySelector('.modules-header h4');
+            countElement.innerHTML = `<i class="fas fa-cubes"></i> Modules for this Formation (${count})`;
+        }
+
+        function handleFormError(error) {
+            console.error('Form error:', error);
+            if (error.response && error.response.data.errors) {
+                const errors = error.response.data.errors;
+                let errorMessage = 'Failed to process request:<br>';
+                for (const key in errors) {
+                    errorMessage += `- ${errors[key][0]}<br>`;
+                }
+                showAlert(errorMessage, 'danger');
+            } else {
+                showAlert('An unknown error occurred. Please try again.', 'danger');
+            }
+        }
+
         function showAlert(message, type) {
-            const alertHtml = `<div class="alert alert-${type} alert-custom alert-dismissible fade show" role="alert">
-                <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'danger' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
+            const alertHtml = `
+            <div class="alert alert-${type} alert-custom alert-dismissible fade show" role="alert" style="animation: fadeInDown 0.5s ease">
                 ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>`;
+            </div>
+            `;
             alertContainer.innerHTML = alertHtml;
+            
+            setTimeout(() => {
+                const alert = alertContainer.querySelector('.alert');
+                if (alert) {
+                    alert.style.animation = 'fadeOutUp 0.5s ease';
+                    setTimeout(() => {
+                        alert.remove();
+                    }, 500);
+                }
+            }, 5000);
         }
+
+        const additionalCSS = `
+        @keyframes fadeOutUp {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-30px); }
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3); }
+            50% { box-shadow: 0 12px 30px rgba(76, 175, 80, 0.5); transform: translateY(-1px); }
+            100% { box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3); transform: translateY(0); }
+        }
+        .btn:active { transform: translateY(1px) !important; }
+        .module-card:nth-child(even) .module-header { background: linear-gradient(135deg, #D32F2F, #ef4444); }
+        .progress-form input:focus { border-color: #C2185B !important; box-shadow: 0 0 0 3px rgba(194, 24, 91, 0.1) !important; }
+        `;
+        const style = document.createElement('style');
+        style.textContent = additionalCSS;
+        document.head.appendChild(style);
     });
 </script>
 @endsection

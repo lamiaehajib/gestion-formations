@@ -270,7 +270,7 @@ public function store(Request $request)
     // Define validation rules
     $rules = [
         'amount_to_pay' => 'required|numeric|min:0.01',
-        'payment_method' => 'required|in:cash,bank_transfer',
+        'payment_method' => 'required|in:cash,bank_transfer,cheque',
         'payment_description' => 'nullable|string|max:1000',
         'receipt_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         // Admins, Finance, and Super Admins can change the status, students cannot
