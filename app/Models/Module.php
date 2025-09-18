@@ -18,6 +18,7 @@ class Module extends Model
         'title',
         'description',
         'duration_hours',
+        'number_seance',
         'order',
         'status',
         'content',

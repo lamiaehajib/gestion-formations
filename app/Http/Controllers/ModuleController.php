@@ -116,41 +116,44 @@ class ModuleController extends Controller
      * Store a newly created module(s) in storage.
      */
     public function store(Request $request)
-    {
-        $validatedData = $request->validate([
-            'formation_id' => 'required|exists:formations,id',
-            'modules' => 'required|array',
-            'modules.*.title' => 'required|string|max:255',
-            'modules.*.status' => 'required|in:draft,published',
-            'modules.*.content' => 'required|string',
-            'modules.*.user_id' => 'required|exists:users,id',
-            'modules.*.duration_hours' => 'nullable|integer|min:0', // Zidna had l'validation l'jdida
+{
+    $validatedData = $request->validate([
+        'formation_id' => 'required|exists:formations,id',
+        'modules' => 'required|array',
+        'modules.*.title' => 'required|string|max:255',
+        'modules.*.status' => 'required|in:draft,published',
+        'modules.*.content' => 'required|string',
+        'modules.*.user_id' => 'required|exists:users,id',
+        'modules.*.duration_hours' => 'nullable|integer|min:0', 
+        'modules.*.number_seance' => 'nullable|integer|min:1', // 👈 Zidna had l'validation l'jdida
+    ]);
+
+    $formationId = $validatedData['formation_id'];
+    $lastModule = Module::where('formation_id', $formationId)
+        ->orderBy('order', 'desc')
+        ->first();
+
+    $startOrder = $lastModule ? $lastModule->order + 1 : 1;
+
+    foreach ($validatedData['modules'] as $index => $moduleData) {
+        $contentArray = explode("\n", $moduleData['content']);
+
+        Module::create([
+            'formation_id' => $formationId,
+            'title' => $moduleData['title'],
+            'status' => $moduleData['status'],
+            'content' => $contentArray,
+            'user_id' => $moduleData['user_id'],
+            'order' => $startOrder + $index,
+            'progress' => 0,
+            'duration_hours' => $moduleData['duration_hours'] ?? null,
+            'number_seance' => $moduleData['number_seance'] ?? null, // 👈 Zidna had l'parti
         ]);
-
-        $formationId = $validatedData['formation_id'];
-        $lastModule = Module::where('formation_id', $formationId)
-            ->orderBy('order', 'desc')
-            ->first();
-
-        $startOrder = $lastModule ? $lastModule->order + 1 : 1;
-
-        foreach ($validatedData['modules'] as $index => $moduleData) {
-            $contentArray = explode("\n", $moduleData['content']);
-
-            Module::create([
-                'formation_id' => $formationId,
-                'title' => $moduleData['title'],
-                'status' => $moduleData['status'],
-                'content' => $contentArray,
-                'user_id' => $moduleData['user_id'],
-                'order' => $startOrder + $index,
-                'progress' => 0,
-                'duration_hours' => $moduleData['duration_hours'] ?? 0, // Zidna had l'parti bach nsavew la valeur
-            ]);
-        }
-
-        return redirect()->route('modules.index')->with('success', 'Modules added successfully!');
     }
+
+    return redirect()->route('modules.index')->with('success', 'Modules added successfully!');
+}
+
 
     /**
      * Show the form for editing the specified module.
@@ -167,12 +170,15 @@ class ModuleController extends Controller
      */
    // In app/Http/Controllers/ModuleController.php
 
+// In app/Http/Controllers/ModuleController.php
+
 public function update(Request $request, Module $module)
 {
     // Validate the incoming data from the AJAX request
     $validatedData = $request->validate([
         'title' => 'required|string|max:255',
-        'duration_hours' => 'nullable|integer|min:0', // Zidna had l'validation l'jdida
+        'duration_hours' => 'nullable|integer|min:0',
+        'number_seance' => 'nullable|integer|min:1', // 👈 Zidna had l'validation l'jdida
         'order' => 'required|integer|min:1',
         'status' => 'required|in:draft,published',
         'content' => 'required|string',
@@ -199,7 +205,11 @@ public function update(Request $request, Module $module)
     }
     
     // Update the current module
-    $module->update(array_merge($validatedData, ['content' => $contentArray]));
+    // Kan includeiw l'new field f l'update
+    $module->update(array_merge($validatedData, [
+        'content' => $contentArray,
+        'number_seance' => $validatedData['number_seance'] ?? null, // 👈 Zidna had l'parti
+    ]));
     
     // Return all modules for the formation to re-render the list
     $formation = Formation::find($module->formation_id);

@@ -398,7 +398,7 @@
                                 <i class="fas fa-clock"></i>
                                 Duration:
                             </div>
-                            <p class="mb-0">{{ $formation->duration_hours }} mois</p>
+                            <p class="mb-0">{{ $formation->duration_hours }} hours</p>
                         </div>
                     </div>
                 </div>
@@ -474,6 +474,14 @@
                                         </div>
                                         <span class="module-duration">{{ $module->duration_hours ?? 'N/A' }} hours</span>
                                     </div>
+                                    
+                                    <div class="info-item">
+                                        <div class="info-label">
+                                            <i class="fas fa-calendar-alt"></i>
+                                            Sessions:
+                                        </div>
+                                        <span class="module-sessions">{{ $module->number_seance ?? 'N/A' }}</span>
+                                    </div>
 
                                     <div class="info-item">
                                         <div class="info-label">
@@ -506,7 +514,19 @@
                                             </div>
                                         </div>
                                         
-                                      
+                                        @if(Auth::check() && $module->user_id === Auth::id() && Auth::user()->can('module-update-progress'))
+                                        <div class="update-progress-form">
+                                            <form action="{{ route('modules.updateProgress', $module->id) }}" method="POST">
+                                                @csrf
+                                                <div class="input-group">
+                                                    <input type="number" name="progress" class="form-control progress-input" placeholder="Update progress (0-100)" min="0" max="100" value="{{ $module->progress }}" required>
+                                                    <button type="submit" class="btn-update-progress">
+                                                        <i class="fas fa-sync-alt"></i> Update Progress
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -550,6 +570,12 @@
                             <i class="fas fa-clock"></i> Duration (in hours)
                         </label>
                         <input type="number" class="form-control" id="create-duration_hours" name="duration_hours" min="0" style="border-radius: 10px; border: 2px solid #e2e8f0;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="create-number_seance" class="form-label" style="color: var(--primary-color); font-weight: 600;">
+                            <i class="fas fa-calendar-alt"></i> Number of Sessions
+                        </label>
+                        <input type="number" class="form-control" id="create-number_seance" name="number_seance" min="1" style="border-radius: 10px; border: 2px solid #e2e8f0;">
                     </div>
                     <div class="mb-3">
                         <label for="create-status" class="form-label" style="color: var(--primary-color); font-weight: 600;">
@@ -612,6 +638,12 @@
                             <i class="fas fa-clock"></i> Duration (in hours)
                         </label>
                         <input type="number" class="form-control" id="edit-duration_hours" name="duration_hours" min="0" style="border-radius: 10px; border: 2px solid #e2e8f0;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-number_seance" class="form-label" style="color: var(--primary-color); font-weight: 600;">
+                            <i class="fas fa-calendar-alt"></i> Number of Sessions
+                        </label>
+                        <input type="number" class="form-control" id="edit-number_seance" name="number_seance" min="1" style="border-radius: 10px; border: 2px solid #e2e8f0;">
                     </div>
                     <div class="mb-3">
                         <label for="edit-order" class="form-label" style="color: var(--primary-color); font-weight: 600;">
@@ -714,6 +746,8 @@
                     document.getElementById('edit-module-id').value = module.id;
                     document.getElementById('edit-title').value = module.title;
                     document.getElementById('edit-duration_hours').value = module.duration_hours;
+                    // FIX: Populate number_seance field in edit modal
+                    document.getElementById('edit-number_seance').value = module.number_seance; 
                     document.getElementById('edit-order').value = module.order;
                     document.getElementById('edit-status').value = module.status;
                     document.getElementById('edit-content').value = module.content.join('\n');
@@ -735,6 +769,8 @@
                     {
                         title: document.getElementById('create-title').value,
                         duration_hours: document.getElementById('create-duration_hours').value,
+                        // FIX: Get number_seance from create form
+                        number_seance: document.getElementById('create-number_seance').value,
                         order: document.getElementById('create-order').value,
                         status: document.getElementById('create-status').value,
                         content: document.getElementById('create-content').value,
@@ -761,6 +797,8 @@
             const formData = {
                 title: document.getElementById('edit-title').value,
                 duration_hours: document.getElementById('edit-duration_hours').value,
+                // FIX: Get number_seance from edit form
+                number_seance: document.getElementById('edit-number_seance').value,
                 order: document.getElementById('edit-order').value,
                 status: document.getElementById('edit-status').value,
                 content: document.getElementById('edit-content').value,
@@ -842,6 +880,13 @@
                                 </div>
                                 <div class="info-item">
                                     <div class="info-label">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        Sessions:
+                                    </div>
+                                    <span class="module-sessions">${module.number_seance ?? 'N/A'}</span>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">
                                         <i class="fas fa-list-ul"></i>
                                         Content:
                                     </div>
@@ -859,7 +904,17 @@
                                             <div class="progress-text">${module.progress}%</div>
                                         </div>
                                     </div>
-                                   
+                                    @if(Auth::check() && $module->user_id === Auth::id() && Auth::user()->can('module-update-progress'))
+                                    <div class="update-progress-form">
+                                        <form action="{{ route('modules.updateProgress', $module->id) }}" method="POST">
+                                            @csrf
+                                            <div class="input-group">
+                                                <input type="number" name="progress" class="form-control progress-input" placeholder="Update progress (0-100)" min="0" max="100" value="${module.progress}" required>
+                                                <button type="submit" class="btn-update-progress"><i class="fas fa-sync-alt"></i> Update Progress</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>

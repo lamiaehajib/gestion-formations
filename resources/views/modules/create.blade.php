@@ -131,14 +131,22 @@
                                 </div>
                             </div>
                             
-                            <div class="mb-3">
-                                <label for="modules[0][status]" class="form-label fw-semibold">
-                                    <i class="fas fa-toggle-on me-2" style="color: #ef4444;"></i>Status:
-                                </label>
-                                <select name="modules[0][status]" class="form-select form-select-lg rounded-3 shadow-sm">
-                                    <option value="draft"><i class="fas fa-edit"></i> Draft</option>
-                                    <option value="published"><i class="fas fa-globe"></i> Published</option>
-                                </select>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="modules[0][number_seance]" class="form-label fw-semibold">
+                                        <i class="fas fa-calendar-alt me-2" style="color: #C2185B;"></i>Number of Sessions:
+                                    </label>
+                                    <input type="number" name="modules[0][number_seance]" class="form-control form-control-lg rounded-3 shadow-sm" min="1">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="modules[0][status]" class="form-label fw-semibold">
+                                        <i class="fas fa-toggle-on me-2" style="color: #ef4444;"></i>Status:
+                                    </label>
+                                    <select name="modules[0][status]" class="form-select form-select-lg rounded-3 shadow-sm">
+                                        <option value="draft">Draft</option>
+                                        <option value="published">Published</option>
+                                    </select>
+                                </div>
                             </div>
                             
                             <div class="mb-3">
@@ -208,14 +216,22 @@ Advanced Concepts" required></textarea>
                     </div>
                 </div>
                 
-                <div class="mb-3">
-                    <label for="modules[${index}][status]" class="form-label fw-semibold">
-                        <i class="fas fa-toggle-on me-2" style="color: #ef4444;"></i>Status:
-                    </label>
-                    <select name="modules[${index}][status]" class="form-select form-select-lg rounded-3 shadow-sm">
-                        <option value="draft">Draft</option>
-                        <option value="published">Published</option>
-                    </select>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="modules[${index}][number_seance]" class="form-label fw-semibold">
+                            <i class="fas fa-calendar-alt me-2" style="color: #C2185B;"></i>Number of Sessions:
+                        </label>
+                        <input type="number" name="modules[${index}][number_seance]" class="form-control form-control-lg rounded-3 shadow-sm" min="1">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="modules[${index}][status]" class="form-label fw-semibold">
+                            <i class="fas fa-toggle-on me-2" style="color: #ef4444;"></i>Status:
+                        </label>
+                        <select name="modules[${index}][status]" class="form-select form-select-lg rounded-3 shadow-sm">
+                            <option value="draft">Draft</option>
+                            <option value="published">Published</option>
+                        </select>
+                    </div>
                 </div>
                 
                 <div class="mb-3">
