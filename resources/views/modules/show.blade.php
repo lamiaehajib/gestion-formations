@@ -506,19 +506,7 @@
                                             </div>
                                         </div>
                                         
-                                        @if(Auth::check() && $module->user_id === Auth::id() && Auth::user()->can('module-update-progress'))
-                                        <div class="update-progress-form">
-                                            <form action="{{ route('modules.updateProgress', $module->id) }}" method="POST">
-                                                @csrf
-                                                <div class="input-group">
-                                                    <input type="number" name="progress" class="form-control progress-input" placeholder="Update progress (0-100)" min="0" max="100" value="{{ $module->progress }}" required>
-                                                    <button type="submit" class="btn-update-progress">
-                                                        <i class="fas fa-sync-alt"></i> Update Progress
-                                                    </button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                        @endif
+                                      
                                     </div>
                                 </div>
                             </div>
@@ -871,17 +859,7 @@
                                             <div class="progress-text">${module.progress}%</div>
                                         </div>
                                     </div>
-                                    @if(Auth::check() && $module->user_id === Auth::id() && Auth::user()->can('module-update-progress'))
-                                    <div class="update-progress-form">
-                                        <form action="{{ route('modules.updateProgress', $module->id) }}" method="POST">
-                                            @csrf
-                                            <div class="input-group">
-                                                <input type="number" name="progress" class="form-control progress-input" placeholder="Update progress (0-100)" min="0" max="100" value="${module.progress}" required>
-                                                <button type="submit" class="btn-update-progress"><i class="fas fa-sync-alt"></i> Update Progress</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                    @endif
+                                   
                                 </div>
                             </div>
                         </div>
