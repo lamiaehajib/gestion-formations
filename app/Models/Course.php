@@ -20,6 +20,8 @@ class Course extends Model
         'consultant_id', 
         'recording_url',
         'documents',
+        'module_id',
+        'formation_id',
         
     ];
 
@@ -32,18 +34,20 @@ class Course extends Model
     ];
 
 
-       public function formations()
+
+    public function module()
     {
-        // La relation a été changée belongsTo à belongsToMany pour supporter
-        // plusieurs formations par cours.
-        return $this->belongsToMany(Formation::class);
+        return $this->belongsTo(Module::class);
     }
+  public function formation() 
+    { 
+        // هذا الكود كينتمي ل Solution 1: 
+        // الكورس كينتمي ل Formation واحدة. 
+        return $this->belongsTo(Formation::class); 
+    } 
 
     // Relations
-    public function formation()
-    {
-        return $this->belongsTo(Formation::class);
-    }
+   
 
     public function reschedules()
     {

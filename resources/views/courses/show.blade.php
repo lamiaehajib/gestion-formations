@@ -332,15 +332,19 @@
     <div class="course-header-section">
         <div>
             <h1>{{ $course->title }}</h1>
-            @if($course->formations->isNotEmpty())
-                                                            <p class="course-formation">
-                                                                @foreach($course->formations as $formation)
-                                                                    <span class="badge bg-secondary">{{ $formation->title }}</span>
-                                                                @endforeach
-                                                            </p>
-                                                        @else
-                                                            <p class="course-formation">Aucune formation associée</p>
-                                                        @endif
+            @if($course->formation)
+                <p class="course-formation">
+                    {{-- Afficher seulement la formation liée --}}
+                    <span class="badge bg-secondary">{{ $course->formation->title }}</span>
+                    
+                    {{-- Ajouter le Module si nécessaire --}}
+                    @if($course->module)
+                        <span class="badge bg-info ms-2">{{ $course->module->title }}</span>
+                    @endif
+                </p>
+            @else
+                <p class="course-formation">Aucune formation associée</p>
+            @endif
             <div class="consultant-info">
                
                 {{-- Changed to display $course->consultant->name directly --}}

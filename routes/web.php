@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AjaxController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseRescheduleController;
@@ -269,6 +270,8 @@ Route::post('/modules/{module}/update-ajax', [ModuleController::class, 'updateAj
 Route::delete('/modules/{module}/destroy-ajax', [ModuleController::class, 'destroyAjax'])->name('modules.destroyAjax');
 Route::get('/modules/{module}/get-data', [ModuleController::class, 'getModuleData'])->name('modules.getData');
 
+
+Route::get('/get-modules/{formationId}', [AjaxController::class, 'getModules']);
 });
 
 require __DIR__.'/auth.php';
