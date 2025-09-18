@@ -41,8 +41,7 @@ class Course extends Model
     }
   public function formation() 
     { 
-        // هذا الكود كينتمي ل Solution 1: 
-        // الكورس كينتمي ل Formation واحدة. 
+       
         return $this->belongsTo(Formation::class); 
     } 
 

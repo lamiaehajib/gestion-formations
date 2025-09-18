@@ -82,8 +82,7 @@ class Formation extends Model
 
      public function courses()
     {
-        // La relation a été changée de hasMany à belongsToMany pour supporter
-        // que chaque formation puisse avoir plusieurs cours.
+      
         return $this->hasMany(Course::class);
     }
 

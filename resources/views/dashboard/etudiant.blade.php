@@ -883,15 +883,15 @@
                                     @foreach($coursesToday as $course)
                                     <tr>
                                         <td><strong>{{ $course->title }}</strong></td>
-                                       @if($course->formations->isNotEmpty())
-                                                            <td class="course-formation">
-                                                                @foreach($course->formations as $formation)
-                                                                    <span class="badge bg-secondary">{{ $formation->title }}</span>
-                                                                @endforeach
-                                                            </td>
-                                                        @else
-                                                            -
-                                                        @endif
+                                      @if($course->formations?->isNotEmpty()) // Zidna ? hna
+    <td class="course-formation">
+        @foreach($course->formations as $formation)
+            <span class="badge bg-secondary">{{ $formation->title }}</span>
+        @endforeach
+    </td>
+@else
+    <td>-</td>
+@endif
                                         <td>
                                             <span class="badge bg-secondary">{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }}</span>
                                             -

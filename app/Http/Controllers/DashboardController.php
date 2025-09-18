@@ -400,25 +400,26 @@ class DashboardController extends Controller
         ->where('access_restricted', false)
         ->pluck('formation_id');
 
-    $today = Carbon::today();
-    $coursesToday = Course::whereDate('course_date', $today)
-        ->orderBy('start_time', 'asc')
-        ->whereHas('formations', function ($q) use ($enrolledFormationIds) {
-            $q->whereIn('formations.id', $enrolledFormationIds);
-        })
-        ->with(['consultant', 'formations' => function ($q) use ($enrolledFormationIds) {
-            $q->whereIn('formations.id', $enrolledFormationIds);
-        }])
-        ->get();
+  $today = Carbon::today();
+$coursesToday = Course::whereDate('course_date', $today)
+    ->orderBy('start_time', 'asc')
+    // Nta daba katsta3mel l'relationship l's7i7a (formation)
+    ->whereHas('formation', function ($q) use ($enrolledFormationIds) { 
+        $q->whereIn('formations.id', $enrolledFormationIds);
+    })
+    ->with(['consultant', 'formation' => function ($q) use ($enrolledFormationIds) { // Hna tbedlat 'formations' l 'formation'
+        $q->whereIn('formations.id', $enrolledFormationIds);
+    }])
+    ->get();
 
-    // NOUVELLE: Récupérer les récentes reprogrammations de cours
-    $recentCourseReschedules = CourseReschedule::whereHas('course.formations', function ($q) use ($enrolledFormationIds) {
-            $q->whereIn('formations.id', $enrolledFormationIds);
-        })
-        ->orderBy('created_at', 'desc')
-        ->take(5)
-        ->with('course')
-        ->get();
+// Zid t3dil l'nafs l'mouchkil f had l'partie dyal CourseReschedule
+$recentCourseReschedules = CourseReschedule::whereHas('course.formation', function ($q) use ($enrolledFormationIds) { // CHANGE: 'course.formations' -> 'course.formation'
+        $q->whereIn('formations.id', $enrolledFormationIds);
+    })
+    ->orderBy('created_at', 'desc')
+    ->take(5)
+    ->with('course')
+    ->get();
 
     // Données pour les graphiques
     $paymentStatusDistribution = Payment::whereHas('inscription', function($q) use ($user) {
