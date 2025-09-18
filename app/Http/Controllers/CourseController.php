@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\Formation;
+use App\Models\Module; // Zidna had l'import
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -171,6 +172,9 @@ class CourseController extends Controller
         'documents' => $documentPaths
     ]);
 
+    // 🔥 Had hiya l'partie l'jdida: N-update automatically l'progress dyal l'module
+    $this->updateModuleProgress($course->module_id);
+
     // La ligne suivante a été supprimée car la relation belongsToMany n'existe plus
     // $course->formations()->sync($request->formation_ids);
     
@@ -237,6 +241,9 @@ class CourseController extends Controller
             ];
         }
     }
+
+    // 🔥 Kan7sab l'old module_id 9bal ma n-update
+    $oldModuleId = $course->module_id;
     
     // 2. Update the Course: Kan7aydouch ghir 'consultant_id' w kanzidou 'formation_id' w 'module_id'
     $course->update([
@@ -253,6 +260,16 @@ class CourseController extends Controller
         'documents' => $documentPaths
     ]);
 
+    // 🔥 Had hiya l'partie l'jdida: N-update progress for both old and new modules
+    if ($oldModuleId != $request->module_id) {
+        // Ila baddal l'module, kan-update l'progress dyal both modules
+        $this->updateModuleProgress($oldModuleId); // L'module l'9dim
+        $this->updateModuleProgress($request->module_id); // L'module l'jdid
+    } else {
+        // Ila bqa f nafs l'module, kan-update ghir hadak
+        $this->updateModuleProgress($request->module_id);
+    }
+
     // 3. Kan7aydou sync() : Had l'ligne ma bqatsh 3andha m3na 7itach db l'course belongsTo formation wahda.
     // $course->formations()->sync($request->formation_ids);
     
@@ -265,6 +282,9 @@ class CourseController extends Controller
      */
     public function destroy(Course $course)
     {
+        // 🔥 Kan7sab l'module_id 9bal ma n7ayd l'course
+        $moduleId = $course->module_id;
+
         if ($course->documents) {
             foreach ($course->documents as $document) {
                 if (isset($document['path'])) {
@@ -274,9 +294,37 @@ class CourseController extends Controller
         }
         
         $course->delete();
+
+        // 🔥 N-update l'progress dyal l'module ba3d ma 7ayydna l'course
+        if ($moduleId) {
+            $this->updateModuleProgress($moduleId);
+        }
         
         return redirect()->route('courses.index')
             ->with('success', 'Course deleted successfully.');
+    }
+
+    /**
+     * 🔥 Had hiya l'method l'jdida: T-update automatically l'progress dyal l'module
+     */
+    private function updateModuleProgress($moduleId)
+    {
+        // Kanjib l'module men database
+        $module = Module::find($moduleId);
+        
+        // Ila ma l9inach l'module aw ma kandiroch number_seance, ma ndirou walou
+        if (!$module || !$module->number_seance || $module->number_seance <= 0) {
+            return;
+        }
+
+        // Kan7sab 3adad les courses li daru f had l'module
+        $coursesCount = Course::where('module_id', $moduleId)->count();
+
+        // Kan7sab l'progress: (3adad les courses / number_seance) * 100
+        $progress = min(100, round(($coursesCount / $module->number_seance) * 100, 2));
+
+        // Kan-update l'progress f l'database
+        $module->update(['progress' => $progress]);
     }
     
     /**

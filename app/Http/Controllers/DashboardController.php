@@ -400,28 +400,81 @@ class DashboardController extends Controller
         ->where('access_restricted', false)
         ->pluck('formation_id');
 
-  $today = Carbon::today();
-$coursesToday = Course::whereDate('course_date', $today)
-    ->orderBy('start_time', 'asc')
-    // Nta daba katsta3mel l'relationship l's7i7a (formation)
-    ->whereHas('formation', function ($q) use ($enrolledFormationIds) { 
-        $q->whereIn('formations.id', $enrolledFormationIds);
-    })
-    ->with(['consultant', 'formation' => function ($q) use ($enrolledFormationIds) { // Hna tbedlat 'formations' l 'formation'
-        $q->whereIn('formations.id', $enrolledFormationIds);
-    }])
-    ->get();
+    $today = Carbon::today();
+    $coursesToday = Course::whereDate('course_date', $today)
+        ->orderBy('start_time', 'asc')
+        // Nta daba katsta3mel l'relationship l's7i7a (formation)
+        ->whereHas('formation', function ($q) use ($enrolledFormationIds) { 
+            $q->whereIn('formations.id', $enrolledFormationIds);
+        })
+        ->with(['consultant', 'formation' => function ($q) use ($enrolledFormationIds) { // Hna tbedlat 'formations' l 'formation'
+            $q->whereIn('formations.id', $enrolledFormationIds);
+        }])
+        ->get();
 
-// Zid t3dil l'nafs l'mouchkil f had l'partie dyal CourseReschedule
-$recentCourseReschedules = CourseReschedule::whereHas('course.formation', function ($q) use ($enrolledFormationIds) { // CHANGE: 'course.formations' -> 'course.formation'
-        $q->whereIn('formations.id', $enrolledFormationIds);
-    })
-    ->orderBy('created_at', 'desc')
-    ->take(5)
-    ->with('course')
-    ->get();
+    // Zid t3dil l'nafs l'mouchkil f had l'partie dyal CourseReschedule
+    $recentCourseReschedules = CourseReschedule::whereHas('course.formation', function ($q) use ($enrolledFormationIds) { // CHANGE: 'course.formations' -> 'course.formation'
+            $q->whereIn('formations.id', $enrolledFormationIds);
+        })
+        ->orderBy('created_at', 'desc')
+        ->take(5)
+        ->with('course')
+        ->get();
 
-    // Données pour les graphiques
+    // 🔥 HAD HIYA L'PARTIE L'JDIDA: Jib les formations m3a modules o progress dyalhom
+    $formationsWithModulesProgress = Formation::whereIn('id', $enrolledFormationIds)
+        ->with(['modules' => function($query) {
+            $query->orderBy('order', 'asc');
+        }])
+        ->get()
+        ->map(function($formation) {
+            // Kan-calculate l'overall progress dyal l'formation
+            $totalModules = $formation->modules->count();
+            $totalProgress = $formation->modules->sum('progress');
+            $formation->overall_progress = $totalModules > 0 ? round($totalProgress / $totalModules, 2) : 0;
+            
+            // Kan-prepare data dyal modules for charts
+            $formation->modules_chart_data = [
+                'labels' => $formation->modules->pluck('title')->toArray(),
+                'data' => $formation->modules->pluck('progress')->toArray(),
+                'backgroundColor' => $formation->modules->map(function($module) {
+                    // Kan-choose color based 3la progress
+                    if ($module->progress >= 80) return '#28a745'; // Green - Excellent
+                    elseif ($module->progress >= 60) return '#17a2b8'; // Blue - Good  
+                    elseif ($module->progress >= 40) return '#ffc107'; // Yellow - Average
+                    elseif ($module->progress >= 20) return '#fd7e14'; // Orange - Low
+                    else return '#dc3545'; // Red - Very Low
+                })->toArray(),
+                'borderColor' => '#fff',
+                'borderWidth' => 2
+            ];
+            
+            return $formation;
+        });
+
+    // 🔥 Kan-prepare global modules progress chart (ga3 les modules dyal ga3 les formations)
+    $allModules = $formationsWithModulesProgress->flatMap(function($formation) {
+        return $formation->modules->map(function($module) use ($formation) {
+            $module->formation_title = $formation->title;
+            return $module;
+        });
+    });
+
+    $globalModulesChart = [
+        'labels' => $allModules->map(function($module) {
+            return $module->formation_title . ' - ' . $module->title;
+        })->toArray(),
+        'data' => $allModules->pluck('progress')->toArray(),
+        'backgroundColor' => $allModules->map(function($module) {
+            if ($module->progress >= 80) return '#28a745';
+            elseif ($module->progress >= 60) return '#17a2b8';
+            elseif ($module->progress >= 40) return '#ffc107';
+            elseif ($module->progress >= 20) return '#fd7e14';
+            else return '#dc3545';
+        })->toArray(),
+    ];
+
+    // Données pour les graphiques (existing code)
     $paymentStatusDistribution = Payment::whereHas('inscription', function($q) use ($user) {
             $q->where('user_id', $user->id);
         })
@@ -453,16 +506,8 @@ $recentCourseReschedules = CourseReschedule::whereHas('course.formation', functi
     ];
     $inscriptionChartBackgroundColors = $inscriptionStatusDistribution->pluck('status')->map(fn($status) => $inscriptionChartColors[$status] ?? '#007bff')->toArray();
 
-    $progressByFormation = Inscription::where('user_id', $user->id)
-        ->whereIn('status', ['active', 'completed'])
-        ->with(['formation.courses'])
-        ->get()
-        ->map(function($inscription) {
-            $totalCourses = $inscription->formation->courses->count();
-            $completedCourses = 0; // Requires logic to track completed courses
-            $inscription->progress = $totalCourses > 0 ? ($completedCourses / $totalCourses) * 100 : 0;
-            return $inscription;
-        });
+    // 🔥 Updated progressByFormation bach nsta3mlo formations m3a modules
+    $progressByFormation = $formationsWithModulesProgress;
 
     return [
         'activeInscriptions' => $currentInscriptions,
@@ -496,6 +541,15 @@ $recentCourseReschedules = CourseReschedule::whereHas('course.formation', functi
         'inscriptionChartLabels' => $inscriptionChartLabels,
         'inscriptionChartData' => $inscriptionChartData,
         'inscriptionChartBackgroundColors' => $inscriptionChartBackgroundColors,
+        
+        // 🔥 NEW DATA FOR MODULES PROGRESS
+        'formationsWithModulesProgress' => $formationsWithModulesProgress,
+        'globalModulesChart' => $globalModulesChart,
+        'totalModulesCount' => $allModules->count(),
+        'averageModuleProgress' => $allModules->count() > 0 ? round($allModules->avg('progress'), 2) : 0,
+        'completedModulesCount' => $allModules->where('progress', 100)->count(),
+        'inProgressModulesCount' => $allModules->whereBetween('progress', [1, 99])->count(),
+        'notStartedModulesCount' => $allModules->where('progress', 0)->count(),
     ];
 }
    private function getFinanceDashboardData(Request $request): array

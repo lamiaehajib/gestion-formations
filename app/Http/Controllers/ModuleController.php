@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Formation;
 use App\Models\Inscription;
 use App\Models\Module;
+use App\Models\Course; // Zidna had l'import
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -210,6 +211,9 @@ public function update(Request $request, Module $module)
         'content' => $contentArray,
         'number_seance' => $validatedData['number_seance'] ?? null, // 👈 Zidna had l'parti
     ]));
+
+    // 👈 🔥 Had hiya l'partie l'jdida: N-recalculer l'progress automatically
+    $this->updateModuleProgressAutomatically($module);
     
     // Return all modules for the formation to re-render the list
     $formation = Formation::find($module->formation_id);
@@ -221,6 +225,27 @@ public function update(Request $request, Module $module)
         'modules' => $formation->modules->sortBy('order')->values()
     ]);
 }
+
+    /**
+     * 🔥 Had hiya l'method l'jdida: T-calculate automatically l'progress based 3la courses created
+     */
+    public function updateModuleProgressAutomatically(Module $module)
+    {
+        // Ila ma kan 3andou number_seance, ma n9adrouch n-calculate progress
+        if (!$module->number_seance || $module->number_seance <= 0) {
+            return;
+        }
+
+        // Kan7sab 3adad les courses li daru f had l'module
+        $coursesCount = Course::where('module_id', $module->id)->count();
+
+        // Kan7sab l'progress: (3adad les courses / number_seance) * 100
+        $progress = min(100, round(($coursesCount / $module->number_seance) * 100, 2));
+
+        // Kan-update l'progress f l'database
+        $module->update(['progress' => $progress]);
+    }
+
     /**
      * Remove the specified module from storage.
      */
@@ -231,7 +256,7 @@ public function update(Request $request, Module $module)
     }
 
     /**
-     * Handle the progress update.
+     * Handle the progress update (Manual update - kept for manual overrides if needed).
      */
    public function updateProgress(Request $request, Module $module)
 {

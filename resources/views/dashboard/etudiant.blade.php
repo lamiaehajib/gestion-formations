@@ -16,8 +16,8 @@
         --accent-orange: #F5B041; /* Warning/pending states */
         --accent-red: #E74C3C; /* Danger/alerts */
         --accent-purple: #8E44AD; /* A new accent color for variety */
- --union-dark-blu: #D32F2F;
-  --union-light-ble: #C2185B; 
+        --union-dark-blu: #D32F2F;
+        --union-light-ble: #C2185B; 
         /* Neutral Colors */
         --background-light: #F8F9FA; /* Very light background for overall dashboard */
         --card-background: #FFFFFF; /* Pure white for cards */
@@ -604,8 +604,8 @@
         padding: 12px 30px;
         border-radius: 30px;
         font-weight: 600;
-         background: linear-gradient(90deg, var(--primary-blue), var(--primary-dark-blue));
-         border: #C2185B !important;
+        background: linear-gradient(90deg, var(--primary-blue), var(--primary-dark-blue));
+        border: #C2185B !important;
     }
 
     /* Smaller empty state for payment sub-sections */
@@ -652,10 +652,10 @@
     }
 
     .btn-outline-primary {
-       border: #C2185B !important;
-        color: #fff;
-         background: linear-gradient(90deg, var(--primary-blue), var(--primary-dark-blue));
-          border-radius: 12px;
+        border: 1px solid var(--primary-dark-blue);
+        color: var(--primary-dark-blue);
+        background: transparent;
+        border-radius: 12px;
     }
     .btn-outline-primary:hover {
         background-color: var(--primary-blue);
@@ -856,6 +856,63 @@
             </div>
         </div>
 
+        <h2 class="chart-title mt-5 mb-4" style="text-align: left; padding-left: 0; transform: none; display: flex; align-items: center; gap: 15px;">
+            <i class="fa-solid fa-bar-chart" style="color: var(--primary-blue); font-size: 1.1em;"></i>
+            Statistiques de Progression des Modules
+        </h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-icon" style="background: linear-gradient(45deg, #17a2b8, #138496);"><i class="fas fa-cubes"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" style="background: linear-gradient(45deg, #17a2b8, #138496); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalModulesCount }}</div>
+                        <div class="stat-label">Modules au Total</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-icon" style="background: linear-gradient(45deg, #28a745, #1e7e34);"><i class="fas fa-percent"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" style="background: linear-gradient(45deg, #28a745, #1e7e34); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $averageModuleProgress }}%</div>
+                        <div class="stat-label">Progrès Moyen</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-icon" style="background: linear-gradient(45deg, #ffc107, #d39e00);"><i class="fas fa-spinner"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" style="background: linear-gradient(45deg, #ffc107, #d39e00); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $inProgressModulesCount }}</div>
+                        <div class="stat-label">Modules En Cours</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-icon" style="background: linear-gradient(45deg, #dc3545, #bd2130);"><i class="fas fa-clock"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" style="background: linear-gradient(45deg, #dc3545, #bd2130); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $notStartedModulesCount }}</div>
+                        <div class="stat-label">Modules Non Commencés</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if($formationsWithModulesProgress->isNotEmpty() && $totalModulesCount > 0)
+        <div class="row">
+            <div class="col-lg-12 mb-4">
+                <div class="card-base chart-card">
+                    <h3 class="chart-title"><i class="fa-solid fa-list-check"></i> Progression Détaillée de Tous Mes Modules</h3>
+                    <div class="chart-container" style="height: auto;">
+                        <canvas id="globalModulesChart" style="height: {{ max(400, $totalModulesCount * 45) }}px !important;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
         <div class="row">
             <div class="col-lg-8 mb-4">
                 <div class="card-base">
@@ -883,15 +940,13 @@
                                     @foreach($coursesToday as $course)
                                     <tr>
                                         <td><strong>{{ $course->title }}</strong></td>
-                                      @if($course->formations?->isNotEmpty()) // Zidna ? hna
-    <td class="course-formation">
-        @foreach($course->formations as $formation)
-            <span class="badge bg-secondary">{{ $formation->title }}</span>
-        @endforeach
-    </td>
-@else
-    <td>-</td>
-@endif
+                                       
+                                        <td class="course-formation">
+                                            
+                                            <span class="badge bg-secondary">{{ $course->formation->title }}</span>
+                                        
+                                        </td>
+
                                         <td>
                                             <span class="badge bg-secondary">{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }}</span>
                                             -
@@ -1000,6 +1055,53 @@
             </div>
         </div>
 
+        @if($formationsWithModulesProgress->isNotEmpty())
+        <h2 class="chart-title mt-5 mb-4" style="text-align: left; padding-left: 0; transform: none; display: flex; align-items: center; gap: 15px;">
+            <i class="fa-solid fa-laptop-code" style="color: var(--primary-blue); font-size: 1.1em;"></i>
+            Progression Détaillée par Formation
+        </h2>
+        <div class="row">
+            @foreach($formationsWithModulesProgress as $formation)
+            <div class="col-lg-12 mb-4">
+                <div class="card-base list-card">
+                    <h4 class="chart-title" style="font-size: 1.5rem; text-align: left; padding-left: 0;"><i class="fa-solid fa-book-open"></i> {{ $formation->title }}</h4>
+                    <div class="d-flex align-items-center mb-4">
+                        <strong class="me-3" style="min-width: 100px; color: var(--text-dark);">Progrès Global :</strong>
+                        <div class="progress flex-grow-1" style="height: 25px; border: 1px solid var(--border-light);">
+                            <div class="progress-bar {{ $formation->overall_progress == 100 ? 'bg-success' : '' }}" role="progressbar" style="width: {{ $formation->overall_progress }}%;" aria-valuenow="{{ $formation->overall_progress }}" aria-valuemin="0" aria-valuemax="100">
+                                {{ $formation->overall_progress }}%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    @if($formation->modules->isNotEmpty())
+                        <h5 class="mt-4 mb-3" style="color: var(--text-medium); font-weight: 600;">Progression des Modules Internes</h5>
+                        <div class="chart-container" style="height: auto;">
+                            <canvas id="moduleChart-{{ $formation->id }}" style="height: {{ max(250, $formation->modules->count() * 40) }}px !important;"></canvas>
+                        </div>
+                    @else
+                        <div class="empty-state empty-state-small">
+                            <div class="icon" style="font-size: 2.5rem;"><i class="fa-solid fa-box-open"></i></div>
+                            <p>Aucun module défini pour cette formation. Progrès non calculable.</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+            @endforeach
+        </div>
+        @else
+        <div class="row">
+            <div class="col-lg-12 mb-4">
+                <div class="card-base">
+                    <div class="empty-state">
+                        <div class="icon"><i class="fa-solid fa-xmark"></i></div>
+                        <p>Vous n'êtes inscrit à aucune formation active pour afficher le progrès des modules.</p>
+                        <a href="{{ route('formations.index') }}" class="btn btn-primary">Découvrir les formations</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
         <div class="row">
             <div class="col-lg-6 mb-4">
                 <div class="card-base">
@@ -1019,7 +1121,7 @@
                                         <th>Formation</th>
                                         <th>Statut</th>
                                         <th>Payé</th>
-                                        <th>Dû</th>                                        
+                                        <th>Dû</th> 
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -1146,11 +1248,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        
-
-           
         </div>
     </div>
 </div>
@@ -1300,5 +1397,174 @@
             },
         });
     }
+
+
+    // 🔥 NEW: Global Modules Progress Chart (Horizontal Bar Chart)
+    const globalModulesCtx = document.getElementById('globalModulesChart');
+    if (globalModulesCtx) {
+        new Chart(globalModulesCtx, {
+            type: 'bar',
+            data: {
+                labels: @json($globalModulesChart['labels']),
+                datasets: [{
+                    label: 'Progrès (%)',
+                    data: @json($globalModulesChart['data']),
+                    backgroundColor: @json($globalModulesChart['backgroundColor']),
+                    borderColor: 'var(--text-dark)', // Border color for contrast
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    minBarLength: 5, // Make small bars visible
+                }],
+            },
+            options: {
+                indexAxis: 'y', // Horizontal Bar Chart
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: "var(--text-dark)",
+                        titleColor: "#fff",
+                        bodyColor: "#fff",
+                        borderColor: 'var(--primary-light-blue)',
+                        borderWidth: 1,
+                        xPadding: 15,
+                        yPadding: 15,
+                        displayColors: false,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ' + context.parsed.x + '%';
+                            }
+                        }
+                    },
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Pourcentage de Progrès',
+                            color: 'var(--text-medium)',
+                            font: { weight: '600', size: 14 }
+                        },
+                        grid: {
+                            display: true,
+                            drawOnChartArea: true,
+                            drawTicks: false
+                        },
+                        ticks: {
+                            callback: function(value, index, ticks) {
+                                return value + '%';
+                            },
+                            color: 'var(--text-medium)'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false,
+                        },
+                        ticks: {
+                            color: 'var(--text-dark)',
+                            font: { size: 13, weight: '500' },
+                            autoSkip: false,
+                            maxRotation: 0,
+                            minRotation: 0
+                        }
+                    }
+                }
+            },
+        });
+    }
+
+    // 🔥 NEW: Individual Module Progress Charts (Loop for each formation)
+    const formationsModulesData = @json($formationsWithModulesProgress->keyBy('id')->map(fn($f) => $f->modules_chart_data));
+
+    Object.keys(formationsModulesData).forEach(formationId => {
+        const data = formationsModulesData[formationId];
+        const ctx = document.getElementById(`moduleChart-${formationId}`);
+
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Progrès du Module (%)',
+                        data: data.data,
+                        backgroundColor: data.backgroundColor,
+                        borderColor: data.borderColor,
+                        borderWidth: data.borderWidth,
+                        borderRadius: 4,
+                        minBarLength: 5,
+                    }],
+                },
+                options: {
+                    indexAxis: 'y', // Horizontal Bar Chart
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: "var(--text-dark)",
+                            titleColor: "#fff",
+                            bodyColor: "#fff",
+                            borderColor: 'var(--primary-light-blue)',
+                            borderWidth: 1,
+                            xPadding: 15,
+                            yPadding: 15,
+                            displayColors: false,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed.x + '%';
+                                }
+                            }
+                        },
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Pourcentage de Progrès',
+                                color: 'var(--text-medium)',
+                                font: { weight: '600', size: 12 }
+                            },
+                            grid: {
+                                display: true,
+                                drawOnChartArea: true,
+                                drawTicks: false
+                            },
+                            ticks: {
+                                callback: function(value, index, ticks) {
+                                    return value + '%';
+                                },
+                                color: 'var(--text-medium)'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                display: false,
+                            },
+                            ticks: {
+                                color: 'var(--text-dark)',
+                                font: { size: 12, weight: '500' },
+                                autoSkip: false,
+                                maxRotation: 0,
+                                minRotation: 0
+                            }
+                        }
+                    }
+                },
+            });
+        }
+    });
 </script>
 @endpush
