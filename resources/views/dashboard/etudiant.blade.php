@@ -16,8 +16,8 @@
         --accent-orange: #F5B041; /* Warning/pending states */
         --accent-red: #E74C3C; /* Danger/alerts */
         --accent-purple: #8E44AD; /* A new accent color for variety */
-        --union-dark-blu: #D32F2F;
-        --union-light-ble: #C2185B; 
+ --union-dark-blu: #D32F2F;
+  --union-light-ble: #C2185B; 
         /* Neutral Colors */
         --background-light: #F8F9FA; /* Very light background for overall dashboard */
         --card-background: #FFFFFF; /* Pure white for cards */
@@ -604,8 +604,8 @@
         padding: 12px 30px;
         border-radius: 30px;
         font-weight: 600;
-        background: linear-gradient(90deg, var(--primary-blue), var(--primary-dark-blue));
-        border: #C2185B !important;
+         background: linear-gradient(90deg, var(--primary-blue), var(--primary-dark-blue));
+         border: #C2185B !important;
     }
 
     /* Smaller empty state for payment sub-sections */
@@ -652,10 +652,10 @@
     }
 
     .btn-outline-primary {
-        border: 1px solid var(--primary-dark-blue);
-        color: var(--primary-dark-blue);
-        background: transparent;
-        border-radius: 12px;
+       border: #C2185B !important;
+        color: #fff;
+         background: linear-gradient(90deg, var(--primary-blue), var(--primary-dark-blue));
+          border-radius: 12px;
     }
     .btn-outline-primary:hover {
         background-color: var(--primary-blue);
@@ -814,6 +814,8 @@
             </form>
         </div>
 
+        
+
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-content">
@@ -856,63 +858,192 @@
             </div>
         </div>
 
-        <h2 class="chart-title mt-5 mb-4" style="text-align: left; padding-left: 0; transform: none; display: flex; align-items: center; gap: 15px;">
-            <i class="fa-solid fa-bar-chart" style="color: var(--primary-blue); font-size: 1.1em;"></i>
-            Statistiques de Progression des Modules
-        </h2>
+
+        <!-- 🔥 NEW: Modules Progress Statistics Cards -->
         <div class="stats-grid">
-            <div class="stat-card">
+            <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                 <div class="stat-content">
-                    <div class="stat-icon" style="background: linear-gradient(45deg, #17a2b8, #138496);"><i class="fas fa-cubes"></i></div>
+                    <div class="stat-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-book"></i></div>
                     <div class="stat-info">
-                        <div class="stat-number" style="background: linear-gradient(45deg, #17a2b8, #138496); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalModulesCount }}</div>
-                        <div class="stat-label">Modules au Total</div>
+                        <div class="stat-number" style="background: linear-gradient(45deg, #fff, #f8f9fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: #fff;">{{ $totalModulesCount ?? 0 }}</div>
+                        <div class="stat-label" style="color: rgba(255,255,255,0.9);">Total Modules</div>
                     </div>
                 </div>
             </div>
 
-            <div class="stat-card">
+            <div class="stat-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
                 <div class="stat-content">
-                    <div class="stat-icon" style="background: linear-gradient(45deg, #28a745, #1e7e34);"><i class="fas fa-percent"></i></div>
+                    <div class="stat-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-check-circle"></i></div>
                     <div class="stat-info">
-                        <div class="stat-number" style="background: linear-gradient(45deg, #28a745, #1e7e34); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $averageModuleProgress }}%</div>
-                        <div class="stat-label">Progrès Moyen</div>
+                        <div class="stat-number" style="background: linear-gradient(45deg, #fff, #f8f9fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: #fff;">{{ $completedModulesCount ?? 0 }}</div>
+                        <div class="stat-label" style="color: rgba(255,255,255,0.9);">Modules Terminés</div>
                     </div>
                 </div>
             </div>
 
-            <div class="stat-card">
+            <div class="stat-card" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
                 <div class="stat-content">
-                    <div class="stat-icon" style="background: linear-gradient(45deg, #ffc107, #d39e00);"><i class="fas fa-spinner"></i></div>
+                    <div class="stat-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-spinner"></i></div>
                     <div class="stat-info">
-                        <div class="stat-number" style="background: linear-gradient(45deg, #ffc107, #d39e00); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $inProgressModulesCount }}</div>
-                        <div class="stat-label">Modules En Cours</div>
+                        <div class="stat-number" style="background: linear-gradient(45deg, #fff, #f8f9fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: #fff;">{{ $inProgressModulesCount ?? 0 }}</div>
+                        <div class="stat-label" style="color: rgba(255,255,255,0.9);">En Cours</div>
                     </div>
                 </div>
             </div>
 
-            <div class="stat-card">
+            <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                 <div class="stat-content">
-                    <div class="stat-icon" style="background: linear-gradient(45deg, #dc3545, #bd2130);"><i class="fas fa-clock"></i></div>
+                    <div class="stat-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-chart-line"></i></div>
                     <div class="stat-info">
-                        <div class="stat-number" style="background: linear-gradient(45deg, #dc3545, #bd2130); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $notStartedModulesCount }}</div>
-                        <div class="stat-label">Modules Non Commencés</div>
+                        <div class="stat-number" style="background: linear-gradient(45deg, #fff, #f8f9fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: #fff;">{{ $averageModuleProgress ?? 0 }}%</div>
+                        <div class="stat-label" style="color: rgba(255,255,255,0.9);">Progression Moyenne</div>
                     </div>
                 </div>
             </div>
         </div>
-        @if($formationsWithModulesProgress->isNotEmpty() && $totalModulesCount > 0)
+
+        <!-- 🔥 NEW: Global Modules Progress Chart -->
         <div class="row">
-            <div class="col-lg-12 mb-4">
+            <div class="col-12 mb-4">
                 <div class="card-base chart-card">
-                    <h3 class="chart-title"><i class="fa-solid fa-list-check"></i> Progression Détaillée de Tous Mes Modules</h3>
-                    <div class="chart-container" style="height: auto;">
-                        <canvas id="globalModulesChart" style="height: {{ max(400, $totalModulesCount * 45) }}px !important;"></canvas>
+                    <h3 class="chart-title"><i class="fa-solid fa-chart-bar"></i> Vue d'ensemble - Progression de tous mes Modules</h3>
+                    @if(isset($globalModulesChart) && !empty($globalModulesChart['data']) && array_sum($globalModulesChart['data']) > 0)
+                        <div class="chart-container" style="height: 400px;">
+                            <canvas id="globalModulesChart"></canvas>
+                        </div>
+                    @else
+                        <div class="empty-state">
+                            <div class="icon"><i class="fa-solid fa-chart-bar"></i></div>
+                            <p>Aucun module disponible pour afficher la progression.</p>
+                            <a href="{{ route('formations.index') }}" class="btn btn-outline-primary">Découvrir nos formations</a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <!-- 🔥 NEW: Formations with Modules Progress -->
+        @if(isset($formationsWithModulesProgress) && $formationsWithModulesProgress->count() > 0)
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="card-base">
+                    <h3 class="chart-title"><i class="fa-solid fa-graduation-cap"></i> Mes Formations & Progression des Modules</h3>
+                    
+                    <div class="formations-accordion" style="margin-top: 20px;">
+                        @foreach($formationsWithModulesProgress as $index => $formation)
+                        <div class="formation-card" style="margin-bottom: 25px; border: 2px solid var(--border-light); border-radius: 16px; overflow: hidden; background: var(--card-background); box-shadow: var(--shadow-sm);">
+                            <!-- Formation Header -->
+                            <div class="formation-header" style="background: linear-gradient(135deg, var(--union-dark-blu), var(--union-light-ble)); padding: 20px; cursor: pointer;" 
+                                 onclick="toggleFormation({{ $index }})">
+                                <div style="display: flex; justify-content: between; align-items: center; color: white;">
+                                    <div style="flex-grow: 1;">
+                                        <h4 style="margin: 0; font-weight: 700; font-size: 1.3rem;">
+                                            <i class="fas fa-book-open" style="margin-right: 10px;"></i>
+                                            {{ $formation->title }}
+                                        </h4>
+                                        <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 0.95rem;">
+                                            {{ $formation->modules->count() }} modules - Progression globale: {{ $formation->overall_progress }}%
+                                        </p>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 15px;">
+                                        <!-- Overall Progress Circle -->
+                                        <div style="position: relative; width: 60px; height: 60px;">
+                                            <div style="width: 60px; height: 60px; border-radius: 50%; background: conic-gradient(#fff 0deg, #fff {{ $formation->overall_progress * 3.6 }}deg, rgba(255,255,255,0.3) {{ $formation->overall_progress * 3.6 }}deg, rgba(255,255,255,0.3) 360deg); display: flex; align-items: center; justify-content: center;">
+                                                <div style="width: 45px; height: 45px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;">
+                                                    <span style="font-weight: 700; font-size: 0.8rem; color: white;">{{ $formation->overall_progress }}%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Toggle Arrow -->
+                                        <i class="fas fa-chevron-down" id="arrow{{ $index }}" style="font-size: 1.2rem; transition: transform 0.3s ease; color: rgba(255,255,255,0.8);"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Formation Content (Collapsible) -->
+                            <div id="formationContent{{ $index }}" style="display: {{ $index === 0 ? 'block' : 'none' }}; padding: 25px;">
+                                <div class="row">
+                                    <!-- Left side: Modules Chart -->
+                                    <div class="col-lg-5 mb-3">
+                                        <div style="background: var(--background-light); border-radius: 12px; padding: 20px; text-align: center;">
+                                            <h6 style="color: var(--text-dark); margin-bottom: 20px; font-weight: 600;">Répartition des modules</h6>
+                                            <div style="height: 250px; position: relative;">
+                                                <canvas id="formationChart{{ $index }}"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Right side: Modules List -->
+                                    <div class="col-lg-7">
+                                        <h6 style="color: var(--text-dark); margin-bottom: 15px; font-weight: 600;">
+                                            <i class="fas fa-list-ul" style="margin-right: 8px; color: var(--primary-blue);"></i>
+                                            Détails des Modules
+                                        </h6>
+                                        <div class="modules-list" style="max-height: 350px; overflow-y: auto;">
+                                            @foreach($formation->modules as $moduleIndex => $module)
+                                            <div class="module-item" style="background: var(--card-background); border: 1px solid var(--border-light); border-radius: 12px; padding: 15px; margin-bottom: 12px; transition: all 0.3s ease;">
+                                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                                    <div style="flex-grow: 1;">
+                                                        <h6 style="margin: 0 0 8px 0; color: var(--text-dark); font-weight: 600; font-size: 1rem;">
+                                                            {{ $module->title }}
+                                                        </h6>
+                                                        @if($module->user)
+                                                        <p style="margin: 0 0 10px 0; color: var(--text-medium); font-size: 0.85rem;">
+                                                            <i class="fas fa-user-tie" style="margin-right: 5px; color: var(--primary-blue);"></i>
+                                                            {{ $module->user->name }}
+                                                        </p>
+                                                        @endif
+                                                        
+                                                        <!-- Progress Bar -->
+                                                        <div style="margin-bottom: 8px;">
+                                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                                                <span style="color: var(--text-medium); font-size: 0.8rem; font-weight: 500;">Progression</span>
+                                                                <span style="color: var(--text-dark); font-size: 0.8rem; font-weight: 600;">{{ $module->progress }}%</span>
+                                                            </div>
+                                                            <div style="width: 100%; height: 8px; background: var(--border-light); border-radius: 4px; overflow: hidden;">
+                                                                <div style="height: 100%; background: {{ $module->progress >= 80 ? 'linear-gradient(90deg, #28a745, #20c997)' : ($module->progress >= 60 ? 'linear-gradient(90deg, #17a2b8, #20c997)' : ($module->progress >= 40 ? 'linear-gradient(90deg, #ffc107, #fd7e14)' : ($module->progress >= 20 ? 'linear-gradient(90deg, #fd7e14, #dc3545)' : 'linear-gradient(90deg, #dc3545, #c82333)'))) }}; width: {{ $module->progress }}%; transition: width 0.4s ease; border-radius: 4px;"></div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Module Details -->
+                                                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                                            @if($module->number_seance)
+                                                            <div style="display: flex; align-items: center; color: var(--text-medium); font-size: 0.8rem;">
+                                                                <i class="fas fa-calendar-day" style="margin-right: 5px; color: var(--accent-orange);"></i>
+                                                                {{ \App\Models\Course::where('module_id', $module->id)->count() }}/{{ $module->number_seance }} séances
+                                                            </div>
+                                                            @endif
+                                                            
+                                                            @if($module->duration_hours)
+                                                            <div style="display: flex; align-items: center; color: var(--text-medium); font-size: 0.8rem;">
+                                                                <i class="fas fa-clock" style="margin-right: 5px; color: var(--accent-green);"></i>
+                                                                {{ $module->duration_hours }}h
+                                                            </div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Status Badge -->
+                                                    <div style="margin-left: 15px;">
+                                                        <span class="badge {{ $module->status === 'published' ? 'bg-success' : 'bg-secondary' }}" style="font-size: 0.7rem; padding: 4px 8px;">
+                                                            {{ ucfirst($module->status) }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
         </div>
         @endif
+
         <div class="row">
             <div class="col-lg-8 mb-4">
                 <div class="card-base">
@@ -940,12 +1071,12 @@
                                     @foreach($coursesToday as $course)
                                     <tr>
                                         <td><strong>{{ $course->title }}</strong></td>
-                                       
-                                        <td class="course-formation">
-                                            
-                                            <span class="badge bg-secondary">{{ $course->formation->title }}</span>
-                                        
-                                        </td>
+                                     
+    <td class="course-formation">
+        
+            <span class="badge bg-secondary">{{ $course->formation->title }}</span>
+    
+    </td>
 
                                         <td>
                                             <span class="badge bg-secondary">{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }}</span>
@@ -1055,53 +1186,6 @@
             </div>
         </div>
 
-        @if($formationsWithModulesProgress->isNotEmpty())
-        <h2 class="chart-title mt-5 mb-4" style="text-align: left; padding-left: 0; transform: none; display: flex; align-items: center; gap: 15px;">
-            <i class="fa-solid fa-laptop-code" style="color: var(--primary-blue); font-size: 1.1em;"></i>
-            Progression Détaillée par Formation
-        </h2>
-        <div class="row">
-            @foreach($formationsWithModulesProgress as $formation)
-            <div class="col-lg-12 mb-4">
-                <div class="card-base list-card">
-                    <h4 class="chart-title" style="font-size: 1.5rem; text-align: left; padding-left: 0;"><i class="fa-solid fa-book-open"></i> {{ $formation->title }}</h4>
-                    <div class="d-flex align-items-center mb-4">
-                        <strong class="me-3" style="min-width: 100px; color: var(--text-dark);">Progrès Global :</strong>
-                        <div class="progress flex-grow-1" style="height: 25px; border: 1px solid var(--border-light);">
-                            <div class="progress-bar {{ $formation->overall_progress == 100 ? 'bg-success' : '' }}" role="progressbar" style="width: {{ $formation->overall_progress }}%;" aria-valuenow="{{ $formation->overall_progress }}" aria-valuemin="0" aria-valuemax="100">
-                                {{ $formation->overall_progress }}%
-                            </div>
-                        </div>
-                    </div>
-                    
-                    @if($formation->modules->isNotEmpty())
-                        <h5 class="mt-4 mb-3" style="color: var(--text-medium); font-weight: 600;">Progression des Modules Internes</h5>
-                        <div class="chart-container" style="height: auto;">
-                            <canvas id="moduleChart-{{ $formation->id }}" style="height: {{ max(250, $formation->modules->count() * 40) }}px !important;"></canvas>
-                        </div>
-                    @else
-                        <div class="empty-state empty-state-small">
-                            <div class="icon" style="font-size: 2.5rem;"><i class="fa-solid fa-box-open"></i></div>
-                            <p>Aucun module défini pour cette formation. Progrès non calculable.</p>
-                        </div>
-                    @endif
-                </div>
-            </div>
-            @endforeach
-        </div>
-        @else
-        <div class="row">
-            <div class="col-lg-12 mb-4">
-                <div class="card-base">
-                    <div class="empty-state">
-                        <div class="icon"><i class="fa-solid fa-xmark"></i></div>
-                        <p>Vous n'êtes inscrit à aucune formation active pour afficher le progrès des modules.</p>
-                        <a href="{{ route('formations.index') }}" class="btn btn-primary">Découvrir les formations</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        @endif
         <div class="row">
             <div class="col-lg-6 mb-4">
                 <div class="card-base">
@@ -1121,7 +1205,7 @@
                                         <th>Formation</th>
                                         <th>Statut</th>
                                         <th>Payé</th>
-                                        <th>Dû</th> 
+                                        <th>Dû</th>                                        
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -1248,6 +1332,11 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        
+
+           
         </div>
     </div>
 </div>
@@ -1399,172 +1488,249 @@
     }
 
 
-    // 🔥 NEW: Global Modules Progress Chart (Horizontal Bar Chart)
+    function toggleFormation(index) {
+        const content = document.getElementById(`formationContent${index}`);
+        const arrow = document.getElementById(`arrow${index}`);
+        
+        if (content.style.display === 'none' || content.style.display === '') {
+            content.style.display = 'block';
+            arrow.style.transform = 'rotate(180deg)';
+        } else {
+            content.style.display = 'none';
+            arrow.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    // 🔥 NEW: Global Modules Chart
     const globalModulesCtx = document.getElementById('globalModulesChart');
-    if (globalModulesCtx) {
+    if (globalModulesCtx && @json(isset($globalModulesChart))) {
+        const globalModulesData = @json($globalModulesChart ?? ['labels' => [], 'data' => [], 'backgroundColor' => []]);
+        
         new Chart(globalModulesCtx, {
             type: 'bar',
             data: {
-                labels: @json($globalModulesChart['labels']),
+                labels: globalModulesData.labels || [],
                 datasets: [{
-                    label: 'Progrès (%)',
-                    data: @json($globalModulesChart['data']),
-                    backgroundColor: @json($globalModulesChart['backgroundColor']),
-                    borderColor: 'var(--text-dark)', // Border color for contrast
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    minBarLength: 5, // Make small bars visible
-                }],
+                    label: 'Progression (%)',
+                    data: globalModulesData.data || [],
+                    backgroundColor: globalModulesData.backgroundColor || [],
+                    borderColor: '#fff',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
             },
             options: {
-                indexAxis: 'y', // Horizontal Bar Chart
-                maintainAspectRatio: false,
                 responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            },
+                            color: 'var(--text-medium)',
+                            font: {
+                                size: 12,
+                                weight: '500'
+                            }
+                        },
+                        grid: {
+                            color: 'var(--border-light)',
+                            lineWidth: 1
+                        }
                     },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 0,
+                            color: 'var(--text-medium)',
+                            font: {
+                                size: 11,
+                                weight: '500'
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
                     tooltip: {
-                        backgroundColor: "var(--text-dark)",
-                        titleColor: "#fff",
-                        bodyColor: "#fff",
-                        borderColor: 'var(--primary-light-blue)',
-                        borderWidth: 1,
-                        xPadding: 15,
-                        yPadding: 15,
-                        displayColors: false,
+                        backgroundColor: 'var(--text-dark)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: 'var(--primary-blue)',
+                        borderWidth: 2,
                         cornerRadius: 8,
+                        padding: 12,
                         callbacks: {
                             label: function(context) {
-                                return context.label + ': ' + context.parsed.x + '%';
+                                return `Progression: ${context.parsed.y}%`;
                             }
                         }
                     },
-                },
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: 'Pourcentage de Progrès',
-                            color: 'var(--text-medium)',
-                            font: { weight: '600', size: 14 }
-                        },
-                        grid: {
-                            display: true,
-                            drawOnChartArea: true,
-                            drawTicks: false
-                        },
-                        ticks: {
-                            callback: function(value, index, ticks) {
-                                return value + '%';
-                            },
-                            color: 'var(--text-medium)'
-                        }
-                    },
-                    y: {
-                        grid: {
-                            display: false,
-                        },
-                        ticks: {
-                            color: 'var(--text-dark)',
-                            font: { size: 13, weight: '500' },
-                            autoSkip: false,
-                            maxRotation: 0,
-                            minRotation: 0
-                        }
+                    legend: {
+                        display: false
                     }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeOutCubic'
                 }
-            },
+            }
         });
     }
 
-    // 🔥 NEW: Individual Module Progress Charts (Loop for each formation)
-    const formationsModulesData = @json($formationsWithModulesProgress->keyBy('id')->map(fn($f) => $f->modules_chart_data));
-
-    Object.keys(formationsModulesData).forEach(formationId => {
-        const data = formationsModulesData[formationId];
-        const ctx = document.getElementById(`moduleChart-${formationId}`);
-
-        if (ctx) {
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: data.labels,
-                    datasets: [{
-                        label: 'Progrès du Module (%)',
-                        data: data.data,
-                        backgroundColor: data.backgroundColor,
-                        borderColor: data.borderColor,
-                        borderWidth: data.borderWidth,
-                        borderRadius: 4,
-                        minBarLength: 5,
-                    }],
-                },
-                options: {
-                    indexAxis: 'y', // Horizontal Bar Chart
-                    maintainAspectRatio: false,
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: "var(--text-dark)",
-                            titleColor: "#fff",
-                            bodyColor: "#fff",
-                            borderColor: 'var(--primary-light-blue)',
-                            borderWidth: 1,
-                            xPadding: 15,
-                            yPadding: 15,
-                            displayColors: false,
-                            cornerRadius: 8,
-                            callbacks: {
-                                label: function(context) {
-                                    return context.label + ': ' + context.parsed.x + '%';
-                                }
+    // 🔥 NEW: Individual Formation Charts
+    @if(isset($formationsWithModulesProgress))
+    @foreach($formationsWithModulesProgress as $index => $formation)
+    const formationCtx{{ $index }} = document.getElementById('formationChart{{ $index }}');
+    if (formationCtx{{ $index }}) {
+        const formationData{{ $index }} = @json($formation->modules_chart_data ?? ['labels' => [], 'data' => [], 'backgroundColor' => []]);
+        
+        new Chart(formationCtx{{ $index }}, {
+            type: 'doughnut',
+            data: {
+                labels: formationData{{ $index }}.labels || [],
+                datasets: [{
+                    data: formationData{{ $index }}.data || [],
+                    backgroundColor: formationData{{ $index }}.backgroundColor || [],
+                    borderColor: '#fff',
+                    borderWidth: 3,
+                    hoverBorderWidth: 5,
+                    hoverOffset: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    tooltip: {
+                        backgroundColor: 'var(--text-dark)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: 'var(--primary-blue)',
+                        borderWidth: 2,
+                        cornerRadius: 8,
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.parsed}%`;
                             }
-                        },
+                        }
                     },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: 'Pourcentage de Progrès',
-                                color: 'var(--text-medium)',
-                                font: { weight: '600', size: 12 }
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true,
+                            font: { 
+                                size: 11, 
+                                weight: '600' 
                             },
-                            grid: {
-                                display: true,
-                                drawOnChartArea: true,
-                                drawTicks: false
-                            },
-                            ticks: {
-                                callback: function(value, index, ticks) {
-                                    return value + '%';
-                                },
-                                color: 'var(--text-medium)'
-                            }
-                        },
-                        y: {
-                            grid: {
-                                display: false,
-                            },
-                            ticks: {
-                                color: 'var(--text-dark)',
-                                font: { size: 12, weight: '500' },
-                                autoSkip: false,
-                                maxRotation: 0,
-                                minRotation: 0
+                            color: 'var(--text-dark)',
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    return data.labels.map((label, i) => {
+                                        const value = data.datasets[0].data[i];
+                                        return {
+                                            text: `${label}: ${value}%`,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            strokeStyle: data.datasets[0].backgroundColor[i],
+                                            lineWidth: 0,
+                                            pointStyle: 'circle',
+                                            hidden: false,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
                             }
                         }
                     }
                 },
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutCubic'
+                }
+            }
+        });
+    }
+    @endforeach
+    @endif
+
+    // 🔥 NEW: Module items hover effects
+    document.addEventListener('DOMContentLoaded', function() {
+        const moduleItems = document.querySelectorAll('.module-item');
+        
+        moduleItems.forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-3px)';
+                this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1)';
+                this.style.borderColor = 'var(--primary-blue)';
             });
-        }
+            
+            item.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0px)';
+                this.style.boxShadow = 'none';
+                this.style.borderColor = 'var(--border-light)';
+            });
+        });
+
+        // Formation header hover effects
+        const formationHeaders = document.querySelectorAll('.formation-header');
+        
+        formationHeaders.forEach(header => {
+            header.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.02)';
+                this.style.transition = 'transform 0.3s ease';
+            });
+            
+            header.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+
+        // Add smooth scrolling for modules list
+        const modulesLists = document.querySelectorAll('.modules-list');
+        modulesLists.forEach(list => {
+            list.style.scrollBehavior = 'smooth';
+        });
+
+        // Progress bar animation on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const progressObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const progressBars = entry.target.querySelectorAll('[style*="width:"]');
+                    progressBars.forEach(bar => {
+                        if (bar.style.background && bar.style.background.includes('gradient')) {
+                            const width = bar.style.width;
+                            bar.style.width = '0%';
+                            setTimeout(() => {
+                                bar.style.width = width;
+                                bar.style.transition = 'width 1.5s ease-out';
+                            }, 100);
+                        }
+                    });
+                }
+            });
+        }, observerOptions);
+
+        // Observe all formation cards
+        document.querySelectorAll('.formation-card').forEach(card => {
+            progressObserver.observe(card);
+        });
     });
 </script>
 @endpush
