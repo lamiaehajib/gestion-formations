@@ -93,7 +93,7 @@ class CourseController extends Controller
             });
         }
 
-        $courses = $query->orderBy('created_at', 'desc')->paginate(15);
+        $courses = $query->orderBy('created_at', 'asc')->paginate(15);
 
         $formationsForModals = Formation::where('status', 'published')->get();
         $formationsForFilter = collect();
