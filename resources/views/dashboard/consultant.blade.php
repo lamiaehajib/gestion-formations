@@ -747,6 +747,284 @@
             </div>
         </div>
 
+
+        {{-- Module Progress Overview Cards --}}
+<div class="stats-grid" style="margin-top: 40px;">
+    <div class="stat-card">
+        <div class="stat-content">
+            <div class="stat-icon" style="background: linear-gradient(45deg, #28B463, #2ECC71);"><i class="fas fa-tasks"></i></div>
+            <div class="stat-info">
+                <div class="stat-number" style="background: linear-gradient(45deg, #28B463, #2ECC71); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalModules }}</div>
+                <div class="stat-label">Total Modules</div>
+            </div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-content">
+            <div class="stat-icon" style="background: linear-gradient(45deg, #28a745, #20c997);"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-info">
+                <div class="stat-number" style="background: linear-gradient(45deg, #28a745, #20c997); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalCompletedModules }}</div>
+                <div class="stat-label">Modules Terminés</div>
+            </div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-content">
+            <div class="stat-icon" style="background: linear-gradient(45deg, #17a2b8, #20c997);"><i class="fas fa-play-circle"></i></div>
+            <div class="stat-info">
+                <div class="stat-number" style="background: linear-gradient(45deg, #17a2b8, #20c997); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalInProgressModules }}</div>
+                <div class="stat-label">En Cours</div>
+            </div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-content">
+            <div class="stat-icon" style="background: linear-gradient(45deg, #ffc107, #fd7e14);"><i class="fas fa-hourglass-start"></i></div>
+            <div class="stat-info">
+                <div class="stat-number" style="background: linear-gradient(45deg, #ffc107, #fd7e14); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalNotStartedModules }}</div>
+                <div class="stat-label">Pas Commencés</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Global Module Progress Chart --}}
+<div class="row" style="margin-top: 30px;">
+    <div class="col-lg-8 mb-4">
+        <div class="card-base">
+            <h3 class="chart-title"><i class="fa-solid fa-chart-line"></i> Progression Globale des Modules</h3>
+            @if($totalModules == 0)
+                <div class="empty-state">
+                    <div class="icon"><i class="fa-solid fa-tasks"></i></div>
+                    <p>Aucun module assigné pour le moment.</p>
+                </div>
+            @else
+                <div class="chart-container">
+                    <canvas id="globalModulesProgressChart"></canvas>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    {{-- Module Progress Statistics --}}
+    <div class="col-lg-4 mb-4">
+        <div class="card-base">
+            <h3 class="chart-title"><i class="fa-solid fa-chart-pie"></i> Répartition des Modules</h3>
+            @if($totalModules == 0)
+                <div class="empty-state empty-state-small">
+                    <div class="icon"><i class="fa-solid fa-chart-pie"></i></div>
+                    <p>Aucune donnée disponible.</p>
+                </div>
+            @else
+                <div class="chart-container">
+                    <canvas id="moduleStatsChart"></canvas>
+                </div>
+                
+                {{-- Progress Statistics Details --}}
+                <div style="margin-top: 25px;">
+                    <div class="progress-stat-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 12px; height: 12px; background-color: #28a745; border-radius: 50%;"></div>
+                            <span style="font-weight: 600; color: var(--text-dark);">Terminés</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 700; color: #28a745;">{{ $moduleProgressStats['completed']['percentage'] }}%</div>
+                            <div style="font-size: 0.85rem; color: var(--text-medium);">{{ $moduleProgressStats['completed']['count'] }} modules</div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-stat-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 12px; height: 12px; background-color: #17a2b8; border-radius: 50%;"></div>
+                            <span style="font-weight: 600; color: var(--text-dark);">En Cours</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 700; color: #17a2b8;">{{ $moduleProgressStats['in_progress']['percentage'] }}%</div>
+                            <div style="font-size: 0.85rem; color: var(--text-medium);">{{ $moduleProgressStats['in_progress']['count'] }} modules</div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-stat-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 12px; height: 12px; background-color: #dc3545; border-radius: 50%;"></div>
+                            <span style="font-weight: 600; color: var(--text-dark);">Non Commencés</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 700; color: #dc3545;">{{ $moduleProgressStats['not_started']['percentage'] }}%</div>
+                            <div style="font-size: 0.85rem; color: var(--text-medium);">{{ $moduleProgressStats['not_started']['count'] }} modules</div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Overall Progress Bar --}}
+                <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid var(--border-light);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-weight: 700; color: var(--text-dark);">Progression Moyenne</span>
+                        <span style="font-weight: 800; font-size: 1.4rem; color: var(--primary-blue);">{{ $overallAverageProgress }}%</span>
+                    </div>
+                    <div style="width: 100%; height: 12px; background-color: var(--background-light); border-radius: 6px; overflow: hidden;">
+                        <div style="height: 100%; background: linear-gradient(90deg, var(--primary-blue), var(--primary-dark-blue)); width: {{ $overallAverageProgress }}%; transition: width 0.8s ease;"></div>
+                    </div>
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
+
+{{-- Modules by Formation --}}
+@if($modulesByFormation->isNotEmpty())
+<div class="row">
+    <div class="col-12">
+        <div class="card-base">
+            <h3 class="chart-title"><i class="fa-solid fa-layer-group"></i> Modules par Formation</h3>
+            
+            <div style="display: grid; gap: 30px;">
+                @foreach($modulesByFormation as $formationId => $formationData)
+                    <div style="background: var(--background-light); border-radius: 16px; padding: 25px; border: 1px solid var(--border-light);">
+                        {{-- Formation Header --}}
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <div>
+                                <h4 style="color: var(--text-dark); font-weight: 700; font-size: 1.3rem; margin: 0; margin-bottom: 5px;">
+                                    <i class="fas fa-graduation-cap" style="color: var(--primary-blue); margin-right: 10px;"></i>
+                                    {{ $formationData['formation']->title }}
+                                </h4>
+                                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                                    <span style="color: var(--text-medium); font-size: 0.9rem;">
+                                        <i class="fas fa-tasks" style="margin-right: 5px;"></i>
+                                        {{ $formationData['total_modules'] }} modules
+                                    </span>
+                                    <span style="color: var(--accent-green); font-size: 0.9rem; font-weight: 600;">
+                                        <i class="fas fa-check-circle" style="margin-right: 5px;"></i>
+                                        {{ $formationData['completed_modules'] }} terminés
+                                    </span>
+                                    <span style="color: var(--accent-orange); font-size: 0.9rem; font-weight: 600;">
+                                        <i class="fas fa-play-circle" style="margin-right: 5px;"></i>
+                                        {{ $formationData['in_progress_modules'] }} en cours
+                                    </span>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 2.2rem; font-weight: 800; color: var(--primary-blue); margin-bottom: 5px;">
+                                    {{ $formationData['average_progress'] }}%
+                                </div>
+                                <div style="color: var(--text-medium); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">
+                                    Progression Moyenne
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Progress Bar for Formation --}}
+                        <div style="width: 100%; height: 8px; background-color: white; border-radius: 4px; overflow: hidden; margin-bottom: 25px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="height: 100%; background: linear-gradient(90deg, var(--primary-blue), var(--primary-dark-blue)); width: {{ $formationData['average_progress'] }}%; transition: width 1s ease;"></div>
+                        </div>
+
+                        {{-- Modules List --}}
+                        @if($formationData['modules']->isNotEmpty())
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+                                @foreach($formationData['modules'] as $module)
+                                    <div style="background: white; border-radius: 12px; padding: 20px; border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='var(--shadow-sm)'">
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                            <h5 style="color: var(--text-dark); font-weight: 600; font-size: 1rem; margin: 0; line-height: 1.4; flex: 1;">
+                                                {{ $module->title }}
+                                            </h5>
+                                            <div style="margin-left: 15px;">
+                                                @if($module->progress == 100)
+                                                    <div style="width: 24px; height: 24px; background-color: #28a745; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                        <i class="fas fa-check" style="color: white; font-size: 12px;"></i>
+                                                    </div>
+                                                @elseif($module->progress >= 1)
+                                                    <div style="width: 24px; height: 24px; background-color: #17a2b8; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                        <i class="fas fa-play" style="color: white; font-size: 10px;"></i>
+                                                    </div>
+                                                @else
+                                                    <div style="width: 24px; height: 24px; background-color: #dc3545; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                        <i class="fas fa-pause" style="color: white; font-size: 10px;"></i>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        
+                                        {{-- Module Progress Bar --}}
+                                        <div style="margin-bottom: 8px;">
+                                            <div style="width: 100%; height: 6px; background-color: var(--background-light); border-radius: 3px; overflow: hidden;">
+                                                <div style="height: 100%; 
+                                                    background-color: {{ $module->progress >= 80 ? '#28a745' : ($module->progress >= 60 ? '#17a2b8' : ($module->progress >= 40 ? '#ffc107' : ($module->progress >= 20 ? '#fd7e14' : '#dc3545'))) }}; 
+                                                    width: {{ $module->progress }}%; 
+                                                    transition: width 0.8s ease;"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <span style="color: var(--text-medium); font-size: 0.85rem;">
+                                                Ordre: #{{ $module->order }}
+                                            </span>
+                                            <span style="font-weight: 700; color: {{ $module->progress >= 80 ? '#28a745' : ($module->progress >= 60 ? '#17a2b8' : ($module->progress >= 40 ? '#ffc107' : ($module->progress >= 20 ? '#fd7e14' : '#dc3545'))) }};">
+                                                {{ $module->progress }}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
+{{-- Recent Module Updates --}}
+@if($recentModuleUpdates->isNotEmpty())
+<div class="row">
+    <div class="col-12">
+        <div class="card-base">
+            <h3 class="chart-title"><i class="fa-solid fa-clock"></i> Modules Récemment Mis à Jour</h3>
+            <div class="table-responsive">
+                <table class="table table-subtle-depth">
+                    <thead>
+                        <tr>
+                            <th>Module</th>
+                            <th>Formation</th>
+                            <th>Progression</th>
+                            <th>Nouveaux Cours</th>
+                            <th>Dernière Mise à Jour</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($recentModuleUpdates as $module)
+                            <tr>
+                                <td><strong>{{ $module->title }}</strong></td>
+                                <td><span class="badge bg-secondary">{{ $module->formation->title }}</span></td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div style="width: 60px; height: 6px; background-color: var(--background-light); border-radius: 3px; overflow: hidden;">
+                                            <div style="height: 100%; background-color: {{ $module->progress >= 80 ? '#28a745' : ($module->progress >= 60 ? '#17a2b8' : ($module->progress >= 40 ? '#ffc107' : ($module->progress >= 20 ? '#fd7e14' : '#dc3545'))) }}; width: {{ $module->progress }}%;"></div>
+                                        </div>
+                                        <span style="font-weight: 600; color: {{ $module->progress >= 80 ? '#28a745' : ($module->progress >= 60 ? '#17a2b8' : ($module->progress >= 40 ? '#ffc107' : ($module->progress >= 20 ? '#fd7e14' : '#dc3545'))) }};">{{ $module->progress }}%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-plus"></i>
+                                        {{ $module->courses->count() }} nouveau(x) cours
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-warning">
+                                        {{ Carbon\Carbon::parse($module->updated_at)->diffForHumans() }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+        
         <div class="row">
             {{-- Courses for Today List (using table-subtle-depth style) --}}
             <div class="col-lg-6 mb-4">
@@ -773,15 +1051,23 @@
                                    @foreach($coursesToday as $course)
                                     <tr>
                                         <td><strong>{{ $course->title }}</strong></td>
-                                       @if($course->formations->isNotEmpty())
-                                                            <td class="course-formation">
-                                                                @foreach($course->formations as $formation)
-                                                                    <span class="badge bg-secondary">{{ $formation->title }}</span>
-                                                                @endforeach
-                                                            </td>
-                                                        @else
-                                                            -
-                                                        @endif
+                                     @if($course->formation)
+    <td class="course-formation">
+        {{-- عرض اسم Formation الواحدة --}}
+        <span class="badge bg-secondary">
+            {{ $course->formation->title }}
+        </span>
+        
+        {{-- (اختياري): يمكنك إضافة اسم Module هنا إذا كنت بحاجة إليه في الجدول --}}
+        @if($course->module)
+            <span class="badge bg-info ms-1">{{ $course->module->title }}</span>
+        @endif
+    </td>
+@else
+    <td class="course-formation">
+        -
+    </td>
+@endif
                                         <td>
                                             <span class="badge bg-secondary">{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }}</span>
                                             -
@@ -972,5 +1258,127 @@
             });
         }
     });
+
+
+    const globalModulesCtx = document.getElementById('globalModulesProgressChart');
+const globalModulesData = @json($globalModulesChart ?? []);
+
+if (globalModulesCtx && globalModulesData.labels && globalModulesData.labels.length > 0) {
+    new Chart(globalModulesCtx, {
+        type: 'bar',
+        data: {
+            labels: globalModulesData.labels,
+            datasets: [{
+                label: 'Progression (%)',
+                data: globalModulesData.data,
+                backgroundColor: globalModulesData.backgroundColor,
+                borderColor: globalModulesData.backgroundColor.map(color => color.replace('0.8', '1')),
+                borderWidth: 2,
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: "var(--text-dark)",
+                    titleColor: "#fff",
+                    bodyColor: "#fff",
+                    borderColor: 'var(--border-light)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    padding: 15,
+                    callbacks: {
+                        label: function(context) {
+                            return `Progression: ${context.parsed.y}%`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    },
+                    grid: {
+                        color: 'var(--border-light)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        maxRotation: 45,
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Module Statistics Chart (Doughnut)
+const moduleStatsCtx = document.getElementById('moduleStatsChart');
+const moduleStatsData = @json($moduleProgressStats ?? []);
+
+if (moduleStatsCtx && moduleStatsData.completed) {
+    new Chart(moduleStatsCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Terminés', 'En Cours', 'Non Commencés'],
+            datasets: [{
+                data: [
+                    moduleStatsData.completed.count,
+                    moduleStatsData.in_progress.count,
+                    moduleStatsData.not_started.count
+                ],
+                backgroundColor: ['#28a745', '#17a2b8', '#dc3545'],
+                borderColor: 'white',
+                borderWidth: 3,
+                hoverOffset: 8,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false // We'll show custom legend below
+                },
+                tooltip: {
+                    backgroundColor: "var(--text-dark)",
+                    titleColor: "#fff",
+                    bodyColor: "#fff",
+                    borderColor: 'var(--border-light)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    padding: 15,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value} modules (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            cutout: '60%',
+        }
+    });
+}
 </script>
 @endpush

@@ -28,84 +28,77 @@ class CourseRescheduleController extends Controller
     /**
      * Display a listing of course reschedules
      */
-    public function index(Request $request)
-    {
-        $user = Auth::user();
+   public function index(Request $request)
+{
+    $user = Auth::user();
 
-        $query = CourseReschedule::with(['course', 'consultant'])
-            ->orderBy('created_at', 'desc');
+    $query = CourseReschedule::with(['course', 'consultant'])
+        ->orderBy('created_at', 'desc');
 
-        // Filter based on user role
-        if ($user->hasRole('Consultant') && !$user->can('course-manage-all')) {
-            // Consultant: Only see reschedules for their own courses
-            $query->whereHas('course', function ($q) use ($user) {
-                $q->where('consultant_id', $user->id);
-            });
-        } elseif ($user->hasRole('Etudiant')) {
-            // Student: Only see reschedules for courses they are enrolled in
-            $query->whereHas('course.formations', function ($q) use ($user) {
-                // Hna l'ajustement: b-delle l-`course.formation.inscriptions` b-`course.formations`.
-                // o men ba3d kanzidou whereHas 3la l-`inscriptions`
-                $q->whereHas('inscriptions', function ($q2) use ($user) {
-                    $q2->where('user_id', $user->id)->where('status', 'active');
-                });
-            });
-        }
-        // If the user has 'course-manage-all' permission (e.g., Admin),
-        // no additional filtering is applied at this stage, so they see all.
+    // Filter based on user role
+    if ($user->hasRole('Consultant') && !$user->can('course-manage-all')) {
+        // Consultant: Only see reschedules for their own courses (Unchanged)
+        $query->whereHas('course', function ($q) use ($user) {
+            $q->where('consultant_id', $user->id);
+        });
+    } elseif ($user->hasRole('Etudiant')) {
+        // Student: Only see reschedules for courses they are enrolled in
+        
+        // FIX: Kan3awdou 'course.formations' b 'course.formation'
+        // W kan'assumo l'formation li fihom inscription kanchoufo ghir l'ID dyalha
+        $enrolledFormationIds = $user->inscriptions()
+                                    ->where('status', 'active')
+                                    ->pluck('formation_id');
 
-        // Search filters
-        if ($request->filled('course_id')) {
-            $query->where('course_id', $request->course_id);
-        }
-
-        // Only apply consultant_id filter if the user is an admin or has 'course-manage-all'
-        // and a consultant_id is provided in the request.
-        if ($user->can('course-manage-all') && $request->filled('consultant_id')) {
-            $query->where('consultant_id', $request->consultant_id);
-        }
-
-
-        if ($request->filled('date_from')) {
-            $query->whereDate('new_date', '>=', $request->date_from);
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('new_date', '<=', $request->date_to);
-        }
-
-        $reschedules = $query->paginate(15);
-
-        // Get courses and consultants for filters
-        // Adjust the courses and consultants dropdowns based on user role for filtering purposes
-        $courses = collect();
-        if ($user->hasRole('Etudiant')) {
-            // For students, the filter dropdown should only show courses they are enrolled in
-            $courses = Course::whereHas('formations', function ($q) use ($user) {
-                // Hna l'ajustement: b-delle l-`formation.inscriptions` b-`formations`.
-                // o men ba3d kanzidou whereHas 3la l-`inscriptions`
-                $q->whereHas('inscriptions', function ($q2) use ($user) {
-                    $q2->where('user_id', $user->id)->where('status', 'active');
-                });
-            })->select('id', 'title')->get();
-        } elseif ($user->hasRole('Consultant') && !$user->can('course-manage-all')) {
-            // For consultants, the filter dropdown should only show their courses
-            $courses = Course::where('consultant_id', $user->id)->select('id', 'title')->get();
-        } else {
-            // For Admins or users with 'course-manage-all' permission, show all courses
-            $courses = Course::select('id', 'title')->get();
-        }
-
-
-        $consultants = collect();
-        if ($user->can('course-manage-all')) {
-            $consultants = User::role('Consultant')->select('id', 'name')->get();
-        }
-        // Consultants and Students don't need to filter by other consultants in the view,
-        // so `consultants` collection can remain empty for them if not `course-manage-all`.
-
-        return view('course_reschedules.index', compact('reschedules', 'courses', 'consultants'));
+        // Kanfiltréw 3la l'course 7itach fih formation_id direct
+        $query->whereHas('course', function ($q) use ($enrolledFormationIds) {
+            $q->whereIn('formation_id', $enrolledFormationIds);
+        });
     }
+    // If the user has 'course-manage-all' permission (e.g., Admin), no additional filtering is applied at this stage.
+
+    // Search filters (Unchanged)
+    if ($request->filled('course_id')) {
+        $query->where('course_id', $request->course_id);
+    }
+    if ($user->can('course-manage-all') && $request->filled('consultant_id')) {
+        $query->where('consultant_id', $request->consultant_id);
+    }
+    if ($request->filled('date_from')) {
+        $query->whereDate('new_date', '>=', $request->date_from);
+    }
+    if ($request->filled('date_to')) {
+        $query->whereDate('new_date', '<=', $request->date_to);
+    }
+
+    $reschedules = $query->paginate(15);
+
+    // --- Adjust Courses for Filters ---
+    $courses = collect();
+    if ($user->hasRole('Etudiant')) {
+        // FIX: Kanakhdou ghir les courses li l'formation_id dyalhom kayn f enrolledFormationIds
+        $enrolledFormationIds = $user->inscriptions()
+                                    ->where('status', 'active')
+                                    ->pluck('formation_id');
+                                    
+        $courses = Course::whereIn('formation_id', $enrolledFormationIds)
+                         ->select('id', 'title')->get();
+                         
+    } elseif ($user->hasRole('Consultant') && !$user->can('course-manage-all')) {
+        $courses = Course::where('consultant_id', $user->id)->select('id', 'title')->get();
+    } else {
+        $courses = Course::select('id', 'title')->get();
+    }
+
+
+    // --- Adjust Consultants for Filters (Unchanged) ---
+    $consultants = collect();
+    if ($user->can('course-manage-all')) {
+        $consultants = User::role('Consultant')->select('id', 'name')->get();
+    }
+
+    return view('course_reschedules.index', compact('reschedules', 'courses', 'consultants'));
+}
 
     // ... rest of your methods (create, store, show, edit, update, destroy, getCourseHistory, getAvailableSlots, getCoursesByConsultant, bulkReschedule, notifyStudentsAboutReschedule) remain the same or as per your existing code.
     // I've included the rest of the controller code below for completeness, but the primary change is in the index method.

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Module;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Formation;
@@ -209,7 +210,7 @@ class DashboardController extends Controller
 
     // ... (all the other code in your controller remains the same)
 
-    private function getConsultantDashboardData(User $user, Request $request): array
+    private function getConsultantDashboardData(User $user, Request $request)
     {
         // Date filtering logic, similar to other dashboards
         $selectedMonth = $request->input('selected_month');
@@ -241,11 +242,11 @@ class DashboardController extends Controller
 
         // Fetch upcoming courses (in the future)
         $upcomingCourses = Course::where('consultant_id', $user->id)
-        ->where('course_date', '>', $today)
-        ->orderBy('course_date', 'asc')
-        ->orderBy('start_time', 'asc')
-        ->with('formation')
-        ->get(); 
+            ->where('course_date', '>', $today)
+            ->orderBy('course_date', 'asc')
+            ->orderBy('start_time', 'asc')
+            ->with('formation')
+            ->get();
 
         // Fetch formations assigned to the consultant
         $myFormations = Formation::where('consultant_id', $user->id)
@@ -255,13 +256,13 @@ class DashboardController extends Controller
             ->get();
 
         // Count total number of students in the consultant's formations
-        $totalStudents = Inscription::whereHas('formation', function($q) use ($user) {
+        $totalStudents = Inscription::whereHas('formation', function ($q) use ($user) {
             $q->where('consultant_id', $user->id);
         })
-        ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-            $query->whereBetween('created_at', [$startDate, $endDate]);
-        })
-        ->count();
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            })
+            ->count();
 
         // Count total number of courses the consultant has
         $totalCourses = Course::where('consultant_id', $user->id)
@@ -274,19 +275,19 @@ class DashboardController extends Controller
         $recentReschedules = CourseReschedule::whereHas('course', function ($q) use ($user) {
             $q->where('consultant_id', $user->id);
         })
-        ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-            $query->whereBetween('created_at', [$startDate, $endDate]);
-        })
-        ->with('course')
-        ->orderBy('created_at', 'desc')
-        ->take(5)
-        ->get();
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            })
+            ->with('course')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
 
         // Get enrollments per formation for the consultant
         // CORRECTED LINE: Using 'title' instead of 'name'
         $enrollmentsByFormation = Inscription::with(['formation:id,title'])
             ->select('formation_id', DB::raw('count(*) as total_students'))
-            ->whereHas('formation', function($q) use ($user) {
+            ->whereHas('formation', function ($q) use ($user) {
                 $q->where('consultant_id', $user->id);
             })
             ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
@@ -296,16 +297,117 @@ class DashboardController extends Controller
             ->get();
 
         // Prepare data for a chart showing student enrollment over time for the consultant's formations
-        $studentEnrollmentTrend = Inscription::whereHas('formation', function($q) use ($user) {
+        $studentEnrollmentTrend = Inscription::whereHas('formation', function ($q) use ($user) {
             $q->where('consultant_id', $user->id);
         })
-        ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-            $query->whereBetween('created_at', [$startDate, $endDate]);
-        })
-        ->select(DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'), DB::raw('count(*) as total_students'))
-        ->groupBy('month')
-        ->orderBy('month')
-        ->get();
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            })
+            ->select(DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'), DB::raw('count(*) as total_students'))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        // 🔥 NEW: Get modules assigned to this consultant with their progress
+        $consultantModules = Module::where('user_id', $user->id)
+            ->with(['formation:id,title'])
+            ->orderBy('formation_id')
+            ->orderBy('order')
+            ->get();
+
+        // 🔥 NEW: Group modules by formation for better organization
+        $modulesByFormation = $consultantModules->groupBy('formation_id')->map(function ($modules, $formationId) {
+            $formation = $modules->first()->formation;
+
+            // Calculate overall progress for this formation
+            $totalProgress = $modules->sum('progress');
+            $averageProgress = $modules->count() > 0 ? round($totalProgress / $modules->count(), 2) : 0;
+
+            // Prepare chart data for modules in this formation
+            $chartData = [
+                'labels' => $modules->pluck('title')->toArray(),
+                'data' => $modules->pluck('progress')->toArray(),
+                'backgroundColor' => $modules->map(function ($module) {
+                    if ($module->progress >= 80)
+                        return '#28a745'; // Green
+                    elseif ($module->progress >= 60)
+                        return '#17a2b8'; // Blue
+                    elseif ($module->progress >= 40)
+                        return '#ffc107'; // Yellow
+                    elseif ($module->progress >= 20)
+                        return '#fd7e14'; // Orange
+                    else
+                        return '#dc3545'; // Red
+                })->toArray()
+            ];
+
+            return [
+                'formation' => $formation,
+                'modules' => $modules,
+                'average_progress' => $averageProgress,
+                'total_modules' => $modules->count(),
+                'completed_modules' => $modules->where('progress', 100)->count(),
+                'in_progress_modules' => $modules->whereBetween('progress', [1, 99])->count(),
+                'not_started_modules' => $modules->where('progress', 0)->count(),
+                'chart_data' => $chartData
+            ];
+        });
+
+        // 🔥 NEW: Calculate overall consultant statistics
+        $totalModules = $consultantModules->count();
+        $totalCompletedModules = $consultantModules->where('progress', 100)->count();
+        $totalInProgressModules = $consultantModules->whereBetween('progress', [1, 99])->count();
+        $totalNotStartedModules = $consultantModules->where('progress', 0)->count();
+        $overallAverageProgress = $totalModules > 0 ? round($consultantModules->avg('progress'), 2) : 0;
+
+        // 🔥 NEW: Prepare global modules chart data
+        $globalModulesChart = [
+            'labels' => $consultantModules->map(function ($module) {
+                return $module->formation->title . ' - ' . $module->title;
+            })->toArray(),
+            'data' => $consultantModules->pluck('progress')->toArray(),
+            'backgroundColor' => $consultantModules->map(function ($module) {
+                if ($module->progress >= 80)
+                    return '#28a745';
+                elseif ($module->progress >= 60)
+                    return '#17a2b8';
+                elseif ($module->progress >= 40)
+                    return '#ffc107';
+                elseif ($module->progress >= 20)
+                    return '#fd7e14';
+                else
+                    return '#dc3545';
+            })->toArray(),
+            'formationColors' => $consultantModules->map(function ($module) {
+                // Different colors per formation for variety
+                $formationId = $module->formation_id;
+                $colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe'];
+                return $colors[$formationId % count($colors)];
+            })->toArray()
+        ];
+
+        // 🔥 NEW: Module progress statistics by status
+        $moduleProgressStats = [
+            'completed' => ['count' => $totalCompletedModules, 'percentage' => $totalModules > 0 ? round(($totalCompletedModules / $totalModules) * 100, 1) : 0],
+            'in_progress' => ['count' => $totalInProgressModules, 'percentage' => $totalModules > 0 ? round(($totalInProgressModules / $totalModules) * 100, 1) : 0],
+            'not_started' => ['count' => $totalNotStartedModules, 'percentage' => $totalModules > 0 ? round(($totalNotStartedModules / $totalModules) * 100, 1) : 0]
+        ];
+
+        // 🔥 NEW: Recent module updates (modules with recent course additions)
+        $recentModuleUpdates = Module::where('user_id', $user->id)
+            ->whereHas('courses', function ($q) {
+                $q->where('created_at', '>=', Carbon::now()->subDays(7));
+            })
+            ->with([
+                'formation:id,title',
+                'courses' => function ($q) {
+                    $q->where('created_at', '>=', Carbon::now()->subDays(7))
+                        ->orderBy('created_at', 'desc');
+                }
+            ])
+            ->orderBy('updated_at', 'desc')
+            ->take(5)
+            ->get();
 
         return [
             'consultant' => $user,
@@ -322,6 +424,18 @@ class DashboardController extends Controller
             'selectedYear' => $selectedYear,
             'startDate' => $startDate ? $startDate->toDateString() : null,
             'endDate' => $endDate ? $endDate->toDateString() : null,
+
+            // 🔥 NEW: Module-related data
+            'consultantModules' => $consultantModules,
+            'modulesByFormation' => $modulesByFormation,
+            'totalModules' => $totalModules,
+            'totalCompletedModules' => $totalCompletedModules,
+            'totalInProgressModules' => $totalInProgressModules,
+            'totalNotStartedModules' => $totalNotStartedModules,
+            'overallAverageProgress' => $overallAverageProgress,
+            'globalModulesChart' => $globalModulesChart,
+            'moduleProgressStats' => $moduleProgressStats,
+            'recentModuleUpdates' => $recentModuleUpdates,
         ];
     }
 

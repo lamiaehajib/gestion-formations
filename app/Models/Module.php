@@ -44,6 +44,10 @@ class Module extends Model
         return $this->belongsTo(Formation::class);
     }
 
+    public function courses()
+    {
+        return $this->hasMany(Course::class);
+    }
     /**
      * Get the user (consultant) that is assigned to the module.
      */
