@@ -13,6 +13,9 @@
                         </h1>
                         <p class="text-muted mb-0">Gérez tous vos utilisateurs en un seul endroit</p>
                     </div>
+                    <a href="{{ route('users.corbeille') }}" class="btn btn-danger">
+    <i class="fa fa-trash"></i> Corbeille
+</a>
                     <a href="{{ route('users.create') }}" class="btn btn-primary btn-floating">
                         <i class="fas fa-plus me-2"></i>
                         Nouvel Utilisateur

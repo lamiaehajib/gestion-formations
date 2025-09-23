@@ -490,4 +490,39 @@ public function toggleStatus(Request $request, User $user)
 
         return response()->json(['error' => 'Format non supporté'], 400);
     }
+
+    public function corbeille()
+{
+    // Kanst3amlo onlyTrashed() bach njebdo GHI les Utilisateurs li mamsou7in
+    $users = User::onlyTrashed()
+                  ->orderBy('deleted_at', 'desc')
+                  ->get();
+
+    return view('users.corbeille', compact('users'));
+}
+
+// N°2. Restauration d'un Utilisateur
+public function restore($id)
+{
+    $user = User::withTrashed()->findOrFail($id);
+    $user->restore();
+
+    return redirect()->route('users.corbeille')->with('success', 'Utilisateur restauré avec succès!');
+}
+
+// N°3. Suppression Définitive
+public function forceDelete($id)
+{
+    $user = User::withTrashed()->findOrFail($id);
+    
+    // ⚠️ WARNING: Ila derti Force Delete, ghadi ytmss7 hta l-Historique dyal l'User (Ranks/Permissions...).
+    
+    // Khassk tmass7 les fichiers dyal l'User 9bel:
+    // Storage::disk('public')->delete($user->avatar); 
+    // Storage::disk('public')->deleteDirectory('users/' . $user->id); // Ila kan 3endek dossier personnel
+    
+    $user->forceDelete(); 
+
+    return redirect()->route('users.corbeille')->with('success', 'Utilisateur supprimé définitivement!');
+}
 }

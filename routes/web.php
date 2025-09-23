@@ -50,7 +50,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
 Route::resource('roles', RoleController::class);
+
+Route::get('/users/corbeille', [UserController::class, 'corbeille'])
+      ->name('users.corbeille');
+
+// 2. Route dyal Restauration
+Route::put('/users/{id}/restore', [UserController::class, 'restore'])
+      ->name('users.restore');
+
+// 3. Route dyal Suppression Définitive
+Route::delete('/users/{id}/forceDelete', [UserController::class, 'forceDelete'])
+      ->name('users.forceDelete');
     Route::resource('users', UserController::class); // Cette ligne définit users.index, users.create, users.show, etc.
 
     // Ces routes khas ykouno mgroupin m3a users.resource bach tkoun la syntaxe users.toggle-status

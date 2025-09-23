@@ -341,6 +341,12 @@
         width: 48% !important;
     }
 }
+
+.table-striped>tbody>tr:nth-of-type(odd)>* {
+    --bs-table-color-type: var(--bs-table-striped-color);
+    --bs-table-bg-type: var(--bs-table-striped-bg);
+    color: black;
+}
     </style>
 
     

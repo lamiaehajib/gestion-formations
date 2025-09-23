@@ -47,6 +47,9 @@
                             <p style="margin-top: 30px;">
                                 Vous pouvez maintenant accéder à tous les contenus de la formation sur notre plateforme.
                             </p>
+                             <p style="text-align: center; margin-top: 30px; color:#fff;">
+                                <a href="{{ route('login') }}" class="btn">Se connecter maintenant</a>
+                            </p>
                             
                             <p style="margin-top: 30px;">
                                 Cordialement,<br>
