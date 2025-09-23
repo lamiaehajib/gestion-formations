@@ -100,8 +100,8 @@ class InscriptionController extends Controller
 public function create(Request $request)
 {
     $users = Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) ? User::role('etudiant')->get() : collect();
-    // Zid with('category') bach t'charger l'category m3a kol formation
-    $formations = Formation::where('status', 'published','draft')->with('category')->get(); 
+    // This line will now fetch ALL formations
+    $formations = Formation::with('category')->get(); 
     return view('inscriptions.create', compact('users', 'formations'));
 }
 
