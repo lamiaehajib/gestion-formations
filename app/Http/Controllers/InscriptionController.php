@@ -101,7 +101,7 @@ public function create(Request $request)
 {
     $users = Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) ? User::role('etudiant')->get() : collect();
     // Zid with('category') bach t'charger l'category m3a kol formation
-    $formations = Formation::where('status', 'published')->with('category')->get(); 
+    $formations = Formation::where('status', 'published','draft')->with('category')->get(); 
     return view('inscriptions.create', compact('users', 'formations'));
 }
 
