@@ -12,6 +12,10 @@ class Kernel extends ConsoleKernel
     {
         // تشغيل الأمر يومياً في الساعة 1 صباحاً
         $schedule->command(CheckInstallmentDueDates::class)->dailyAt('01:00');
+
+                // أضيفي هذا السطر لجدولة الباك اب
+        $schedule->command('backup:run --only-db')->weekly()->at('02:00');
+
         
         // بديل: إذا كنت تريد تشغيله فقط في اليوم السادس من كل شهر (بعد اليوم الخامس بيوم واحد)
         // $schedule->command(CheckInstallmentDueDates::class)->monthlyOn(6, '01:00'); 

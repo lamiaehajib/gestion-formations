@@ -84,7 +84,7 @@ class InscriptionController extends Controller
     }
     // ***********************************************
 
-    $inscriptions = $query->paginate(15);
+    $inscriptions = $query->paginate(2);
     
     $availableStatuses = ['pending', 'active', 'completed', 'cancelled'];
     $availableFormations = Formation::all();

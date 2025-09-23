@@ -53,6 +53,20 @@ return [
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
         ],
 
+         'google' => [
+            'driver' => 'google',
+            'clientId' => env('GOOGLE_DRIVE_CLIENT_ID'),
+            'clientSecret' => env('GOOGLE_DRIVE_CLIENT_SECRET'),
+            'refreshToken' => env('GOOGLE_DRIVE_REFRESH_TOKEN'),
+
+            // Use the Folder ID of the subfolder directly
+            'folderId' => '1Rh3SCE0rkG8wYf0k4DjxM-_3PoIoQ1jD',
+
+            // Remove the 'folder' and 'root' keys to avoid conflicts
+            'root' => '',
+            'folder' => '',
+        ],
+
     ],
 
     /*

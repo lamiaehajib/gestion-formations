@@ -1813,6 +1813,10 @@ j    .inscription-card {
 .hidden {
     display: none;
 }
+
+li.page-item {
+    background-color: #e91010 !important;
+}
 </style>
 @endpush
 
