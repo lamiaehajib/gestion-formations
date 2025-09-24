@@ -114,7 +114,17 @@ Route::get('/formations/{formation}/edit-modal', [FormationController::class, 'e
 Route::get('/formations/{formation}/inscriptions-count', [App\Http\Controllers\FormationController::class, 'getActiveInscriptionsCount']);
 
 
+// 1. Route dyal Affichage Corbeille
+Route::get('/inscriptions/corbeille', [InscriptionController::class, 'corbeille'])
+      ->name('inscriptions.corbeille');
 
+// 2. Route dyal Restauration
+Route::put('/inscriptions/{id}/restore', [InscriptionController::class, 'restore'])
+      ->name('inscriptions.restore');
+
+// 3. Route dyal Suppression Définitive
+Route::delete('/inscriptions/{id}/forceDelete', [InscriptionController::class, 'forceDelete'])
+      ->name('inscriptions.forceDelete');
 Route::get('/inscriptions/export', [InscriptionController::class, 'export'])->name('inscriptions.export');
     Route::get('/inscriptions/{inscription}/details-json', [App\Http\Controllers\InscriptionController::class, 'detailsJson'])->name('inscriptions.detailsJson');
 Route::post('inscriptions/{inscription}/record-payment', [App\Http\Controllers\InscriptionController::class, 'recordPayment'])->name('inscriptions.recordPayment');
@@ -125,6 +135,10 @@ Route::get('inscriptions/{inscription}/add-payment', [App\Http\Controllers\Inscr
 // Route to handle the submission of the add payment form
 Route::post('/inscriptions/{inscription}/add-payment', [InscriptionController::class, 'addPayment'])->name('inscriptions.addPayment');
 Route::resource('inscriptions', App\Http\Controllers\InscriptionController::class);
+
+Route::get('/inscriptions/{inscription}', [InscriptionController::class, 'show'])
+      ->name('inscriptions.show')
+      ->withTrashed();
     // Routes API pour les inscriptions
     Route::prefix('api/inscriptions')->name('api.inscriptions.')->group(function () {
         Route::get('my-inscriptions', [InscriptionController::class, 'myInscriptions'])->name('my-inscriptions');

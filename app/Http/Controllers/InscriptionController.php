@@ -692,6 +692,39 @@ public function detailsJson(Inscription $inscription)
         ]
     ]);
 }
+public function corbeille()
+{
+    // Kanst3amlo onlyTrashed() bach njebdo GHI les Inscriptions li mamsou7in
+    // KanLoadéw relations 'user' w 'formation'
+    $inscriptions = Inscription::onlyTrashed()
+                  ->with(['user', 'formation']) 
+                  ->orderBy('deleted_at', 'desc')
+                  ->get();
 
+    return view('inscriptions.corbeille', compact('inscriptions'));
+}
+
+// N°2. Restauration d'une Inscription (I3ada l'Hayat)
+public function restore($id)
+{
+    // Kanjebdo l-Inscription b ID men l'Corbeille (withTrashed) w kan3ayto 3la restore()
+    $inscription = Inscription::withTrashed()->findOrFail($id);
+    $inscription->restore();
+
+    return redirect()->route('inscriptions.corbeille')->with('success', 'Inscription restaurée avec succès!');
+}
+
+// N°3. Suppression Définitive (Mass7 Nnéha'i)
+public function forceDelete($id)
+{
+    // Kanjebdo l-Inscription b ID men l'Corbeille (withTrashed) w kan3ayto 3la forceDelete()
+    $inscription = Inscription::withTrashed()->findOrFail($id);
+    
+    // ⚠️ Mola7aḍa: Ila 3endek des fichiers flouked (b7al `documents`), khass tmass7hom hna.
+    
+    $inscription->forceDelete(); // Hadchi kaymassah men la base de données b neha'i!
+
+    return redirect()->route('inscriptions.corbeille')->with('success', 'Inscription supprimée définitivement!');
+}
    
 }

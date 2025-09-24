@@ -5,10 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 // use Illuminate->Support->Facades->DB; // هذا الـ import ليس ضروريا في هذا الموديل بعد الآن إذا تم حذف DB::beginTransaction/rollback
-
+use Illuminate\Database\Eloquent\SoftDeletes; 
 class Inscription extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'user_id',

@@ -34,6 +34,10 @@
                         </div>
                         Nouvelle Inscription
                     </a>
+
+                    <a href="{{ route('inscriptions.corbeille') }}" class="btn btn-danger">
+    <i class="fa fa-trash"></i> Corbeille
+</a>
                     @endcan
                     @can('inscription-create')
                     <a href="{{ route('inscriptions.export', request()->all()) }}" class="btn-export-csv group">
