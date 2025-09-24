@@ -306,6 +306,12 @@ Route::get('promotions/{promotion}/report', [PromotionController::class, 'genera
 Route::get('promotions/{promotion}/student/{user}/payments', [PromotionController::class, 'showStudentPayments'])
      ->name('promotions.studentPaymentHistory');
 
+     Route::get('/modules/corbeille', [ModuleController::class, 'corbeille'])
+      ->name('modules.corbeille');
+Route::put('/modules/{id}/restore', [ModuleController::class, 'restore'])
+      ->name('modules.restore');
+Route::delete('/modules/{id}/forceDelete', [ModuleController::class, 'forceDelete'])
+      ->name('modules.forceDelete');
 
     Route::get('/modules/create', [ModuleController::class, 'create'])->name('modules.create');
 Route::post('/modules', [ModuleController::class, 'store'])->name('modules.store');

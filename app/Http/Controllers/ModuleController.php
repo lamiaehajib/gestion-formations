@@ -294,4 +294,40 @@ public function update(Request $request, Module $module)
         $module->delete();
         return response()->json(['success' => 'Module deleted successfully!']);
     }
+
+    public function corbeille()
+{
+    $modules = Module::onlyTrashed()
+                  ->with(['formation', 'user']) 
+                  ->orderBy('deleted_at', 'desc')
+                  ->get();
+
+    return view('modules.corbeille', compact('modules'));
+}
+
+// N°2. Restauration d'un Module
+public function restore($id)
+{
+    $module = Module::withTrashed()->findOrFail($id);
+    $module->restore();
+
+    return redirect()->route('modules.corbeille')->with('success', 'Module restauré avec succès!');
+}
+
+// N°3. Suppression Définitive
+public function forceDelete($id)
+{
+    $module = Module::withTrashed()->findOrFail($id);
+    
+    // Matnsach tmass7 les fichiers ila 3endek
+    // if ($module->content) {
+    //    foreach (json_decode($module->content, true) as $file) {
+    //       Storage::disk('public')->delete($file['path']);
+    //    }
+    // }
+
+    $module->forceDelete(); 
+
+    return redirect()->route('modules.corbeille')->with('success', 'Module supprimé définitivement!');
+}
 }

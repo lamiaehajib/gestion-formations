@@ -423,6 +423,9 @@
                     <button type="button" class="add-module-btn" data-bs-toggle="modal" data-bs-target="#createModuleModal">
                         <i class="fas fa-plus-circle"></i> Add New Module
                     </button>
+                    <a href="{{ route('modules.corbeille') }}" class="btn btn-danger">
+    <i class="fa fa-trash"></i> Corbeille
+</a>
                     @endcan
                 </div>
 
