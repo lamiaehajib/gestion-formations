@@ -407,7 +407,7 @@
                                 <i class="fas fa-clock"></i>
                                 Duration:
                             </div>
-                            <p class="mb-0">{{ $formation->duration_hours }} hours</p>
+                            <p class="mb-0">{{ $formation->duration_hours }} mois</p>
                         </div>
                     </div>
                 </div>
