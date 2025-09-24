@@ -861,4 +861,39 @@ public function store(Request $request)
 
         return response()->stream($callback, 200, $headers);
     }
+
+    public function corbeille()
+{
+    // Kanst3amlo onlyTrashed() bach njebdo GHI les paiements li mamsou7in
+    // KanLoadéw relations 'inscription' w 'creator'
+    $payments = Payment::onlyTrashed()
+                  ->with(['inscription', 'creator']) 
+                  ->orderBy('deleted_at', 'desc')
+                  ->get();
+
+    return view('payments.corbeille', compact('payments'));
+}
+
+// N°2. Restauration d'un Paiement (I3ada l'Hayat)
+public function restore($id)
+{
+    // Kanjebdo l-paiement b ID men l'Corbeille (withTrashed) w kan3ayto 3la restore()
+    $payment = Payment::withTrashed()->findOrFail($id);
+    $payment->restore();
+
+    return redirect()->route('payments.corbeille')->with('success', 'Paiement restauré avec succès!');
+}
+
+// N°3. Suppression Définitive (Mass7 Nnéha'i)
+public function forceDelete($id)
+{
+    // Kanjebdo l-paiement b ID men l'Corbeille (withTrashed) w kan3ayto 3la forceDelete()
+    $payment = Payment::withTrashed()->findOrFail($id);
+    
+    // ⚠️ Mola7aḍa: Ila 3endek des fichiers flouked (b7al `receipt_path`), khass tmass7hom hna.
+    
+    $payment->forceDelete(); // Hadchi kaymassah men la base de données b neha'i!
+
+    return redirect()->route('payments.corbeille')->with('success', 'Paiement supprimé définitivement!');
+}
 }

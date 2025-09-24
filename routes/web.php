@@ -163,7 +163,23 @@ Route::get('/payments/export', [PaymentController::class, 'export'])->name('paym
 
       
     });
+    
+
+    Route::get('/payments/corbeille', [PaymentController::class, 'corbeille'])
+      ->name('payments.corbeille');
+
+// 2. Route dyal Restauration
+Route::put('/payments/{id}/restore', [PaymentController::class, 'restore'])
+      ->name('payments.restore');
+
+// 3. Route dyal Suppression Définitive
+Route::delete('/payments/{id}/forceDelete', [PaymentController::class, 'forceDelete'])
+      ->name('payments.forceDelete');
+
+      
     Route::resource('payments', PaymentController::class);
+
+    
     
      Route::resource('courses', CourseController::class);
     

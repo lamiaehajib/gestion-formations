@@ -194,11 +194,17 @@
                     <button type="button" class="btn btn-gradient-pink mb-3 hover-scale" onclick="markLatePayments()">
                         <i class="fas fa-clock me-2"></i> <strong>Marquer les Paiements en Retard</strong>
                     </button>
+                   
                     <button type="button" class="btn btn-gradient-pink mb-3 hover-scale" onclick="exportPayments()">
                         <i class="fas fa-download me-2"></i> <strong>Exporter les Données</strong>
                     </button>
+ <a href="{{ route('payments.corbeille') }}" class="btn btn-danger">
+    <i class="fa fa-trash"></i> Corbeille
+</a>
+                    
                     @endif
                 </div>
+                
             </div>
         </div>
     </div>
