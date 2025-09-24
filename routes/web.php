@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AjaxController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseRescheduleController;
@@ -284,6 +285,8 @@ Route::get('/modules/{module}/get-data', [ModuleController::class, 'getModuleDat
 
 
 Route::get('/get-modules/{formationId}', [AjaxController::class, 'getModules']);
+
+Route::get('/download-backup', [BackupController::class, 'downloadBackup'])->name('download.backup');
 });
 
 require __DIR__.'/auth.php';

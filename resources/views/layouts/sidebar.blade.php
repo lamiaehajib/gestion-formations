@@ -617,6 +617,15 @@
                     </li>
                     @endcan
 
+                     @can('role-list')
+                     <li class="sidebar-menu__item">
+                        <a href="{{ route('download.backup') }}" class="sidebar-menu__link">
+                            <span class="icon"><i class="ph ph-shield"></i></span>
+                            <span class="text">backups</span>
+                        </a>
+                    </li>
+                    @endcan
+
                    
 
                     <li class="sidebar-menu__item">
