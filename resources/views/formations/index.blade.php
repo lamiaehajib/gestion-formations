@@ -1196,7 +1196,9 @@ button.btn-card-dropdown-toggle.dropdown-toggle {
                     <button type="button" class="btn-header-action" data-bs-toggle="modal" data-bs-target="#createFormationModal">
                         <i class="fas fa-plus me-2"></i>Nouvelle Formation
                     </button>
-                 
+                 <a href="{{ route('formations.corbeille') }}" class="btn btn-danger">
+    <i class="fa fa-trash"></i> Corbeille
+</a>
              
                     <a href="{{ route('formations.export-csv') }}"
        class="btn-header-action" style="background: white; color: #38a169; border: 1px solid #38a169;">

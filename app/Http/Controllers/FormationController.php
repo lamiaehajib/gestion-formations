@@ -496,4 +496,39 @@ class FormationController extends Controller
 
         return new StreamedResponse($callback, 200, $headers);
     }
+
+    public function corbeille()
+{
+    // Kanst3amlo onlyTrashed() bach njebdo GHI les Formations li mamsou7in
+    // KanLoadéw relations 'consultant' w 'category'
+    $formations = Formation::onlyTrashed()
+                  ->with(['consultant', 'category']) 
+                  ->orderBy('deleted_at', 'desc')
+                  ->get();
+
+    return view('formations.corbeille', compact('formations'));
+}
+
+// N°2. Restauration d'une Formation (I3ada l'Hayat)
+public function restore($id)
+{
+    // Kanjebdo l-Formation b ID men l'Corbeille (withTrashed) w kan3ayto 3la restore()
+    $formation = Formation::withTrashed()->findOrFail($id);
+    $formation->restore();
+
+    return redirect()->route('formations.corbeille')->with('success', 'Formation restaurée avec succès!');
+}
+
+// N°3. Suppression Définitive (Mass7 Nnéha'i)
+public function forceDelete($id)
+{
+    // Kanjebdo l-Formation b ID men l'Corbeille (withTrashed) w kan3ayto 3la forceDelete()
+    $formation = Formation::withTrashed()->findOrFail($id);
+    
+    // ⚠️ Mola7aḍa: Ila 3endek des fichiers flouked (b7al `documents_required`), khass tmass7hom hna.
+    
+    $formation->forceDelete(); // Hadchi kaymassah men la base de données b neha'i!
+
+    return redirect()->route('formations.corbeille')->with('success', 'Formation supprimée définitivement!');
+}
 }

@@ -87,8 +87,23 @@ Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus
 
     // Route API pour récupérer les catégories actives (pour les formulaires)
     Route::get('/api/categories/active', [CategoryController::class, 'getActiveCategories'])->name('api.categories.active');
+
+    Route::get('/formations/corbeille', [FormationController::class, 'corbeille'])
+      ->name('formations.corbeille');
+
+// 2. Route dyal Restauration
+Route::put('/formations/{id}/restore', [FormationController::class, 'restore'])
+      ->name('formations.restore');
+
+// 3. Route dyal Suppression Définitive
+Route::delete('/formations/{id}/forceDelete', [FormationController::class, 'forceDelete'])
+      ->name('formations.forceDelete');
+      
  Route::get('/formations/export-csv', [FormationController::class, 'exportCsv'])->name('formations.export-csv');
     Route::resource('formations', FormationController::class);
+    Route::get('/formations/{formation}', [FormationController::class, 'show'])
+      ->name('formations.show')
+      ->withTrashed();
     Route::get('/formations/category/{categoryId}', [FormationController::class, 'getByCategory'])->name('formations.getByCategory');
     Route::post('/formations/{formation}/duplicate', [FormationController::class, 'duplicate'])->name('formations.duplicate');
     Route::get('/formations/{formation}/statistics', [FormationController::class, 'statistics'])->name('formations.statistics');
@@ -287,6 +302,9 @@ Route::get('/modules/{module}/get-data', [ModuleController::class, 'getModuleDat
 Route::get('/get-modules/{formationId}', [AjaxController::class, 'getModules']);
 
 Route::get('/download-backup', [BackupController::class, 'downloadBackup'])->name('download.backup');
+
+
+
 });
 
 require __DIR__.'/auth.php';
