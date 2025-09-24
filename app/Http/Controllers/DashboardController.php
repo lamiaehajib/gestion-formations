@@ -167,7 +167,7 @@ class DashboardController extends Controller
                     }
                 }])
                 ->orderByDesc('inscriptions_count')
-                ->take(5)
+                ->take(10)
                 ->get(),
             'upcomingFormations' => Formation::where('start_date', '>=', Carbon::now())
     // Remove the `when` block that filters by $startDate and $endDate
