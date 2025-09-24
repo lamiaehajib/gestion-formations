@@ -32,88 +32,91 @@ class UserController extends Controller
     /**
      * Display a listing of the users.
      */
-  public function index(Request $request)
-    {
-        // Start building the query
-        $query = User::with('roles');
+public function index(Request $request)
+{
+    // Start building the query
+    $query = User::with('roles');
 
-        // Apply search filter if present
-        if ($request->filled('search')) {
-            $search = $request->get('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                  ->orWhere('email', 'like', '%' . $search . '%')
-                  ->orWhere('phone', 'like', '%' . $search . '%');
-            });
-        }
-
-        // Apply status filter if present
-        if ($request->filled('status')) {
-            $query->where('status', $request->get('status'));
-        }
-
-        // Apply role filter if present
-        if ($request->filled('role')) {
-            $query->whereHas('roles', function ($q) use ($request) {
-                $q->where('name', $request->get('role'));
-            });
-        }
-
-        // Separate users by role BEFORE pagination
-        $consultants = (clone $query)->whereHas('roles', function ($q) {
-            $q->where('name', 'Consultant');
-        })->get();
-
-        $etudiants = (clone $query)->whereHas('roles', function ($q) {
-            $q->where('name', 'Etudiant');
-        })->get();
-
-        $admis = (clone $query)->whereHas('roles', function ($q) {
-            $q->where('name', 'Admin');
-        })->get();
-
-        // Paginate each collection
-        $perPage = 10;
-        $consultantsPaginated = $this->paginateCollection($consultants, $perPage, $request->get('page_consultant'), 'page_consultant');
-        $etudiantsPaginated = $this->paginateCollection($etudiants, $perPage, $request->get('page_etudiant'), 'page_etudiant');
-        $admisPaginated = $this->paginateCollection($admis, $perPage, $request->get('page_admis'), 'page_admis');
-
-        // Statistics
-        $stats = [
-            'total' => User::count(),
-            'active' => User::where('status', 'active')->count(),
-            'inactive' => User::where('status', 'inactive')->count(),
-            'recent' => User::where('created_at', '>=', now()->subDays(30))->count(),
-        ];
-        
-        $allRoles = Role::all();
-
-        // Return JSON response for AJAX requests
-        if ($request->ajax()) {
-            $group = $request->get('group');
-            $users = [];
-            $pagination = '';
-            
-            if ($group === 'consultant') {
-                $users = $consultantsPaginated;
-                $pagination = $consultantsPaginated->appends($request->except('page_consultant'))->links('vendor.pagination.bootstrap-5')->toHtml();
-            } elseif ($group === 'etudiant') {
-                $users = $etudiantsPaginated;
-                $pagination = $etudiantsPaginated->appends($request->except('page_etudiant'))->links('vendor.pagination.bootstrap-5')->toHtml();
-            } elseif ($group === 'admis') {
-                $users = $admisPaginated;
-                $pagination = $admisPaginated->appends($request->except('page_admis'))->links('vendor.pagination.bootstrap-5')->toHtml();
-            }
-            
-            return response()->json([
-                'users' => $users,
-                'pagination' => $pagination,
-                'stats' => $stats,
-            ]);
-        }
-
-        return view('users.index', compact('consultantsPaginated', 'etudiantsPaginated', 'admisPaginated', 'stats', 'allRoles'));
+    // Apply search filter if present
+    if ($request->filled('search')) {
+        $search = $request->get('search');
+        $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', '%' . $search . '%')
+                ->orWhere('email', 'like', '%' . $search . '%')
+                ->orWhere('phone', 'like', '%' . $search . '%');
+        });
     }
+
+    // Apply status filter if present
+    if ($request->filled('status')) {
+        $query->where('status', $request->get('status'));
+    }
+
+    // Apply role filter if present
+    if ($request->filled('role')) {
+        $query->whereHas('roles', function ($q) use ($request) {
+            $q->where('name', $request->get('role'));
+        });
+    }
+    
+    // Ajoute le tri pour afficher les utilisateurs les plus récents en premier
+    $query->orderBy('created_at', 'desc');
+
+    // Separate users by role BEFORE pagination
+    $consultants = (clone $query)->whereHas('roles', function ($q) {
+        $q->where('name', 'Consultant');
+    })->get();
+
+    $etudiants = (clone $query)->whereHas('roles', function ($q) {
+        $q->where('name', 'Etudiant');
+    })->get();
+
+    $admis = (clone $query)->whereHas('roles', function ($q) {
+        $q->where('name', 'Admin');
+    })->get();
+
+    // Paginate each collection
+    $perPage = 10;
+    $consultantsPaginated = $this->paginateCollection($consultants, $perPage, $request->get('page_consultant'), 'page_consultant');
+    $etudiantsPaginated = $this->paginateCollection($etudiants, $perPage, $request->get('page_etudiant'), 'page_etudiant');
+    $admisPaginated = $this->paginateCollection($admis, $perPage, $request->get('page_admis'), 'page_admis');
+
+    // Statistics
+    $stats = [
+        'total' => User::count(),
+        'active' => User::where('status', 'active')->count(),
+        'inactive' => User::where('status', 'inactive')->count(),
+        'recent' => User::where('created_at', '>=', now()->subDays(30))->count(),
+    ];
+    
+    $allRoles = Role::all();
+
+    // Return JSON response for AJAX requests
+    if ($request->ajax()) {
+        $group = $request->get('group');
+        $users = [];
+        $pagination = '';
+        
+        if ($group === 'consultant') {
+            $users = $consultantsPaginated;
+            $pagination = $consultantsPaginated->appends($request->except('page_consultant'))->links('vendor.pagination.bootstrap-5')->toHtml();
+        } elseif ($group === 'etudiant') {
+            $users = $etudiantsPaginated;
+            $pagination = $etudiantsPaginated->appends($request->except('page_etudiant'))->links('vendor.pagination.bootstrap-5')->toHtml();
+        } elseif ($group === 'admis') {
+            $users = $admisPaginated;
+            $pagination = $admisPaginated->appends($request->except('page_admis'))->links('vendor.pagination.bootstrap-5')->toHtml();
+        }
+        
+        return response()->json([
+            'users' => $users,
+            'pagination' => $pagination,
+            'stats' => $stats,
+        ]);
+    }
+
+    return view('users.index', compact('consultantsPaginated', 'etudiantsPaginated', 'admisPaginated', 'stats', 'allRoles'));
+}
 
     protected function paginateCollection($items, $perPage = 10, $page = null, $pageName = 'page')
     {
