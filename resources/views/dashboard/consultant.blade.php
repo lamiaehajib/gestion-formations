@@ -680,515 +680,519 @@
 @endpush
 
 @section('content')
-<div class="dashboard-body">
-    <div class="dashboard-container">
-        {{-- Header Section (matches student dashboard) --}}
-        <div class="card-base header-card mb-4">
-            <h1><i class="fa-solid fa-chalkboard-teacher"></i> Tableau de Bord Consultant</h1>
-            <p class="header-subtitle">Bienvenue, {{ Auth::user()->name }} ! Gérez vos formations, vos cours et vos étudiants.</p>
-            <form action="{{ route('dashboard') }}" method="GET" class="date-filter">
-                <label for="selected_month" class="sr-only">Filtrer par mois :</label>
-                <select name="selected_month" id="selected_month">
-                    <option value="">Tous les mois</option>
-                    @foreach($months as $num => $name)
-                        <option value="{{ $num }}" {{ (int)$selectedMonth === $num ? 'selected' : '' }}>
-                            {{ $name }}
-                        </option>
-                    @endforeach
-                </select>
-                <label for="selected_year" class="sr-only">Année :</label>
-                <input type="number" name="selected_year" id="selected_year" value="{{ $selectedYear ?? \Carbon\Carbon::now()->year }}" min="2020" max="{{ \Carbon\Carbon::now()->addYears(5)->year }}">
-                <button type="submit" class="filter-btn"><i class="fa-solid fa-filter"></i> Filtrer</button>
-                @if($selectedMonth || request()->filled('selected_year') && request()->selected_year != \Carbon\Carbon::now()->year)
-                    <a href="{{ route('dashboard') }}" class="filter-btn" style="background: var(--text-light); color: white; box-shadow: none;">
-                        <i class="fa-solid fa-rotate-right"></i> Réinitialiser
-                    </a>
+    <div class="dashboard-body">
+        <div class="dashboard-container">
+            {{-- Header Section (matches student dashboard) --}}
+            <div class="card-base header-card mb-4">
+                <h1><i class="fa-solid fa-chalkboard-teacher"></i> Tableau de Bord Consultant</h1>
+                <p class="header-subtitle">Bienvenue, {{ Auth::user()->name }} ! Gérez vos formations, vos cours et vos étudiants.</p>
+                <form action="{{ route('dashboard') }}" method="GET" class="date-filter">
+                    <label for="selected_month" class="sr-only">Filtrer par mois :</label>
+                    <select name="selected_month" id="selected_month">
+                        <option value="">Tous les mois</option>
+                        @foreach($months as $num => $name)
+                            <option value="{{ $num }}" {{ (int) $selectedMonth === $num ? 'selected' : '' }}>
+                                {{ $name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <label for="selected_year" class="sr-only">Année :</label>
+                    <input type="number" name="selected_year" id="selected_year" value="{{ $selectedYear ?? \Carbon\Carbon::now()->year }}" min="2020" max="{{ \Carbon\Carbon::now()->addYears(5)->year }}">
+                    <button type="submit" class="filter-btn"><i class="fa-solid fa-filter"></i> Filtrer</button>
+                    @if($selectedMonth || request()->filled('selected_year') && request()->selected_year != \Carbon\Carbon::now()->year)
+                        <a href="{{ route('dashboard') }}" class="filter-btn" style="background: var(--text-light); color: white; box-shadow: none;">
+                            <i class="fa-solid fa-rotate-right"></i> Réinitialiser
+                        </a>
+                    @endif
+                </form>
+            </div>
+
+            {{-- Stats Cards Section (matches student dashboard) --}}
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon" style="background: linear-gradient(45deg, var(--accent-green), #2ECC71);"><i class="fas fa-users"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-number" style="background: linear-gradient(45deg, var(--accent-green), #2ECC71); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalStudents }}</div>
+                            <div class="stat-label">Total Étudiants</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon" style="background: linear-gradient(45deg, var(--primary-blue), var(--primary-dark-blue));"><i class="fas fa-book-open"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-number" style="background: linear-gradient(45deg, var(--primary-blue), var(--primary-dark-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalCourses }}</div>
+                            <div class="stat-label">Total Cours</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon" style="background: linear-gradient(45deg, var(--accent-purple), #9B59B6);"><i class="fas fa-chalkboard"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-number" style="background: linear-gradient(45deg, var(--accent-purple), #9B59B6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $myFormations->count() }}</div>
+                            <div class="stat-label">Mes Formations</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon" style="background: linear-gradient(45deg, var(--accent-orange), #E67E22);"><i class="fas fa-calendar-day"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-number" style="background: linear-gradient(45deg, var(--accent-orange), #E67E22); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $coursesToday->count() }}</div>
+                            <div class="stat-label">Cours Aujourd'hui</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            {{-- Module Progress Overview Cards --}}
+    <div class="stats-grid" style="margin-top: 40px;">
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-icon" style="background: linear-gradient(45deg, #28B463, #2ECC71);"><i class="fas fa-tasks"></i></div>
+                <div class="stat-info">
+                    <div class="stat-number" style="background: linear-gradient(45deg, #28B463, #2ECC71); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalModules }}</div>
+                    <div class="stat-label">Total Modules</div>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-icon" style="background: linear-gradient(45deg, #28a745, #20c997);"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-info">
+                    <div class="stat-number" style="background: linear-gradient(45deg, #28a745, #20c997); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalCompletedModules }}</div>
+                    <div class="stat-label">Modules Terminés</div>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-icon" style="background: linear-gradient(45deg, #17a2b8, #20c997);"><i class="fas fa-play-circle"></i></div>
+                <div class="stat-info">
+                    <div class="stat-number" style="background: linear-gradient(45deg, #17a2b8, #20c997); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalInProgressModules }}</div>
+                    <div class="stat-label">En Cours</div>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-icon" style="background: linear-gradient(45deg, #ffc107, #fd7e14);"><i class="fas fa-hourglass-start"></i></div>
+                <div class="stat-info">
+                    <div class="stat-number" style="background: linear-gradient(45deg, #ffc107, #fd7e14); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalNotStartedModules }}</div>
+                    <div class="stat-label">Pas Commencés</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Global Module Progress Chart --}}
+    <div class="row" style="margin-top: 30px;">
+        <div class="col-lg-8 mb-4">
+            <div class="card-base">
+                <h3 class="chart-title"><i class="fa-solid fa-chart-line"></i> Progression Globale des Modules</h3>
+                @if($totalModules == 0)
+                    <div class="empty-state">
+                        <div class="icon"><i class="fa-solid fa-tasks"></i></div>
+                        <p>Aucun module assigné pour le moment.</p>
+                    </div>
+                @else
+                    <div class="chart-container">
+                        <canvas id="globalModulesProgressChart"></canvas>
+                    </div>
                 @endif
-            </form>
-        </div>
-
-        {{-- Stats Cards Section (matches student dashboard) --}}
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon" style="background: linear-gradient(45deg, var(--accent-green), #2ECC71);"><i class="fas fa-users"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-number" style="background: linear-gradient(45deg, var(--accent-green), #2ECC71); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalStudents }}</div>
-                        <div class="stat-label">Total Étudiants</div>
-                    </div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon" style="background: linear-gradient(45deg, var(--primary-blue), var(--primary-dark-blue));"><i class="fas fa-book-open"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-number" style="background: linear-gradient(45deg, var(--primary-blue), var(--primary-dark-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalCourses }}</div>
-                        <div class="stat-label">Total Cours</div>
-                    </div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon" style="background: linear-gradient(45deg, var(--accent-purple), #9B59B6);"><i class="fas fa-chalkboard"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-number" style="background: linear-gradient(45deg, var(--accent-purple), #9B59B6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $myFormations->count() }}</div>
-                        <div class="stat-label">Mes Formations</div>
-                    </div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon" style="background: linear-gradient(45deg, var(--accent-orange), #E67E22);"><i class="fas fa-calendar-day"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-number" style="background: linear-gradient(45deg, var(--accent-orange), #E67E22); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $coursesToday->count() }}</div>
-                        <div class="stat-label">Cours Aujourd'hui</div>
-                    </div>
-                </div>
             </div>
         </div>
 
-
-        {{-- Module Progress Overview Cards --}}
-<div class="stats-grid" style="margin-top: 40px;">
-    <div class="stat-card">
-        <div class="stat-content">
-            <div class="stat-icon" style="background: linear-gradient(45deg, #28B463, #2ECC71);"><i class="fas fa-tasks"></i></div>
-            <div class="stat-info">
-                <div class="stat-number" style="background: linear-gradient(45deg, #28B463, #2ECC71); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalModules }}</div>
-                <div class="stat-label">Total Modules</div>
-            </div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-content">
-            <div class="stat-icon" style="background: linear-gradient(45deg, #28a745, #20c997);"><i class="fas fa-check-circle"></i></div>
-            <div class="stat-info">
-                <div class="stat-number" style="background: linear-gradient(45deg, #28a745, #20c997); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalCompletedModules }}</div>
-                <div class="stat-label">Modules Terminés</div>
-            </div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-content">
-            <div class="stat-icon" style="background: linear-gradient(45deg, #17a2b8, #20c997);"><i class="fas fa-play-circle"></i></div>
-            <div class="stat-info">
-                <div class="stat-number" style="background: linear-gradient(45deg, #17a2b8, #20c997); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalInProgressModules }}</div>
-                <div class="stat-label">En Cours</div>
-            </div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-content">
-            <div class="stat-icon" style="background: linear-gradient(45deg, #ffc107, #fd7e14);"><i class="fas fa-hourglass-start"></i></div>
-            <div class="stat-info">
-                <div class="stat-number" style="background: linear-gradient(45deg, #ffc107, #fd7e14); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalNotStartedModules }}</div>
-                <div class="stat-label">Pas Commencés</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- Global Module Progress Chart --}}
-<div class="row" style="margin-top: 30px;">
-    <div class="col-lg-8 mb-4">
-        <div class="card-base">
-            <h3 class="chart-title"><i class="fa-solid fa-chart-line"></i> Progression Globale des Modules</h3>
-            @if($totalModules == 0)
-                <div class="empty-state">
-                    <div class="icon"><i class="fa-solid fa-tasks"></i></div>
-                    <p>Aucun module assigné pour le moment.</p>
-                </div>
-            @else
-                <div class="chart-container">
-                    <canvas id="globalModulesProgressChart"></canvas>
-                </div>
-            @endif
-        </div>
-    </div>
-
-    {{-- Module Progress Statistics --}}
-    <div class="col-lg-4 mb-4">
-        <div class="card-base">
-            <h3 class="chart-title"><i class="fa-solid fa-chart-pie"></i> Répartition des Modules</h3>
-            @if($totalModules == 0)
-                <div class="empty-state empty-state-small">
-                    <div class="icon"><i class="fa-solid fa-chart-pie"></i></div>
-                    <p>Aucune donnée disponible.</p>
-                </div>
-            @else
-                <div class="chart-container">
-                    <canvas id="moduleStatsChart"></canvas>
-                </div>
-                
-                {{-- Progress Statistics Details --}}
-                <div style="margin-top: 25px;">
-                    <div class="progress-stat-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 12px; height: 12px; background-color: #28a745; border-radius: 50%;"></div>
-                            <span style="font-weight: 600; color: var(--text-dark);">Terminés</span>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="font-weight: 700; color: #28a745;">{{ $moduleProgressStats['completed']['percentage'] }}%</div>
-                            <div style="font-size: 0.85rem; color: var(--text-medium);">{{ $moduleProgressStats['completed']['count'] }} modules</div>
-                        </div>
+        {{-- Module Progress Statistics --}}
+        <div class="col-lg-4 mb-4">
+            <div class="card-base">
+                <h3 class="chart-title"><i class="fa-solid fa-chart-pie"></i> Répartition des Modules</h3>
+                @if($totalModules == 0)
+                    <div class="empty-state empty-state-small">
+                        <div class="icon"><i class="fa-solid fa-chart-pie"></i></div>
+                        <p>Aucune donnée disponible.</p>
                     </div>
-                    
-                    <div class="progress-stat-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 12px; height: 12px; background-color: #17a2b8; border-radius: 50%;"></div>
-                            <span style="font-weight: 600; color: var(--text-dark);">En Cours</span>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="font-weight: 700; color: #17a2b8;">{{ $moduleProgressStats['in_progress']['percentage'] }}%</div>
-                            <div style="font-size: 0.85rem; color: var(--text-medium);">{{ $moduleProgressStats['in_progress']['count'] }} modules</div>
-                        </div>
+                @else
+                    <div class="chart-container">
+                        <canvas id="moduleStatsChart"></canvas>
                     </div>
-                    
-                    <div class="progress-stat-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 12px; height: 12px; background-color: #dc3545; border-radius: 50%;"></div>
-                            <span style="font-weight: 600; color: var(--text-dark);">Non Commencés</span>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="font-weight: 700; color: #dc3545;">{{ $moduleProgressStats['not_started']['percentage'] }}%</div>
-                            <div style="font-size: 0.85rem; color: var(--text-medium);">{{ $moduleProgressStats['not_started']['count'] }} modules</div>
-                        </div>
-                    </div>
-                </div>
 
-                {{-- Overall Progress Bar --}}
-                <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid var(--border-light);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <span style="font-weight: 700; color: var(--text-dark);">Progression Moyenne</span>
-                        <span style="font-weight: 800; font-size: 1.4rem; color: var(--primary-blue);">{{ $overallAverageProgress }}%</span>
-                    </div>
-                    <div style="width: 100%; height: 12px; background-color: var(--background-light); border-radius: 6px; overflow: hidden;">
-                        <div style="height: 100%; background: linear-gradient(90deg, var(--primary-blue), var(--primary-dark-blue)); width: {{ $overallAverageProgress }}%; transition: width 0.8s ease;"></div>
-                    </div>
-                </div>
-            @endif
-        </div>
-    </div>
-</div>
-
-{{-- Modules by Formation --}}
-@if($modulesByFormation->isNotEmpty())
-<div class="row">
-    <div class="col-12">
-        <div class="card-base">
-            <h3 class="chart-title"><i class="fa-solid fa-layer-group"></i> Modules par Formation</h3>
-            
-            <div style="display: grid; gap: 30px;">
-                @foreach($modulesByFormation as $formationId => $formationData)
-                    <div style="background: var(--background-light); border-radius: 16px; padding: 25px; border: 1px solid var(--border-light);">
-                        {{-- Formation Header --}}
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                            <div>
-                                <h4 style="color: var(--text-dark); font-weight: 700; font-size: 1.3rem; margin: 0; margin-bottom: 5px;">
-                                    <i class="fas fa-graduation-cap" style="color: var(--primary-blue); margin-right: 10px;"></i>
-                                    {{ $formationData['formation']->title }}
-                                </h4>
-                                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                                    <span style="color: var(--text-medium); font-size: 0.9rem;">
-                                        <i class="fas fa-tasks" style="margin-right: 5px;"></i>
-                                        {{ $formationData['total_modules'] }} modules
-                                    </span>
-                                    <span style="color: var(--accent-green); font-size: 0.9rem; font-weight: 600;">
-                                        <i class="fas fa-check-circle" style="margin-right: 5px;"></i>
-                                        {{ $formationData['completed_modules'] }} terminés
-                                    </span>
-                                    <span style="color: var(--accent-orange); font-size: 0.9rem; font-weight: 600;">
-                                        <i class="fas fa-play-circle" style="margin-right: 5px;"></i>
-                                        {{ $formationData['in_progress_modules'] }} en cours
-                                    </span>
-                                </div>
+                    {{-- Progress Statistics Details --}}
+                    <div style="margin-top: 25px;">
+                        <div class="progress-stat-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 12px; height: 12px; background-color: #28a745; border-radius: 50%;"></div>
+                                <span style="font-weight: 600; color: var(--text-dark);">Terminés</span>
                             </div>
                             <div style="text-align: right;">
-                                <div style="font-size: 2.2rem; font-weight: 800; color: var(--primary-blue); margin-bottom: 5px;">
-                                    {{ $formationData['average_progress'] }}%
-                                </div>
-                                <div style="color: var(--text-medium); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">
-                                    Progression Moyenne
-                                </div>
+                                <div style="font-weight: 700; color: #28a745;">{{ $moduleProgressStats['completed']['percentage'] }}%</div>
+                                <div style="font-size: 0.85rem; color: var(--text-medium);">{{ $moduleProgressStats['completed']['count'] }} modules</div>
                             </div>
                         </div>
 
-                        {{-- Progress Bar for Formation --}}
-                        <div style="width: 100%; height: 8px; background-color: white; border-radius: 4px; overflow: hidden; margin-bottom: 25px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
-                            <div style="height: 100%; background: linear-gradient(90deg, var(--primary-blue), var(--primary-dark-blue)); width: {{ $formationData['average_progress'] }}%; transition: width 1s ease;"></div>
+                        <div class="progress-stat-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 12px; height: 12px; background-color: #17a2b8; border-radius: 50%;"></div>
+                                <span style="font-weight: 600; color: var(--text-dark);">En Cours</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 700; color: #17a2b8;">{{ $moduleProgressStats['in_progress']['percentage'] }}%</div>
+                                <div style="font-size: 0.85rem; color: var(--text-medium);">{{ $moduleProgressStats['in_progress']['count'] }} modules</div>
+                            </div>
                         </div>
 
-                        {{-- Modules List --}}
-                        @if($formationData['modules']->isNotEmpty())
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
-                                @foreach($formationData['modules'] as $module)
-                                    <div style="background: white; border-radius: 12px; padding: 20px; border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='var(--shadow-sm)'">
-                                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                                            <h5 style="color: var(--text-dark); font-weight: 600; font-size: 1rem; margin: 0; line-height: 1.4; flex: 1;">
-                                                {{ $module->title }}
-                                            </h5>
-                                            <div style="margin-left: 15px;">
-                                                @if($module->progress == 100)
-                                                    <div style="width: 24px; height: 24px; background-color: #28a745; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                                        <i class="fas fa-check" style="color: white; font-size: 12px;"></i>
-                                                    </div>
-                                                @elseif($module->progress >= 1)
-                                                    <div style="width: 24px; height: 24px; background-color: #17a2b8; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                                        <i class="fas fa-play" style="color: white; font-size: 10px;"></i>
-                                                    </div>
-                                                @else
-                                                    <div style="width: 24px; height: 24px; background-color: #dc3545; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                                        <i class="fas fa-pause" style="color: white; font-size: 10px;"></i>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </div>
-                                        
-                                        {{-- Module Progress Bar --}}
-                                        <div style="margin-bottom: 8px;">
-                                            <div style="width: 100%; height: 6px; background-color: var(--background-light); border-radius: 3px; overflow: hidden;">
-                                                <div style="height: 100%; 
-                                                    background-color: {{ $module->progress >= 80 ? '#28a745' : ($module->progress >= 60 ? '#17a2b8' : ($module->progress >= 40 ? '#ffc107' : ($module->progress >= 20 ? '#fd7e14' : '#dc3545'))) }}; 
-                                                    width: {{ $module->progress }}%; 
-                                                    transition: width 0.8s ease;"></div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                                            <span style="color: var(--text-medium); font-size: 0.85rem;">
-                                                Ordre: #{{ $module->order }}
+                        <div class="progress-stat-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 12px; height: 12px; background-color: #dc3545; border-radius: 50%;"></div>
+                                <span style="font-weight: 600; color: var(--text-dark);">Non Commencés</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 700; color: #dc3545;">{{ $moduleProgressStats['not_started']['percentage'] }}%</div>
+                                <div style="font-size: 0.85rem; color: var(--text-medium);">{{ $moduleProgressStats['not_started']['count'] }} modules</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Overall Progress Bar --}}
+                    <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid var(--border-light);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span style="font-weight: 700; color: var(--text-dark);">Progression Moyenne</span>
+                            <span style="font-weight: 800; font-size: 1.4rem; color: var(--primary-blue);">{{ $overallAverageProgress }}%</span>
+                        </div>
+                        <div style="width: 100%; height: 12px; background-color: var(--background-light); border-radius: 6px; overflow: hidden;">
+                            <div style="height: 100%; background: linear-gradient(90deg, var(--primary-blue), var(--primary-dark-blue)); width: {{ $overallAverageProgress }}%; transition: width 0.8s ease;"></div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    {{-- Modules by Formation --}}
+    @if($modulesByFormation->isNotEmpty())
+        <div class="row">
+            <div class="col-12">
+                <div class="card-base">
+                    <h3 class="chart-title"><i class="fa-solid fa-layer-group"></i> Modules par Formation</h3>
+
+                    <div style="display: grid; gap: 30px;">
+                        @foreach($modulesByFormation as $formationId => $formationData)
+                            <div style="background: var(--background-light); border-radius: 16px; padding: 25px; border: 1px solid var(--border-light);">
+                                {{-- Formation Header --}}
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                    <div>
+                                    <h4 style="color: var(--text-dark); font-weight: 700; font-size: 1.3rem; margin: 0; margin-bottom: 5px;">
+                                        <i class="fas fa-graduation-cap" style="color: var(--primary-blue); margin-right: 10px;"></i>
+                                        @if ($formationData['formation'])
+                                            {{ $formationData['formation']->title }}
+                                        @else
+                                            Unknown Formation
+                                        @endif
+                                    </h4>
+                                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                                            <span style="color: var(--text-medium); font-size: 0.9rem;">
+                                                <i class="fas fa-tasks" style="margin-right: 5px;"></i>
+                                                {{ $formationData['total_modules'] }} modules
                                             </span>
-                                            <span style="font-weight: 700; color: {{ $module->progress >= 80 ? '#28a745' : ($module->progress >= 60 ? '#17a2b8' : ($module->progress >= 40 ? '#ffc107' : ($module->progress >= 20 ? '#fd7e14' : '#dc3545'))) }};">
-                                                {{ $module->progress }}%
+                                            <span style="color: var(--accent-green); font-size: 0.9rem; font-weight: 600;">
+                                                <i class="fas fa-check-circle" style="margin-right: 5px;"></i>
+                                                {{ $formationData['completed_modules'] }} terminés
+                                            </span>
+                                            <span style="color: var(--accent-orange); font-size: 0.9rem; font-weight: 600;">
+                                                <i class="fas fa-play-circle" style="margin-right: 5px;"></i>
+                                                {{ $formationData['in_progress_modules'] }} en cours
                                             </span>
                                         </div>
                                     </div>
-                                @endforeach
+                                    <div style="text-align: right;">
+                                        <div style="font-size: 2.2rem; font-weight: 800; color: var(--primary-blue); margin-bottom: 5px;">
+                                            {{ $formationData['average_progress'] }}%
+                                        </div>
+                                        <div style="color: var(--text-medium); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">
+                                            Progression Moyenne
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Progress Bar for Formation --}}
+                                <div style="width: 100%; height: 8px; background-color: white; border-radius: 4px; overflow: hidden; margin-bottom: 25px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+                                    <div style="height: 100%; background: linear-gradient(90deg, var(--primary-blue), var(--primary-dark-blue)); width: {{ $formationData['average_progress'] }}%; transition: width 1s ease;"></div>
+                                </div>
+
+                                {{-- Modules List --}}
+                                @if($formationData['modules']->isNotEmpty())
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+                                        @foreach($formationData['modules'] as $module)
+                                            <div style="background: white; border-radius: 12px; padding: 20px; border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='var(--shadow-sm)'">
+                                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                                    <h5 style="color: var(--text-dark); font-weight: 600; font-size: 1rem; margin: 0; line-height: 1.4; flex: 1;">
+                                                        {{ $module->title }}
+                                                    </h5>
+                                                    <div style="margin-left: 15px;">
+                                                        @if($module->progress == 100)
+                                                            <div style="width: 24px; height: 24px; background-color: #28a745; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                                <i class="fas fa-check" style="color: white; font-size: 12px;"></i>
+                                                            </div>
+                                                        @elseif($module->progress >= 1)
+                                                            <div style="width: 24px; height: 24px; background-color: #17a2b8; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                                <i class="fas fa-play" style="color: white; font-size: 10px;"></i>
+                                                            </div>
+                                                        @else
+                                                            <div style="width: 24px; height: 24px; background-color: #dc3545; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                                <i class="fas fa-pause" style="color: white; font-size: 10px;"></i>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+
+                                                {{-- Module Progress Bar --}}
+                                                <div style="margin-bottom: 8px;">
+                                                    <div style="width: 100%; height: 6px; background-color: var(--background-light); border-radius: 3px; overflow: hidden;">
+                                                        <div style="height: 100%; 
+                                                            background-color: {{ $module->progress >= 80 ? '#28a745' : ($module->progress >= 60 ? '#17a2b8' : ($module->progress >= 40 ? '#ffc107' : ($module->progress >= 20 ? '#fd7e14' : '#dc3545'))) }}; 
+                                                            width: {{ $module->progress }}%; 
+                                                            transition: width 0.8s ease;"></div>
+                                                    </div>
+                                                </div>
+
+                                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                    <span style="color: var(--text-medium); font-size: 0.85rem;">
+                                                        Ordre: #{{ $module->order }}
+                                                    </span>
+                                                    <span style="font-weight: 700; color: {{ $module->progress >= 80 ? '#28a745' : ($module->progress >= 60 ? '#17a2b8' : ($module->progress >= 40 ? '#ffc107' : ($module->progress >= 20 ? '#fd7e14' : '#dc3545'))) }};">
+                                                        {{ $module->progress }}%
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Recent Module Updates --}}
+    @if($recentModuleUpdates->isNotEmpty())
+    <div class="row">
+        <div class="col-12">
+            <div class="card-base">
+                <h3 class="chart-title"><i class="fa-solid fa-clock"></i> Modules Récemment Mis à Jour</h3>
+                <div class="table-responsive">
+                    <table class="table table-subtle-depth">
+                        <thead>
+                            <tr>
+                                <th>Module</th>
+                                <th>Formation</th>
+                                <th>Progression</th>
+                                <th>Nouveaux Cours</th>
+                                <th>Dernière Mise à Jour</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($recentModuleUpdates as $module)
+                                <tr>
+                                    <td><strong>{{ $module->title }}</strong></td>
+                                    <td><span class="badge bg-secondary">{{ $module->formation->title }}</span></td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="width: 60px; height: 6px; background-color: var(--background-light); border-radius: 3px; overflow: hidden;">
+                                                <div style="height: 100%; background-color: {{ $module->progress >= 80 ? '#28a745' : ($module->progress >= 60 ? '#17a2b8' : ($module->progress >= 40 ? '#ffc107' : ($module->progress >= 20 ? '#fd7e14' : '#dc3545'))) }}; width: {{ $module->progress }}%;"></div>
+                                            </div>
+                                            <span style="font-weight: 600; color: {{ $module->progress >= 80 ? '#28a745' : ($module->progress >= 60 ? '#17a2b8' : ($module->progress >= 40 ? '#ffc107' : ($module->progress >= 20 ? '#fd7e14' : '#dc3545'))) }};">{{ $module->progress }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-plus"></i>
+                                            {{ $module->courses->count() }} nouveau(x) cours
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning">
+                                            {{ Carbon\Carbon::parse($module->updated_at)->diffForHumans() }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+            <div class="row">
+                {{-- Courses for Today List (using table-subtle-depth style) --}}
+                <div class="col-lg-6 mb-4">
+                    <div class="card-base">
+                        <h3 class="chart-title"><i class="fa-solid fa-calendar-check"></i> Mes Cours Aujourd'hui</h3>
+                        @if($coursesToday->isEmpty())
+                            <div class="empty-state">
+                                <div class="icon"><i class="fa-solid fa-calendar-check"></i></div>
+                                <p>Aucun cours prévu pour aujourd'hui.</p>
+                            </div>
+                        @else
+                            <div class="table-responsive">
+                                <table class="table table-subtle-depth">
+                                    <thead>
+                                        <tr>
+                                             <th>Cours</th>
+                                            <th>Formation</th>
+                                            <th>Heure</th>
+                                            <th>Consultant</th>
+                                            <th>Lien Zoom</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                       @foreach($coursesToday as $course)
+                                        <tr>
+                                            <td><strong>{{ $course->title }}</strong></td>
+                                         @if($course->formation)
+        <td class="course-formation">
+            {{-- عرض اسم Formation الواحدة --}}
+            <span class="badge bg-secondary">
+                {{ $course->formation->title }}
+            </span>
+
+            {{-- (اختياري): يمكنك إضافة اسم Module هنا إذا كنت بحاجة إليه في الجدول --}}
+            @if($course->module)
+                <span class="badge bg-info ms-1">{{ $course->module->title }}</span>
+            @endif
+        </td>
+    @else
+        <td class="course-formation">
+            -
+        </td>
+    @endif
+                                            <td>
+                                                <span class="badge bg-secondary">{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }}</span>
+                                                -
+                                                <span class="badge bg-secondary">{{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}</span>
+                                            </td>
+                                            <td>{{ $course->consultant->name ?? 'N/A' }}</td>
+                                            <td>
+                                                @if($course->zoom_link)
+                                                    <a href="{{ $course->zoom_link }}" target="_blank" class="btn btn-sm btn-success">
+                                                        <i class="fas fa-video"></i> Rejoindre
+                                                    </a>
+                                                @else
+                                                    <span class="badge bg-secondary"><i class="fas fa-link-slash"></i> Indisponible</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
                             </div>
                         @endif
                     </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
-</div>
-@endif
-
-{{-- Recent Module Updates --}}
-@if($recentModuleUpdates->isNotEmpty())
-<div class="row">
-    <div class="col-12">
-        <div class="card-base">
-            <h3 class="chart-title"><i class="fa-solid fa-clock"></i> Modules Récemment Mis à Jour</h3>
-            <div class="table-responsive">
-                <table class="table table-subtle-depth">
-                    <thead>
-                        <tr>
-                            <th>Module</th>
-                            <th>Formation</th>
-                            <th>Progression</th>
-                            <th>Nouveaux Cours</th>
-                            <th>Dernière Mise à Jour</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($recentModuleUpdates as $module)
-                            <tr>
-                                <td><strong>{{ $module->title }}</strong></td>
-                                <td><span class="badge bg-secondary">{{ $module->formation->title }}</span></td>
-                                <td>
-                                    <div style="display: flex; align-items: center; gap: 10px;">
-                                        <div style="width: 60px; height: 6px; background-color: var(--background-light); border-radius: 3px; overflow: hidden;">
-                                            <div style="height: 100%; background-color: {{ $module->progress >= 80 ? '#28a745' : ($module->progress >= 60 ? '#17a2b8' : ($module->progress >= 40 ? '#ffc107' : ($module->progress >= 20 ? '#fd7e14' : '#dc3545'))) }}; width: {{ $module->progress }}%;"></div>
-                                        </div>
-                                        <span style="font-weight: 600; color: {{ $module->progress >= 80 ? '#28a745' : ($module->progress >= 60 ? '#17a2b8' : ($module->progress >= 40 ? '#ffc107' : ($module->progress >= 20 ? '#fd7e14' : '#dc3545'))) }};">{{ $module->progress }}%</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-info">
-                                        <i class="fas fa-plus"></i>
-                                        {{ $module->courses->count() }} nouveau(x) cours
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-warning">
-                                        {{ Carbon\Carbon::parse($module->updated_at)->diffForHumans() }}
-                                    </span>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-@endif
-        
-        <div class="row">
-            {{-- Courses for Today List (using table-subtle-depth style) --}}
-            <div class="col-lg-6 mb-4">
-                <div class="card-base">
-                    <h3 class="chart-title"><i class="fa-solid fa-calendar-check"></i> Mes Cours Aujourd'hui</h3>
-                    @if($coursesToday->isEmpty())
-                        <div class="empty-state">
-                            <div class="icon"><i class="fa-solid fa-calendar-check"></i></div>
-                            <p>Aucun cours prévu pour aujourd'hui.</p>
-                        </div>
-                    @else
-                        <div class="table-responsive">
-                            <table class="table table-subtle-depth">
-                                <thead>
-                                    <tr>
-                                         <th>Cours</th>
-                                        <th>Formation</th>
-                                        <th>Heure</th>
-                                        <th>Consultant</th>
-                                        <th>Lien Zoom</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                   @foreach($coursesToday as $course)
-                                    <tr>
-                                        <td><strong>{{ $course->title }}</strong></td>
-                                     @if($course->formation)
-    <td class="course-formation">
-        {{-- عرض اسم Formation الواحدة --}}
-        <span class="badge bg-secondary">
-            {{ $course->formation->title }}
-        </span>
-        
-        {{-- (اختياري): يمكنك إضافة اسم Module هنا إذا كنت بحاجة إليه في الجدول --}}
-        @if($course->module)
-            <span class="badge bg-info ms-1">{{ $course->module->title }}</span>
-        @endif
-    </td>
-@else
-    <td class="course-formation">
-        -
-    </td>
-@endif
-                                        <td>
-                                            <span class="badge bg-secondary">{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }}</span>
-                                            -
-                                            <span class="badge bg-secondary">{{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}</span>
-                                        </td>
-                                        <td>{{ $course->consultant->name ?? 'N/A' }}</td>
-                                        <td>
-                                            @if($course->zoom_link)
-                                                <a href="{{ $course->zoom_link }}" target="_blank" class="btn btn-sm btn-success">
-                                                    <i class="fas fa-video"></i> Rejoindre
-                                                </a>
-                                            @else
-                                                <span class="badge bg-secondary"><i class="fas fa-link-slash"></i> Indisponible</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
                 </div>
-            </div>
-            
-            {{-- Upcoming Courses List (using table-subtle-depth style) --}}
-            <div class="col-lg-6 mb-4">
-                <div class="card-base">
-                    <h3 class="chart-title"><i class="fa-solid fa-calendar-alt"></i> Mes Prochains Cours</h3>
-                    @if($upcomingCourses->isEmpty())
-                        <div class="empty-state">
-                            <div class="icon"><i class="fa-solid fa-calendar-plus"></i></div>
-                            <p>Aucun cours à venir pour le moment.</p>
-                        </div>
-                    @else
-                        <div class="table-responsive">
-                            <table class="table table-subtle-depth">
-                                <thead>
-                                    <tr>
-                                        <th>Formation</th>
-                                        <th>Date</th>
-                                        <th>Heure</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($upcomingCourses as $course)
+
+                {{-- Upcoming Courses List (using table-subtle-depth style) --}}
+                <div class="col-lg-6 mb-4">
+                    <div class="card-base">
+                        <h3 class="chart-title"><i class="fa-solid fa-calendar-alt"></i> Mes Prochains Cours</h3>
+                        @if($upcomingCourses->isEmpty())
+                            <div class="empty-state">
+                                <div class="icon"><i class="fa-solid fa-calendar-plus"></i></div>
+                                <p>Aucun cours à venir pour le moment.</p>
+                            </div>
+                        @else
+                            <div class="table-responsive">
+                                <table class="table table-subtle-depth">
+                                    <thead>
                                         <tr>
-                                            <td><strong>{{ $course->formation->title }}</strong></td>
-                                            <td><span class="badge bg-warning">{{ Carbon\Carbon::parse($course->course_date)->format('d/m/Y') }}</span></td>
-                                            <td><span class="badge bg-info">{{ Carbon\Carbon::parse($course->start_time)->format('H:i') }}</span></td>
-                                            <td>
-                                                <a href="{{ route('courses.show', $course) }}" class="btn-action btn-view">
-                                    <i class="fas fa-eye"></i>
-                                    <span>Voir</span>
-                                </a>
-                                            </td>
+                                            <th>Formation</th>
+                                            <th>Date</th>
+                                            <th>Heure</th>
+                                            <th>Actions</th>
                                         </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            {{-- Enrollments by Formation Chart --}}
-            <div class="col-lg-6 mb-4">
-                <div class="card-base">
-                    <h3 class="chart-title"><i class="fa-solid fa-chart-pie"></i> Étudiants par Formation</h3>
-                    @if($enrollmentsByFormation->isEmpty())
-                        <div class="empty-state">
-                            <div class="icon"><i class="fa-solid fa-chart-bar"></i></div>
-                            <p>Aucune donnée d'inscription pour le moment.</p>
-                        </div>
-                    @else
-                        <div class="chart-container">
-                            <canvas id="enrollmentsByFormationChart"></canvas>
-                        </div>
-                    @endif
+                                    </thead>
+                                    <tbody>
+                                        @foreach($upcomingCourses as $course)
+                                            <tr>
+                                                <td><strong>{{ $course->formation->title }}</strong></td>
+                                                <td><span class="badge bg-warning">{{ Carbon\Carbon::parse($course->course_date)->format('d/m/Y') }}</span></td>
+                                                <td><span class="badge bg-info">{{ Carbon\Carbon::parse($course->start_time)->format('H:i') }}</span></td>
+                                                <td>
+                                                    <a href="{{ route('courses.show', $course) }}" class="btn-action btn-view">
+                                        <i class="fas fa-eye"></i>
+                                        <span>Voir</span>
+                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
 
-            {{-- Recent Course Reschedules List (using table-subtle-depth style) --}}
-            <div class="col-lg-6 mb-4">
-                <div class="card-base">
-                    <h3 class="chart-title"><i class="fa-solid fa-sync-alt"></i> Reprogrammations Récentes</h3>
-                    @if($recentReschedules->isEmpty())
-                        <div class="empty-state">
-                            <div class="icon"><i class="fa-solid fa-history"></i></div>
-                            <p>Aucune reprogrammation récente.</p>
-                        </div>
-                    @else
-                        <div class="table-responsive">
-                            <table class="table table-subtle-depth">
-                                <thead>
-                                    <tr>
-                                        <th>Cours</th>
-                                        <th>Ancienne Date</th>
-                                        <th>Nouvelle Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($recentReschedules as $reschedule)
+            <div class="row">
+                {{-- Enrollments by Formation Chart --}}
+                <div class="col-lg-6 mb-4">
+                    <div class="card-base">
+                        <h3 class="chart-title"><i class="fa-solid fa-chart-pie"></i> Étudiants par Formation</h3>
+                        @if($enrollmentsByFormation->isEmpty())
+                            <div class="empty-state">
+                                <div class="icon"><i class="fa-solid fa-chart-bar"></i></div>
+                                <p>Aucune donnée d'inscription pour le moment.</p>
+                            </div>
+                        @else
+                            <div class="chart-container">
+                                <canvas id="enrollmentsByFormationChart"></canvas>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Recent Course Reschedules List (using table-subtle-depth style) --}}
+                <div class="col-lg-6 mb-4">
+                    <div class="card-base">
+                        <h3 class="chart-title"><i class="fa-solid fa-sync-alt"></i> Reprogrammations Récentes</h3>
+                        @if($recentReschedules->isEmpty())
+                            <div class="empty-state">
+                                <div class="icon"><i class="fa-solid fa-history"></i></div>
+                                <p>Aucune reprogrammation récente.</p>
+                            </div>
+                        @else
+                            <div class="table-responsive">
+                                <table class="table table-subtle-depth">
+                                    <thead>
                                         <tr>
-                                            <td><strong>{{ $reschedule->course->title }}</strong></td>
-                                            <td><span class="badge bg-danger">{{ Carbon\Carbon::parse($reschedule->old_date)->format('d/m/Y') }}</span></td>
-                                            <td><span class="badge bg-success">{{ Carbon\Carbon::parse($reschedule->new_date)->format('d/m/Y') }}</span></td>
+                                            <th>Cours</th>
+                                            <th>Ancienne Date</th>
+                                            <th>Nouvelle Date</th>
                                         </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
+                                    </thead>
+                                    <tbody>
+                                        @foreach($recentReschedules as $reschedule)
+                                            <tr>
+                                                <td><strong>{{ $reschedule->course->title }}</strong></td>
+                                                <td><span class="badge bg-danger">{{ Carbon\Carbon::parse($reschedule->old_date)->format('d/m/Y') }}</span></td>
+                                                <td><span class="badge bg-success">{{ Carbon\Carbon::parse($reschedule->new_date)->format('d/m/Y') }}</span></td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
-        </div>
 
+        </div>
     </div>
-</div>
 @endsection
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>

@@ -26,95 +26,95 @@ class CourseController extends Controller
 
 
     public function index(Request $request)
-    {
-        $user = Auth::user();
+{
+    $user = Auth::user();
 
-        // Kan3ayt 3la l'relations 'consultant' w 'formation'
-        // 'formation' 7itach l'relation f l'Model Course hiya belongsTo
-        $query = Course::with(['consultant', 'formation']);
+    // Load relations 'consultant' and 'formation'
+    $query = Course::with(['consultant', 'formation']);
 
-        if ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance')) {
-            // L'admin kaychouf ga3 les courses, ma7tajnch nzidou filter
-        } elseif ($user->hasRole('Consultant')) {
-            // L'Consultant kaychouf ghir les courses dyalou
-            $query->where('consultant_id', $user->id);
-        } elseif ($user->hasRole('Etudiant')) {
-            // L'étudiant kaychouf ghir les courses dyal les formations li dayer fihom inscription
-            $enrolledFormationIds = $user->inscriptions()
-                ->whereIn('status', ['active', 'completed'])
-                ->where('access_restricted', false)
-                ->pluck('formation_id');
+    if ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance')) {
+        // Admins see all courses, no filter needed
+    } elseif ($user->hasRole('Consultant')) {
+        // Consultants see their courses, regardless of date
+        $query->where('consultant_id', $user->id);
+    } elseif ($user->hasRole('Etudiant')) {
+        // Students see all courses for the formations they are enrolled in, regardless of date
+        $enrolledFormationIds = $user->inscriptions()
+            ->whereIn('status', ['active', 'completed'])
+            ->where('access_restricted', false)
+            ->pluck('formation_id');
 
-            if ($enrolledFormationIds->isEmpty()) {
-                // Ila ma kan 3andou 7ta formation, ma kaychouf walou
-                $query->whereRaw('1 = 0');
-            } else {
-                // Kanfiltrio 3la 7sab 'formation_id'
-                $query->whereIn('formation_id', $enrolledFormationIds);
-
-                // Eager load ghir les formations li kaynin f had l'courses
-                $query->with([
-                    'formation' => function ($q) use ($enrolledFormationIds) {
-                        $q->whereIn('id', $enrolledFormationIds);
-                    }
-                ]);
-            }
-        } else {
-            // ila kan chi role akhor ma kaychouf walou
+        if ($enrolledFormationIds->isEmpty()) {
+            // If they have no enrolled formations, they see nothing
             $query->whereRaw('1 = 0');
+        } else {
+            // Filter by 'formation_id'
+            $query->whereIn('formation_id', $enrolledFormationIds);
+
+            // Eager load only the formations relevant to these courses
+            $query->with([
+                'formation' => function ($q) use ($enrolledFormationIds) {
+                    $q->whereIn('id', $enrolledFormationIds);
+                }
+            ]);
         }
-
-        // Filter 3la 7sab l'formation
-        if ($request->has('filter_formation_id') && $request->filter_formation_id) {
-            $query->where('formation_id', $request->filter_formation_id);
-        }
-
-        // Filter 3la 7sab date
-        if ($request->has('start_date') && $request->start_date) {
-            $query->where('course_date', '>=', $request->start_date);
-        }
-
-        // Filter 3la 7sab l'search bar
-        if ($request->has('search') && $request->search) {
-            $query->where('title', 'like', '%' . $request->search . '%');
-        }
-
-        // Filter l'étudiants باش يشوفو ghir les courses li sde9o
-        if ($user && $user->hasRole('Etudiant')) {
-            $now = Carbon::now();
-            $query->where(function ($q) use ($now) {
-                $q->where('course_date', '<', $now->toDateString())
-                    ->orWhere(function ($q2) use ($now) {
-                        $q2->where('course_date', $now->toDateString())
-                            ->whereRaw("TIME_TO_SEC(CONCAT(course_date, ' ', start_time)) <= TIME_TO_SEC(?)", [
-                                $now->copy()->addMinutes(5)->toDateTimeString()
-                            ]);
-                    });
-            });
-        }
-
-        $courses = $query->orderBy('created_at', 'asc')->paginate(15);
-
-        $formationsForModals = Formation::where('status', 'published')->get();
-        $formationsForFilter = collect();
-
-        // Kan7addou les formations li ghaybanou f l'filter
-        if ($user && ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance'))) {
-            $formationsForFilter = Formation::all();
-        } elseif ($user && $user->hasRole('Etudiant')) {
-            $enrolledFormationIds = $user->inscriptions()
-                ->whereIn('status', ['active', 'completed'])
-                ->where('access_restricted', false)
-                ->pluck('formation_id');
-            if ($enrolledFormationIds->isNotEmpty()) {
-                $formationsForFilter = Formation::whereIn('id', $enrolledFormationIds)->get();
-            }
-        }
-
-        $consultants = User::role('Consultant')->get();
-
-        return view('courses.index', compact('courses', 'formationsForModals', 'formationsForFilter', 'consultants'));
+    } else {
+        // Other roles see nothing
+        $query->whereRaw('1 = 0');
     }
+
+    // Filters based on request parameters
+    if ($request->has('filter_formation_id') && $request->filter_formation_id) {
+        $query->where('formation_id', $request->filter_formation_id);
+    }
+
+    if ($request->has('start_date') && $request->start_date) {
+        $query->where('course_date', '>=', $request->start_date);
+    }
+
+    if ($request->has('search') && $request->search) {
+        $query->where('title', 'like', '%' . $request->search . '%');
+    }
+    
+    // **Remove the date filter block for Etudiants**
+    // The following block is the one you need to delete or comment out:
+    /*
+    if ($user && $user->hasRole('Etudiant')) {
+        $now = Carbon::now();
+        $query->where(function ($q) use ($now) {
+            $q->where('course_date', '<', $now->toDateString())
+                ->orWhere(function ($q2) use ($now) {
+                    $q2->where('course_date', $now->toDateString())
+                        ->whereRaw("TIME_TO_SEC(CONCAT(course_date, ' ', start_time)) <= TIME_TO_SEC(?)", [
+                            $now->copy()->addMinutes(5)->toDateTimeString()
+                        ]);
+                });
+        });
+    }
+    */
+
+    $courses = $query->orderBy('created_at', 'asc')->paginate(15);
+
+    $formationsForModals = Formation::where('status', 'published')->get();
+    $formationsForFilter = collect();
+
+    // Determine which formations to show in the filter
+    if ($user && ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance'))) {
+        $formationsForFilter = Formation::all();
+    } elseif ($user && $user->hasRole('Etudiant')) {
+        $enrolledFormationIds = $user->inscriptions()
+            ->whereIn('status', ['active', 'completed'])
+            ->where('access_restricted', false)
+            ->pluck('formation_id');
+        if ($enrolledFormationIds->isNotEmpty()) {
+            $formationsForFilter = Formation::whereIn('id', $enrolledFormationIds)->get();
+        }
+    }
+
+    $consultants = User::role('Consultant')->get();
+
+    return view('courses.index', compact('courses', 'formationsForModals', 'formationsForFilter', 'consultants'));
+}
     /**
      * Show the form for creating a new resource.
      */
