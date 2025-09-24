@@ -377,26 +377,32 @@ class UserController extends Controller
      */
     // Le code de ton contrôleur est déjà bien pour cette partie :
 
-public function toggleStatus(Request $request, User $user)
+public function toggleStatus(Request $request, User $user, string $status)
 {
-    // Permission is already checked by the middleware
-    $request->validate([
-        'status' => 'required|in:active,inactive,suspended', // 'suspended' est déjà inclus
-    ]);
+    // Check if the authenticated user has permission to edit users
+    // You can also use the Spatie middleware here:
+    // $this->authorize('user-edit');
+    if (!Auth::user()->can('user-edit')) {
+        return response()->json(['success' => false, 'message' => 'Permission denied.'], 403);
+    }
 
-    // Prevent changing status of currently authenticated user if it makes them inactive/suspended
-    if (Auth::id() === $user->id && ($request->status === 'inactive' || $request->status === 'suspended')) {
-        return response()->json(['success' => false, 'message' => 'Impossible de changer votre propre statut en inactif ou suspendu.'], 403);
+    if (!in_array($status, ['active', 'inactive'])) {
+        return response()->json(['success' => false, 'message' => 'Invalid status provided.'], 400);
     }
     
-    try {
-        $user->status = $request->status;
-        $user->save();
-        return response()->json(['success' => true, 'message' => 'Statut mis à jour avec succès.', 'new_status' => $user->status]);
-    } catch (\Exception $e) {
-        Log::error('Erreur lors de la mise à jour du statut de l\'utilisateur : ' . $e->getMessage());
-        return response()->json(['success' => false, 'message' => 'Erreur lors de la mise à jour du statut.', 'error' => $e->getMessage()], 500);
+    // Check if the user is trying to deactivate their own account
+    if (Auth::user()->id === $user->id && $status === 'inactive') {
+        return response()->json(['success' => false, 'message' => 'You cannot deactivate your own account.'], 403);
     }
+
+    $user->status = $status;
+    $user->save();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'User status updated successfully.',
+        'newStatus' => $user->status
+    ]);
 }
 
     /**
