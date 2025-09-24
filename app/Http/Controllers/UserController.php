@@ -4,14 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection; // Correct namespace for Collection
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log; // Don't forget to import Log facade!
-use Illuminate\Support\Facades\Mail; // Importe la façade Mail
-use App\Mail\UserCreatedMail;      // Importe la nouvelle Mailable
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\UserCreatedMail;
 
 class UserController extends Controller
 {
@@ -29,64 +32,99 @@ class UserController extends Controller
     /**
      * Display a listing of the users.
      */
-public function index(Request $request)
-{
-    // Permission is already checked by the middleware in the constructor
-    $query = User::with('roles'); // Eager load roles for display and filtering
+  public function index(Request $request)
+    {
+        // Start building the query
+        $query = User::with('roles');
 
-    // Filters
-    if ($request->filled('search')) {
-        $search = $request->get('search');
-        $query->where(function ($q) use ($search) {
-            $q->where('name', 'like', '%' . $search . '%')
-              ->orWhere('email', 'like', '%' . $search . '%')
-              ->orWhere('phone', 'like', '%' . $search . '%');
-        });
+        // Apply search filter if present
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('email', 'like', '%' . $search . '%')
+                  ->orWhere('phone', 'like', '%' . $search . '%');
+            });
+        }
+
+        // Apply status filter if present
+        if ($request->filled('status')) {
+            $query->where('status', $request->get('status'));
+        }
+
+        // Apply role filter if present
+        if ($request->filled('role')) {
+            $query->whereHas('roles', function ($q) use ($request) {
+                $q->where('name', $request->get('role'));
+            });
+        }
+
+        // Separate users by role BEFORE pagination
+        $consultants = (clone $query)->whereHas('roles', function ($q) {
+            $q->where('name', 'Consultant');
+        })->get();
+
+        $etudiants = (clone $query)->whereHas('roles', function ($q) {
+            $q->where('name', 'Etudiant');
+        })->get();
+
+        $admis = (clone $query)->whereHas('roles', function ($q) {
+            $q->where('name', 'Admin');
+        })->get();
+
+        // Paginate each collection
+        $perPage = 10;
+        $consultantsPaginated = $this->paginateCollection($consultants, $perPage, $request->get('page_consultant'), 'page_consultant');
+        $etudiantsPaginated = $this->paginateCollection($etudiants, $perPage, $request->get('page_etudiant'), 'page_etudiant');
+        $admisPaginated = $this->paginateCollection($admis, $perPage, $request->get('page_admis'), 'page_admis');
+
+        // Statistics
+        $stats = [
+            'total' => User::count(),
+            'active' => User::where('status', 'active')->count(),
+            'inactive' => User::where('status', 'inactive')->count(),
+            'recent' => User::where('created_at', '>=', now()->subDays(30))->count(),
+        ];
+        
+        $allRoles = Role::all();
+
+        // Return JSON response for AJAX requests
+        if ($request->ajax()) {
+            $group = $request->get('group');
+            $users = [];
+            $pagination = '';
+            
+            if ($group === 'consultant') {
+                $users = $consultantsPaginated;
+                $pagination = $consultantsPaginated->appends($request->except('page_consultant'))->links('vendor.pagination.bootstrap-5')->toHtml();
+            } elseif ($group === 'etudiant') {
+                $users = $etudiantsPaginated;
+                $pagination = $etudiantsPaginated->appends($request->except('page_etudiant'))->links('vendor.pagination.bootstrap-5')->toHtml();
+            } elseif ($group === 'admis') {
+                $users = $admisPaginated;
+                $pagination = $admisPaginated->appends($request->except('page_admis'))->links('vendor.pagination.bootstrap-5')->toHtml();
+            }
+            
+            return response()->json([
+                'users' => $users,
+                'pagination' => $pagination,
+                'stats' => $stats,
+            ]);
+        }
+
+        return view('users.index', compact('consultantsPaginated', 'etudiantsPaginated', 'admisPaginated', 'stats', 'allRoles'));
     }
 
-    if ($request->filled('status')) {
-        $query->where('status', $request->get('status'));
-    }
-
-    if ($request->filled('role')) {
-        $query->whereHas('roles', function ($q) use ($request) {
-            $q->where('name', $request->get('role'));
-        });
-    }
-
-    // Sorting
-    $sortBy = $request->get('sort_by', 'created_at');
-    $sortDirection = $request->get('sort_direction', 'desc');
-    $query->orderBy($sortBy, $sortDirection);
-
-    $users = $query->paginate(10);
-
-    // Statistics
-    $stats = [
-        'total' => User::count(),
-        'active' => User::where('status', 'active')->count(),
-        'inactive' => User::where('status', 'inactive')->count(),
-        'suspended' => User::where('status', 'suspended')->count(),
-        'recent' => User::where('created_at', '>=', now()->subDays(30))->count(),
-    ];
-    
-    // Fetch all roles for the filter dropdown
-    $allRoles = Role::all();
-
-    if ($request->ajax()) {
-        return response()->json([
-            'users' => $users,
-            'stats' => $stats,
-            'html' => view('users.partials.table', compact('users'))->render(),
-            // C'est la ligne qui manquait ou qui était incorrecte.
-            // On envoie les liens de pagination en tant que HTML.
-            'pagination' => $users->appends($request->except('page'))->links('vendor.pagination.bootstrap-5')->toHtml(),
+    protected function paginateCollection($items, $perPage = 10, $page = null, $pageName = 'page')
+    {
+        $page = $page ?: (Paginator::resolveCurrentPage($pageName) ?: 1);
+        $items = $items instanceof Collection ? $items : Collection::make($items);
+        $paginatedItems = $items->forPage($page, $perPage);
+        return new LengthAwarePaginator($paginatedItems, $items->count(), $perPage, $page, [
+            'path' => Paginator::resolveCurrentPath(),
+            'pageName' => $pageName,
         ]);
     }
-
-    return view('users.index', compact('users', 'stats', 'allRoles'));
-}
-
     /**
      * Show the form for creating a new user.
      */

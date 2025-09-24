@@ -14,8 +14,8 @@
                         <p class="text-muted mb-0">Gérez tous vos utilisateurs en un seul endroit</p>
                     </div>
                     <a href="{{ route('users.corbeille') }}" class="btn btn-danger">
-    <i class="fa fa-trash"></i> Corbeille
-</a>
+                        <i class="fa fa-trash"></i> Corbeille
+                    </a>
                     <a href="{{ route('users.create') }}" class="btn btn-primary btn-floating">
                         <i class="fas fa-plus me-2"></i>
                         Nouvel Utilisateur
@@ -146,160 +146,147 @@
             </div>
         @endif
 
-        <div class="row">
+        <div class="row mb-5">
             <div class="col-12">
-                <div class="table-card" id="tableCard">
+                <div class="table-card" data-group="consultant">
                     <div class="table-header">
                         <h5 class="mb-0">
-                            <i class="fas fa-table me-2"></i>
-                            Liste des Utilisateurs
+                            <i class="fas fa-user-tie me-2"></i>
+                            Liste des Consultants
                         </h5>
-                        <div class="table-actions">
-                            <button class="btn btn-sm btn-outline-secondary me-2" id="toggleView">
-                                <i class="fas fa-th-large"></i>
-                            </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th><div class="form-check"><input class="form-check-input" type="checkbox" id="selectAllConsultants"></div></th>
+                                    <th>Avatar</th>
+                                    <th>Nom</th>
+                                    <th>Email</th>
+                                    <th>Téléphone</th>
+                                    <th>Rôle</th>
+                                    <th>Statut</th>
+                                    <th>Date de création</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="consultantsTableBody">
+                                @forelse($consultantsPaginated as $user)
+                                    @include('users.partials.user_row', ['user' => $user])
+                                @empty
+                                    <tr>
+                                        <td colspan="9">@include('users.partials.empty_state')</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-footer">
+                        <div class="pagination-info">
+                            Affichage de {{ $consultantsPaginated->firstItem() }} à {{ $consultantsPaginated->lastItem() }} sur {{ $consultantsPaginated->total() }} résultats
+                        </div>
+                        <div class="pagination-wrapper">
+                            {{ $consultantsPaginated->appends(request()->except('page_consultant'))->links('vendor.pagination.bootstrap-5') }}
                         </div>
                     </div>
-                    @if($users->count() > 0)
-                        <div class="table-responsive">
-                            <table class="table table-modern" id="usersTable">
-                                <thead>
-                                    <tr>
-                                        <th><div class="form-check"><input class="form-check-input" type="checkbox" id="selectAll"></div></th>
-                                        <th>Avatar</th>
-                                        <th>Nom</th>
-                                        <th>Email</th>
-                                        <th>Téléphone</th>
-                                        <th>Rôle</th>
-                                        <th>Statut</th>
-                                        <th>Date de création</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="usersTableBody">
-                                    @foreach($users as $user)
-                                        <tr class="table-row" data-user-id="{{ $user->id }}">
-                                            <td><div class="form-check"><input class="form-check-input user-checkbox" type="checkbox" value="{{ $user->id }}"></div></td>
-                                            <td>
-                                                <div class="user-avatar">
-                                                    @if($user->avatar)
-                                                        <img src="{{ asset('storage/' . $user->avatar) }}" alt="Avatar de {{ $user->name }}" class="avatar-img">
-                                                    @else
-                                                        <div class="avatar-placeholder">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
-                                                    @endif
-                                                    <div class="status-indicator status-{{ $user->status }}"></div>
-                                                </div>
-                                            </td>
-                                            <td><div class="user-info"><span class="user-name">{{ $user->name }}</span><small class="user-id">ID: {{ $user->id }}</small></div></td>
-                                            <td><span class="user-email">{{ $user->email }}</span></td>
-                                            <td><span class="user-phone">{{ $user->phone ?? '-' }}</span></td>
-                                            <td>
-                                                @if($user->getRoleNames()->count() > 0)
-                                                    @foreach($user->getRoleNames() as $role)
-                                                        <span class="badge badge-role">{{ $role }}</span>
-                                                    @endforeach
-                                                @else
-                                                    <span class="badge badge-secondary">Aucun rôle</span>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                <div class="form-check form-switch d-flex align-items-center justify-content-center">
-                                                    <input class="form-check-input status-toggle-switch" type="checkbox" id="statusSwitch-{{ $user->id }}"
-                                                           data-user-id="{{ $user->id }}" {{ $user->status === 'active' ? 'checked' : '' }}>
-                                                    <label class="form-check-label ms-2 status-label {{ $user->status }}" for="statusSwitch-{{ $user->id }}">
-                                                        {{ $user->status === 'active' ? 'Actif' : 'Inactif' }}
-                                                    </label>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="date-text">{{ $user->created_at->format('d/m/Y') }}</span>
-                                                <small class="date-time">{{ $user->created_at->format('H:i') }}</small>
-                                            </td>
-                                            <td>
-                                                <div class="action-buttons">
-                                                    <a href="{{ route('users.show', $user->id) }}" class="btn btn-action btn-view tooltip-custom" data-tooltip="Voir" title="Voir"><i class="fas fa-eye"></i></a>
-                                                    <a href="{{ route('users.edit', $user->id) }}" class="btn btn-action btn-edit tooltip-custom" data-tooltip="Modifier" title="Modifier"><i class="fas fa-edit"></i></a>
-                                                    <button class="btn btn-action btn-delete tooltip-custom" data-tooltip="Supprimer" onclick="deleteUser({{ $user->id }})" title="Supprimer"><i class="fas fa-trash"></i></button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="table-footer">
-                            <div class="pagination-info">
-                                Affichage de {{ $users->firstItem() }} à {{ $users->lastItem() }} sur {{ $users->total() }} résultats
-                            </div>
-                            <div class="pagination-wrapper">
-                                {{ $users->appends(request()->input())->links('vendor.pagination.bootstrap-5') }}
-                            </div>
-                        </div>
-                    @else
-                        <div class="empty-state">
-                            <div class="empty-icon"><i class="fas fa-users"></i></div>
-                            <h4>Aucun utilisateur trouvé</h4>
-                            <p>Commencez par créer votre premier utilisateur pour voir la liste ici.</p>
-                            <a href="{{ route('users.create') }}" class="btn btn-primary btn-floating">
-                                <i class="fas fa-plus me-2"></i> Créer un utilisateur
-                            </a>
-                        </div>
-                    @endif
                 </div>
             </div>
         </div>
+        <hr>
 
-        <div class="grid-container" id="gridContainer" style="display: none;">
-            @if($users->count() > 0)
-                @foreach($users as $user)
-                    <div class="user-card animate__animated animate__fadeInUp" data-user-id="{{ $user->id }}">
-                        <div class="user-card-header">
-                            <div class="user-card-avatar user-avatar">
-                                @if($user->avatar)
-                                    <img src="{{ asset('storage/' . $user->avatar) }}" alt="Avatar de {{ $user->name }}" class="avatar-img">
-                                @else
-                                    <div class="avatar-placeholder">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
-                                @endif
-                                <div class="status-indicator status-{{ $user->status }}"></div>
-                            </div>
-                            <div class="user-card-info">
-                                <h5>{{ $user->name }}</h5>
-                                <p>ID: {{ $user->id }}</p>
-                            </div>
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="table-card" data-group="etudiant">
+                    <div class="table-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-graduation-cap me-2"></i>
+                            Liste des Étudiants
+                        </h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th><div class="form-check"><input class="form-check-input" type="checkbox" id="selectAllEtudiants"></div></th>
+                                    <th>Avatar</th>
+                                    <th>Nom</th>
+                                    <th>Email</th>
+                                    <th>Téléphone</th>
+                                    <th>Rôle</th>
+                                    <th>Statut</th>
+                                    <th>Date de création</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="etudiantsTableBody">
+                                @forelse($etudiantsPaginated as $user)
+                                    @include('users.partials.user_row', ['user' => $user])
+                                @empty
+                                    <tr>
+                                        <td colspan="9">@include('users.partials.empty_state')</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-footer">
+                        <div class="pagination-info">
+                            Affichage de {{ $etudiantsPaginated->firstItem() }} à {{ $etudiantsPaginated->lastItem() }} sur {{ $etudiantsPaginated->total() }} résultats
                         </div>
-                        <div class="user-card-details">
-                            <div class="user-card-detail"><span><i class="fas fa-envelope me-2 text-muted"></i>Email:</span><span>{{ $user->email }}</span></div>
-                            <div class="user-card-detail"><span><i class="fas fa-phone me-2 text-muted"></i>Téléphone:</span><span>{{ $user->phone ?? '-' }}</span></div>
-                            <div class="user-card-detail">
-                                <span><i class="fas fa-user-tag me-2 text-muted"></i>Rôle:</span>
-                                <span>
-                                    @if($user->getRoleNames()->count() > 0)
-                                        @foreach($user->getRoleNames() as $role)
-                                            <span class="badge badge-role">{{ $role }}</span>
-                                        @endforeach
-                                    @else
-                                        <span class="badge badge-secondary">Aucun rôle</span>
-                                    @endif
-                                </span>
-                            </div>
-                            <div class="user-card-detail">
-                                <span><i class="fas fa-power-off me-2 text-muted"></i>Statut:</span>
-                                <div class="form-check form-switch d-flex align-items-center justify-content-center">
-                                    <input class="form-check-input status-toggle-switch" type="checkbox" id="gridStatusSwitch-{{ $user->id }}"
-                                           data-user-id="{{ $user->id }}" {{ $user->status === 'active' ? 'checked' : '' }}>
-                                    <label class="form-check-label ms-2 status-label {{ $user->status }}" for="gridStatusSwitch-{{ $user->id }}">{{ $user->status === 'active' ? 'Actif' : 'Inactif' }}</label>
-                                </div>
-                            </div>
-                            <div class="user-card-detail"><span><i class="fas fa-calendar-alt me-2 text-muted"></i>Créé le:</span><span>{{ $user->created_at->format('d/m/Y H:i') }}</span></div>
-                        </div>
-                        <div class="user-card-actions">
-                            <a href="{{ route('users.show', $user->id) }}" class="btn btn-action btn-view tooltip-custom" data-tooltip="Voir" title="Voir"><i class="fas fa-eye"></i></a>
-                            <a href="{{ route('users.edit', $user->id) }}" class="btn btn-action btn-edit tooltip-custom" data-tooltip="Modifier" title="Modifier"><i class="fas fa-edit"></i></a>
-                            <button class="btn btn-action btn-delete tooltip-custom" data-tooltip="Supprimer" onclick="deleteUser({{ $user->id }})" title="Supprimer"><i class="fas fa-trash"></i></button>
+                        <div class="pagination-wrapper">
+                            {{ $etudiantsPaginated->appends(request()->except('page_etudiant'))->links('vendor.pagination.bootstrap-5') }}
                         </div>
                     </div>
-                @endforeach
-            @endif
+                </div>
+            </div>
+        </div>
+        <hr>
+
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="table-card" data-group="admis">
+                    <div class="table-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user-graduate me-2"></i>
+                            Liste des Admis
+                        </h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th><div class="form-check"><input class="form-check-input" type="checkbox" id="selectAllAdmis"></div></th>
+                                    <th>Avatar</th>
+                                    <th>Nom</th>
+                                    <th>Email</th>
+                                    <th>Téléphone</th>
+                                    <th>Rôle</th>
+                                    <th>Statut</th>
+                                    <th>Date de création</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admisTableBody">
+                                @forelse($admisPaginated as $user)
+                                    @include('users.partials.user_row', ['user' => $user])
+                                @empty
+                                    <tr>
+                                        <td colspan="9">@include('users.partials.empty_state')</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-footer">
+                        <div class="pagination-info">
+                            Affichage de {{ $admisPaginated->firstItem() }} à {{ $admisPaginated->lastItem() }} sur {{ $admisPaginated->total() }} résultats
+                        </div>
+                        <div class="pagination-wrapper">
+                            {{ $admisPaginated->appends(request()->except('page_admis'))->links('vendor.pagination.bootstrap-5') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -393,7 +380,6 @@
         .empty-state p { color: #666; margin-bottom: 2rem; }
         .custom-alert { border-radius: var(--border-radius); border: none; box-shadow: var(--box-shadow); animation: slideInDown 0.5s ease; }
         @keyframes slideInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
-        .table-card { display: block; }
         .grid-container { display: none; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; padding: 1.5rem; animation: fadeInUp 0.5s ease; }
         .grid-container.grid-show { display: grid; }
         .user-card { background: white; border-radius: var(--border-radius); box-shadow: var(--box-shadow); padding: 1.5rem; transition: var(--transition); border: 1px solid #f1f3f4; }
@@ -451,119 +437,138 @@
 <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        animateTableRows();
         animateNumbers();
 
-        function getFilters() {
-            return {
+        async function filterAndFetchGroup(group, page = 1) {
+            const filters = {
                 search: document.getElementById('searchInput').value,
                 status: document.getElementById('statusFilter').value,
                 role: document.getElementById('roleFilter').value,
+                group: group,
+                [`page_${group}`]: page
             };
-        }
-
-        async function updateTableContent(data) {
-            const usersTableBody = document.getElementById('usersTableBody');
-            const paginationWrapper = document.querySelector('.pagination-wrapper');
-            const paginationInfo = document.querySelector('.pagination-info');
-            const gridContainer = document.getElementById('gridContainer');
-            const tableCard = document.getElementById('tableCard');
-
-            if (data.users && data.users.data.length > 0) {
-                usersTableBody.innerHTML = '';
-                data.users.data.forEach(user => {
-                    const row = document.createElement('tr');
-                    row.className = 'table-row';
-                    row.setAttribute('data-user-id', user.id);
-                    
-                    const avatarHtml = user.avatar ?
-                        `<img src="/storage/${user.avatar}" alt="Avatar de ${user.name}" class="avatar-img">` :
-                        `<div class="avatar-placeholder">${user.name.substring(0, 1).toUpperCase()}</div>`;
-                    
-                    const rolesHtml = user.roles.map(role => `<span class="badge badge-role">${role.name}</span>`).join('') || '<span class="badge badge-secondary">Aucun rôle</span>';
-                    
-                    row.innerHTML = `
-                        <td><div class="form-check"><input class="form-check-input user-checkbox" type="checkbox" value="${user.id}"></div></td>
-                        <td><div class="user-avatar">${avatarHtml}<div class="status-indicator status-${user.status}"></div></div></td>
-                        <td><div class="user-info"><span class="user-name">${user.name}</span><small class="user-id">ID: ${user.id}</small></div></td>
-                        <td><span class="user-email">${user.email}</span></td>
-                        <td><span class="user-phone">${user.phone || '-'}</span></td>
-                        <td>${rolesHtml}</td>
-                        <td>
-                            <div class="form-check form-switch d-flex align-items-center justify-content-center">
-                                <input class="form-check-input status-toggle-switch" type="checkbox" id="statusSwitch-${user.id}" data-user-id="${user.id}" ${user.status === 'active' ? 'checked' : ''}>
-                                <label class="form-check-label ms-2 status-label ${user.status}" for="statusSwitch-${user.id}">${user.status === 'active' ? 'Actif' : 'Inactif'}</label>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="date-text">${new Date(user.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
-                            <small class="date-time">${new Date(user.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</small>
-                        </td>
-                        <td>
-                            <div class="action-buttons">
-                                <a href="/users/${user.id}" class="btn btn-action btn-view tooltip-custom" data-tooltip="Voir" title="Voir"><i class="fas fa-eye"></i></a>
-                                <a href="/users/${user.id}/edit" class="btn btn-action btn-edit tooltip-custom" data-tooltip="Modifier" title="Modifier"><i class="fas fa-edit"></i></a>
-                                <button class="btn btn-action btn-delete tooltip-custom" data-tooltip="Supprimer" onclick="deleteUser(${user.id})" title="Supprimer"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    `;
-                    usersTableBody.appendChild(row);
-                });
-
-                paginationWrapper.innerHTML = data.pagination;
-                const firstItem = data.users.from || 0;
-                const lastItem = data.users.to || 0;
-                const total = data.users.total || 0;
-                paginationInfo.textContent = `Affichage de ${firstItem} à ${lastItem} sur ${total} résultats`;
-                
-                updateGridView(data.users.data);
-                tableCard.style.display = 'block';
-                gridContainer.style.display = 'none';
-                animateTableRows();
-            } else {
-                usersTableBody.innerHTML = '';
-                paginationWrapper.innerHTML = '';
-                paginationInfo.textContent = 'Aucun résultat trouvé.';
-                tableCard.style.display = 'none';
-                gridContainer.style.display = 'grid';
-                gridContainer.innerHTML = `<div class="col-12 empty-state">
-                    <div class="empty-icon"><i class="fas fa-users"></i></div>
-                    <h4>Aucun utilisateur trouvé</h4>
-                    <p>Aucun utilisateur ne correspond à vos critères de recherche.</p>
-                </div>`;
-            }
-
-            document.querySelector('.stats-card-primary .stats-number').setAttribute('data-count', data.stats.total);
-            document.querySelector('.stats-card-success .stats-number').setAttribute('data-count', data.stats.active);
-            document.querySelector('.stats-card-warning .stats-number').setAttribute('data-count', data.stats.inactive);
-            document.querySelector('.stats-card-info .stats-number').setAttribute('data-count', data.stats.recent);
-            animateNumbers();
-            document.getElementById('selectAll').checked = false;
-        }
-
-        async function filterTableAndFetch(page = 1) {
-            const filters = getFilters();
+            
             try {
                 const response = await axios.get("{{ route('users.index') }}", {
-                    params: { ...filters, page: page },
+                    params: filters,
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
-                updateTableContent(response.data);
+
+                updateGroupTable(group, response.data.users.data, response.data.pagination);
             } catch (error) {
-                console.error("Erreur lors du filtrage ou de la récupération des données:", error);
-                showCustomAlert('Erreur lors du chargement des utilisateurs. Veuillez réessayer.', 'danger');
+                console.error(`Erreur lors du chargement des utilisateurs pour le groupe ${group}:`, error);
             }
         }
         
-        document.querySelector('.pagination-wrapper').addEventListener('click', async function(e) {
-            if (e.target.tagName === 'A' || e.target.closest('a')) {
-                e.preventDefault();
-                const link = e.target.closest('a');
-                const url = new URL(link.href);
-                const page = url.searchParams.get('page');
-                filterTableAndFetch(page);
-                window.scrollTo({ top: document.querySelector('.table-card').offsetTop - 50, behavior: 'smooth' });
+        function updateGroupTable(group, users, pagination) {
+            const tableCard = document.querySelector(`.table-card[data-group="${group}"]`);
+            if (!tableCard) return;
+
+            const tbody = tableCard.querySelector('tbody');
+            const paginationWrapper = tableCard.querySelector('.pagination-wrapper');
+            const tableFooter = tableCard.querySelector('.table-footer');
+            
+            if (users.length > 0) {
+                let html = '';
+                users.forEach(user => {
+                    const avatarHtml = user.avatar ? `<img src="/storage/${user.avatar}" alt="Avatar de ${user.name}" class="avatar-img">` : `<div class="avatar-placeholder">${user.name.substring(0, 1).toUpperCase()}</div>`;
+                    const rolesHtml = user.roles.map(role => `<span class="badge badge-role">${role.name}</span>`).join('') || '<span class="badge badge-secondary">Aucun rôle</span>';
+
+                    html += `
+                        <tr class="table-row" data-user-id="${user.id}">
+                            <td><div class="form-check"><input class="form-check-input user-checkbox" type="checkbox" value="${user.id}"></div></td>
+                            <td><div class="user-avatar">${avatarHtml}<div class="status-indicator status-${user.status}"></div></div></td>
+                            <td><div class="user-info"><span class="user-name">${user.name}</span><small class="user-id">ID: ${user.id}</small></div></td>
+                            <td><span class="user-email">${user.email}</span></td>
+                            <td><span class="user-phone">${user.phone || '-'}</span></td>
+                            <td>${rolesHtml}</td>
+                            <td>
+                                <div class="form-check form-switch d-flex align-items-center justify-content-center">
+                                    <input class="form-check-input status-toggle-switch" type="checkbox" id="statusSwitch-${user.id}" data-user-id="${user.id}" ${user.status === 'active' ? 'checked' : ''}>
+                                    <label class="form-check-label ms-2 status-label ${user.status}" for="statusSwitch-${user.id}">${user.status === 'active' ? 'Actif' : 'Inactif'}</label>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="date-text">${new Date(user.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                                <small class="date-time">${new Date(user.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</small>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="/users/${user.id}" class="btn btn-action btn-view tooltip-custom" data-tooltip="Voir" title="Voir"><i class="fas fa-eye"></i></a>
+                                    <a href="/users/${user.id}/edit" class="btn btn-action btn-edit tooltip-custom" data-tooltip="Modifier" title="Modifier"><i class="fas fa-edit"></i></a>
+                                    <button class="btn btn-action btn-delete tooltip-custom" data-tooltip="Supprimer" onclick="deleteUser(${user.id})" title="Supprimer"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+                paginationWrapper.innerHTML = pagination;
+                tableCard.style.display = 'block'; // S'assurer que le tableau est visible
+                animateTableRows();
+            } else {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <div class="empty-icon"><i class="fas fa-users"></i></div>
+                                <h4>Aucun utilisateur trouvé</h4>
+                                <p>Aucun utilisateur ne correspond à vos critères de recherche.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                paginationWrapper.innerHTML = '';
             }
+        }
+
+        document.getElementById('searchInput').addEventListener('input', () => {
+            filterAndFetchGroup('consultant');
+            filterAndFetchGroup('etudiant');
+            filterAndFetchGroup('admis');
+        });
+        
+        document.getElementById('statusFilter').addEventListener('change', () => {
+            filterAndFetchGroup('consultant');
+            filterAndFetchGroup('etudiant');
+            filterAndFetchGroup('admis');
+        });
+        
+        document.getElementById('roleFilter').addEventListener('change', () => {
+            const selectedRole = document.getElementById('roleFilter').value;
+            const groups = ['consultant', 'etudiant', 'admis'];
+            
+            groups.forEach(group => {
+                const tableCard = document.querySelector(`.table-card[data-group="${group}"]`);
+                if (selectedRole === '' || selectedRole === group) {
+                    tableCard.parentElement.style.display = 'block';
+                    filterAndFetchGroup(group);
+                } else {
+                    tableCard.parentElement.style.display = 'none';
+                }
+            });
+        });
+        
+        document.querySelectorAll('.pagination-wrapper').forEach(wrapper => {
+            wrapper.addEventListener('click', async function(e) {
+                if (e.target.tagName === 'A' || e.target.closest('a')) {
+                    e.preventDefault();
+                    const link = e.target.closest('a');
+                    const url = new URL(link.href);
+                    
+                    if(url.searchParams.has('page_consultant')) {
+                        const page = url.searchParams.get('page_consultant');
+                        filterAndFetchGroup('consultant', page);
+                    } else if (url.searchParams.has('page_etudiant')) {
+                        const page = url.searchParams.get('page_etudiant');
+                        filterAndFetchGroup('etudiant', page);
+                    } else if (url.searchParams.has('page_admis')) {
+                        const page = url.searchParams.get('page_admis');
+                        filterAndFetchGroup('admis', page);
+                    }
+                    window.scrollTo({ top: this.closest('.table-card').offsetTop - 50, behavior: 'smooth' });
+                }
+            });
         });
 
         document.querySelector('.filter-header').addEventListener('click', function() {
@@ -573,19 +578,12 @@
             icon.classList.toggle('fa-chevron-up');
             icon.classList.toggle('fa-chevron-down');
         });
-        document.getElementById('searchInput').addEventListener('input', () => filterTableAndFetch(1));
-        document.getElementById('statusFilter').addEventListener('change', () => filterTableAndFetch(1));
-        document.getElementById('roleFilter').addEventListener('change', () => filterTableAndFetch(1));
+
         document.getElementById('resetFilters').addEventListener('click', function(e) {
             e.preventDefault();
             window.location.href = "{{ route('users.index') }}";
         });
-        document.getElementById('selectAll').addEventListener('change', function() {
-            const checkboxes = document.querySelectorAll('.user-checkbox');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = this.checked;
-            });
-        });
+
         setTimeout(function() {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(alert => {
@@ -593,12 +591,14 @@
                 setTimeout(() => alert.remove(), 500);
             });
         }, 5000);
+
         let userToDelete = null;
         window.deleteUser = function(userId) {
             userToDelete = userId;
             const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
             deleteModal.show();
         }
+
         document.getElementById('confirmDelete').addEventListener('click', function() {
             if (userToDelete) {
                 const form = document.createElement('form');
@@ -619,6 +619,7 @@
                 form.submit();
             }
         });
+
         function animateTableRows() {
             const rows = document.querySelectorAll('.table-row');
             rows.forEach((row, index) => {
@@ -626,22 +627,7 @@
                 row.classList.add('animate__animated', 'animate__fadeInUp');
             });
         }
-        document.getElementById('toggleView').addEventListener('click', function() {
-            const tableCard = document.getElementById('tableCard');
-            const gridContainer = document.getElementById('gridContainer');
-            const icon = this.querySelector('i');
-            if (tableCard.style.display !== 'none') {
-                tableCard.style.display = 'none';
-                gridContainer.style.display = 'grid';
-                icon.classList.remove('fa-th-large');
-                icon.classList.add('fa-table');
-            } else {
-                tableCard.style.display = 'block';
-                gridContainer.style.display = 'none';
-                icon.classList.remove('fa-table');
-                icon.classList.add('fa-th-large');
-            }
-        });
+
         function animateNumbers() {
             const counters = document.querySelectorAll('.stats-number');
             counters.forEach(counter => {
@@ -659,59 +645,6 @@
                 };
                 requestAnimationFrame(update);
             });
-        }
-
-
-
-
-
-        
-        function updateGridView(users) {
-            const gridContainer = document.getElementById('gridContainer');
-            gridContainer.innerHTML = '';
-            if (users.length > 0) {
-                users.forEach(user => {
-                    const userCard = document.createElement('div');
-                    userCard.className = 'user-card animate__animated animate__fadeInUp';
-                    userCard.setAttribute('data-user-id', user.id);
-                    const avatarHtml = user.avatar ? `<img src="/storage/${user.avatar}" alt="Avatar de ${user.name}" class="avatar-img">` : `<div class="avatar-placeholder">${user.name.substring(0, 1).toUpperCase()}</div>`;
-                    const rolesHtml = user.roles.map(role => `<span class="badge badge-role">${role.name}</span>`).join('') || '<span class="badge badge-secondary">Aucun rôle</span>';
-                    userCard.innerHTML = `
-                        <div class="user-card-header">
-                            <div class="user-card-avatar user-avatar">
-                                ${avatarHtml}
-                                <div class="status-indicator status-${user.status}"></div>
-                            </div>
-                            <div class="user-card-info">
-                                <h5>${user.name}</h5>
-                                <p>ID: ${user.id}</p>
-                            </div>
-                        </div>
-                        <div class="user-card-details">
-                            <div class="user-card-detail"><span><i class="fas fa-envelope me-2 text-muted"></i>Email:</span><span>${user.email}</span></div>
-                            <div class="user-card-detail"><span><i class="fas fa-phone me-2 text-muted"></i>Téléphone:</span><span>${user.phone || '-'}</span></div>
-                            <div class="user-card-detail"><span><i class="fas fa-user-tag me-2 text-muted"></i>Rôle:</span><span>${rolesHtml}</span></div>
-                            <div class="user-card-detail">
-                                <span><i class="fas fa-power-off me-2 text-muted"></i>Statut:</span>
-                                <div class="form-check form-switch d-flex align-items-center justify-content-center">
-                                    <input class="form-check-input status-toggle-switch" type="checkbox" id="gridStatusSwitch-${user.id}" data-user-id="${user.id}" ${user.status === 'active' ? 'checked' : ''}>
-                                    <label class="form-check-label ms-2 status-label ${user.status}" for="gridStatusSwitch-${user.id}">${user.status === 'active' ? 'Actif' : 'Inactif'}</label>
-                                </div>
-                            </div>
-                            <div class="user-card-detail"><span><i class="fas fa-calendar-alt me-2 text-muted"></i>Créé le:</span><span>${new Date(user.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '')}</span></div>
-                        </div>
-                        <div class="user-card-actions">
-                            <a href="/users/${user.id}" class="btn btn-action btn-view tooltip-custom" data-tooltip="Voir" title="Voir"><i class="fas fa-eye"></i></a>
-                            <a href="/users/${user.id}/edit" class="btn btn-action btn-edit tooltip-custom" data-tooltip="Modifier" title="Modifier"><i class="fas fa-edit"></i></a>
-                            <button class="btn btn-action btn-delete tooltip-custom" data-tooltip="Supprimer" onclick="deleteUser(${user.id})" title="Supprimer"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                    `;
-                    gridContainer.appendChild(userCard);
-                });
-            } else {
-                gridContainer.innerHTML = `<div class="col-12 empty-state"><div class="empty-icon"><i class="fas fa-users"></i></div><h4>Aucun utilisateur trouvé</h4><p>Commencez par créer votre premier utilisateur pour voir la liste ici.</p><a href="{{ route('users.create') }}" class="btn btn-primary btn-floating"><i class="fas fa-plus me-2"></i> Créer un utilisateur</a></div>`;
-            }
         }
     });
 </script>
