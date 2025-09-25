@@ -115,7 +115,7 @@
                                     <select name="role" id="roleFilter" class="form-select">
                                         <option value="">Tous les rôles</option>
                                         @foreach($allRoles as $role)
-                                            <option value="{{ $role->name }}" {{ request('role') == $role->name ? 'selected' : '' }}>{{ ucfirst($role->name) }}</option>
+                                            <option value="{{ strtolower($role->name) }}" {{ request('role') == strtolower($role->name) ? 'selected' : '' }}>{{ ucfirst($role->name) }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -454,16 +454,18 @@
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
 
-                updateGroupTable(group, response.data.users.data, response.data.pagination);
+                // La structure de la réponse contient l'objet users (avec data, from, to, total) et pagination (HTML)
+                updateGroupTable(group, response.data.users, response.data.pagination); 
             } catch (error) {
                 console.error(`Erreur lors du chargement des utilisateurs pour le groupe ${group}:`, error);
             }
         }
         
-        function updateGroupTable(group, users, pagination) {
+        function updateGroupTable(group, usersObject, paginationHtml) {
             const tableCard = document.querySelector(`.table-card[data-group="${group}"]`);
             if (!tableCard) return;
 
+            const users = usersObject.data;
             const tbody = tableCard.querySelector('tbody');
             const paginationWrapper = tableCard.querySelector('.pagination-wrapper');
             const paginationInfo = tableCard.querySelector('.pagination-info');
@@ -473,6 +475,7 @@
                 users.forEach(user => {
                     const avatarHtml = user.avatar ? `<img src="/storage/${user.avatar}" alt="Avatar de ${user.name}" class="avatar-img">` : `<div class="avatar-placeholder">${user.name.substring(0, 1).toUpperCase()}</div>`;
                     const rolesHtml = user.roles.map(role => `<span class="badge badge-role">${role.name}</span>`).join('') || '<span class="badge badge-secondary">Aucun rôle</span>';
+                    const statusClass = user.status === 'active' ? 'checked' : '';
 
                     html += `
                         <tr class="table-row" data-user-id="${user.id}">
@@ -486,7 +489,7 @@
                                 <div class="form-check form-switch d-flex align-items-center justify-content-center">
                                     <input class="form-check-input status-toggle-switch" type="checkbox" id="statusSwitch-${user.id}"
                                            data-user-id="${user.id}"
-                                           {{ $user->status === 'active' ? 'checked' : '' }}>
+                                           ${statusClass}>
                                     <label class="form-check-label ms-2 status-label ${user.status}" for="statusSwitch-${user.id}">${user.status === 'active' ? 'Actif' : 'Inactif'}</label>
                                 </div>
                             </td>
@@ -505,14 +508,16 @@
                     `;
                 });
                 tbody.innerHTML = html;
-                paginationWrapper.innerHTML = pagination;
+                paginationWrapper.innerHTML = paginationHtml;
                 
-                const firstItem = users.from || 0;
-                const lastItem = users.to || 0;
-                const total = users.total || 0;
+                const firstItem = usersObject.from || 0;
+                const lastItem = usersObject.to || 0;
+                const total = usersObject.total || 0;
                 paginationInfo.textContent = `Affichage de ${firstItem} à ${lastItem} sur ${total} résultats`;
                 
                 tableCard.style.display = 'block';
+                // Réattacher les event listeners pour les nouveaux boutons switch (Toggle)
+                attachStatusToggleListeners(); 
                 animateTableRows();
             } else {
                 tbody.innerHTML = `
@@ -527,9 +532,76 @@
                     </tr>
                 `;
                 paginationWrapper.innerHTML = '';
+                paginationInfo.textContent = `Affichage de 0 à 0 sur ${usersObject.total || 0} résultats`;
             }
         }
 
+        // Fonction pour attacher les listeners au switch de statut
+        function attachStatusToggleListeners() {
+            document.querySelectorAll('.status-toggle-switch').forEach(toggle => {
+                // Évite de ré-attacher si déjà fait
+                if (toggle.getAttribute('data-listener-attached')) return;
+                toggle.setAttribute('data-listener-attached', 'true');
+
+                toggle.addEventListener('change', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    const newStatus = this.checked ? 'active' : 'inactive';
+                    const statusLabel = this.nextElementSibling;
+                    const initialChecked = !this.checked; // L'état précédent
+
+                    // Ajouter un état de chargement visuel
+                    const loadingHtml = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                    statusLabel.innerHTML = loadingHtml;
+                    this.disabled = true;
+
+                    axios.put(`/users/${userId}/toggle-status/${newStatus}`, {
+                        _token: '{{ csrf_token() }}'
+                    })
+                    .then(response => {
+                        if (response.data.success) {
+                            // Mettre à jour le texte et la couleur du label de statut
+                            statusLabel.textContent = newStatus === 'active' ? 'Actif' : 'Inactif';
+                            statusLabel.classList.remove('active', 'inactive');
+                            statusLabel.classList.add(newStatus);
+                            
+                            // Mettre à jour le point d'indicateur de statut sur l'avatar
+                            const statusIndicator = document.querySelector(`.table-row[data-user-id="${userId}"] .status-indicator`);
+                            if (statusIndicator) {
+                                statusIndicator.classList.remove('status-active', 'status-inactive');
+                                statusIndicator.classList.add(`status-${newStatus}`);
+                            }
+
+                            showCustomAlert(response.data.message, 'success');
+                        } else {
+                            // Si la requête échoue, annuler le changement de la case à cocher
+                            this.checked = initialChecked;
+                            statusLabel.textContent = initialChecked ? 'Actif' : 'Inactif';
+                            statusLabel.classList.remove('active', 'inactive');
+                            statusLabel.classList.add(initialChecked ? 'active' : 'inactive');
+                            showCustomAlert(response.data.message, 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erreur lors du changement de statut:', error);
+                        // En cas d'erreur de la requête, annuler le changement
+                        this.checked = initialChecked;
+                        statusLabel.textContent = initialChecked ? 'Actif' : 'Inactif';
+                        statusLabel.classList.remove('active', 'inactive');
+                        statusLabel.classList.add(initialChecked ? 'active' : 'inactive');
+                        showCustomAlert('Une erreur est survenue. Veuillez réessayer.', 'danger');
+                    })
+                    .finally(() => {
+                        // Réactiver le bouton
+                        this.disabled = false;
+                    });
+                });
+            });
+        }
+        
+        // Initial call to attach listeners on page load
+        attachStatusToggleListeners(); 
+
+        // Listeners for filters and pagination (No change needed here as the logic is correct)
         document.getElementById('searchInput').addEventListener('input', () => {
             filterAndFetchGroup('consultant');
             filterAndFetchGroup('etudiant');
@@ -548,11 +620,13 @@
             
             groups.forEach(group => {
                 const tableCard = document.querySelector(`.table-card[data-group="${group}"]`);
-                if (selectedRole === '' || selectedRole === group) {
-                    tableCard.parentElement.style.display = 'block';
-                    filterAndFetchGroup(group);
-                } else {
-                    tableCard.parentElement.style.display = 'none';
+                if (tableCard) {
+                    if (selectedRole === '' || selectedRole === group) {
+                        tableCard.parentElement.style.display = 'block';
+                        filterAndFetchGroup(group);
+                    } else {
+                        tableCard.parentElement.style.display = 'none';
+                    }
                 }
             });
         });
@@ -592,128 +666,7 @@
             window.location.href = "{{ route('users.index') }}";
         });
 
-        setTimeout(function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
-                alert.style.animation = 'slideOutUp 0.5s ease forwards';
-                setTimeout(() => alert.remove(), 500);
-            });
-        }, 5000);
-
-        let userToDelete = null;
-        window.deleteUser = function(userId) {
-            userToDelete = userId;
-            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            deleteModal.show();
-        }
-
-        document.getElementById('confirmDelete').addEventListener('click', function() {
-            if (userToDelete) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `/users/${userToDelete}`;
-                form.style.display = 'none';
-                const csrfToken = document.createElement('input');
-                csrfToken.type = 'hidden';
-                csrfToken.name = '_token';
-                csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                form.appendChild(csrfToken);
-                const methodInput = document.createElement('input');
-                methodInput.type = 'hidden';
-                methodInput.name = '_method';
-                methodInput.value = 'DELETE';
-                form.appendChild(methodInput);
-                document.body.appendChild(form);
-                form.submit();
-            }
-        });
-
-        function animateTableRows() {
-            const rows = document.querySelectorAll('.table-row');
-            rows.forEach((row, index) => {
-                row.style.animationDelay = `${index * 0.05}s`;
-                row.classList.add('animate__animated', 'animate__fadeInUp');
-            });
-        }
-
-        function animateNumbers() {
-            const counters = document.querySelectorAll('.stats-number');
-            counters.forEach(counter => {
-                const target = parseInt(counter.getAttribute('data-count'));
-                const duration = 1500;
-                const start = performance.now();
-                const update = (timestamp) => {
-                    const progress = (timestamp - start) / duration;
-                    if (progress < 1) {
-                        counter.textContent = Math.floor(progress * target);
-                        requestAnimationFrame(update);
-                    } else {
-                        counter.textContent = target;
-                    }
-                };
-                requestAnimationFrame(update);
-            });
-        }
-
-        // --- Code pour le toggle de statut ---
-        document.querySelectorAll('.status-toggle-switch').forEach(toggle => {
-            toggle.addEventListener('change', function() {
-                const userId = this.getAttribute('data-user-id');
-                const newStatus = this.checked ? 'active' : 'inactive';
-                const statusLabel = this.nextElementSibling;
-                const initialChecked = !this.checked;
-
-                // Ajouter un état de chargement visuel
-                const loadingHtml = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
-                statusLabel.innerHTML = loadingHtml;
-                this.disabled = true;
-
-                axios.put(`/users/${userId}/toggle-status/${newStatus}`, {
-                    _token: '{{ csrf_token() }}'
-                })
-                .then(response => {
-                    if (response.data.success) {
-                        // Mettre à jour le texte et la couleur du label de statut
-                        statusLabel.textContent = newStatus === 'active' ? 'Actif' : 'Inactif';
-                        statusLabel.classList.remove('active', 'inactive');
-                        statusLabel.classList.add(newStatus);
-                        
-                        // Mettre à jour le point d'indicateur de statut sur l'avatar
-                        const statusIndicator = document.querySelector(`.table-row[data-user-id="${userId}"] .status-indicator`);
-                        if (statusIndicator) {
-                            statusIndicator.classList.remove('status-active', 'status-inactive');
-                            statusIndicator.classList.add(`status-${newStatus}`);
-                        }
-
-                        // Afficher une alerte de succès
-                        showCustomAlert(response.data.message, 'success');
-                    } else {
-                        // Si la requête échoue, annuler le changement de la case à cocher et afficher une alerte d'erreur
-                        this.checked = initialChecked;
-                        statusLabel.textContent = initialChecked ? 'Actif' : 'Inactif';
-                        statusLabel.classList.remove('active', 'inactive');
-                        statusLabel.classList.add(initialChecked ? 'active' : 'inactive');
-                        showCustomAlert(response.data.message, 'danger');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erreur lors du changement de statut:', error);
-                    // En cas d'erreur de la requête, annuler le changement et afficher une alerte
-                    this.checked = initialChecked;
-                    statusLabel.textContent = initialChecked ? 'Actif' : 'Inactif';
-                    statusLabel.classList.remove('active', 'inactive');
-                    statusLabel.classList.add(initialChecked ? 'active' : 'inactive');
-                    showCustomAlert('Une erreur est survenue. Veuillez réessayer.', 'danger');
-                })
-                .finally(() => {
-                    // Réactiver le bouton
-                    this.disabled = false;
-                });
-            });
-        });
-        // --- Fin du code pour le toggle de statut ---
-
-        // Fonction pour afficher une alerte personnalisée
+        // Global Alert Function (make sure this is not duplicating a function already in layouts.app)
         function showCustomAlert(message, type) {
             const alertHtml = `
                 <div class="alert alert-${type} alert-dismissible fade show custom-alert" role="alert">
@@ -725,7 +678,6 @@
             const container = document.querySelector('.container-fluid');
             container.insertAdjacentHTML('afterbegin', alertHtml);
 
-            // Faire disparaître l'alerte après 5 secondes
             setTimeout(() => {
                 const alert = container.querySelector('.alert');
                 if (alert) {
@@ -734,7 +686,6 @@
                 }
             }, 5000);
         }
-
     });
 </script>
 @endpush
