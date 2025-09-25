@@ -124,96 +124,99 @@
 @endpush
 
 @section('content')
-<div class="container-fluid py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
+    <div class="container-fluid py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
 
-            {{-- Main Payment Details Card --}}
-            <div class="card animated-card mb-4">
-                <div class="card-header gradient-header text-white d-flex justify-content-between align-items-center p-4">
-                    <h3 class="card-title mb-0">
-                        <i class="fas fa-money-check-alt fa-2x me-2 floating-icon"></i>
-                        Détails du Paiement
-                    </h3>
-                    @php
-                        $statusClass = [
-                            'paid' => 'status-badge status-paid',
-                            'pending' => 'status-badge status-pending',
-                            'late' => 'status-badge status-late',
-                        ][$payment->status] ?? 'status-badge bg-secondary';
-                    @endphp
-                    <span class="{{ $statusClass }} fs-6">{{ ucfirst($payment->status) }}</span>
-                </div>
-                <div class="card-body glass-card p-4">
-                    @if (session('success'))
-                        <div class="alert alert-success alert-custom alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    @endif
+                {{-- Main Payment Details Card --}}
+                <div class="card animated-card mb-4">
+                    <div class="card-header gradient-header text-white d-flex justify-content-between align-items-center p-4">
+                        <h3 class="card-title mb-0">
+                            <i class="fas fa-money-check-alt fa-2x me-2 floating-icon"></i>
+                            Détails du Paiement
+                        </h3>
+                        @php
+    $statusClass = [
+        'paid' => 'status-badge status-paid',
+        'pending' => 'status-badge status-pending',
+        'late' => 'status-badge status-late',
+    ][$payment->status] ?? 'status-badge bg-secondary';
+                        @endphp
+                        <span class="{{ $statusClass }} fs-6">{{ ucfirst($payment->status) }}</span>
+                    </div>
+                    <div class="card-body glass-card p-4">
+                        @if (session('success'))
+                            <div class="alert alert-success alert-custom alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
 
-                    <div class="row">
-                        {{-- Payment Information --}}
-                        <div class="col-md-6 mb-4">
-                            <h5 class="mb-3" style="color: var(--primary-red); font-weight: 700;">
-                                <i class="fas fa-file-invoice-dollar me-2"></i> Informations du Paiement
-                            </h5>
-                            <ul class="list-group list-group-flush">
-                                <li class="custom-list-item"><strong>Référence:</strong> {{ $payment->reference ?? 'N/A' }}</li>
-                                <li class="custom-list-item"><strong>Montant:</strong> <span class="badge bg-success">{{ number_format($payment->amount, 2) }} DH</span></li>
-                                <li class="custom-list-item"><strong>Méthode:</strong> {{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</li>
-                                <li class="custom-list-item"><strong>Date d'échéance:</strong> {{ \Carbon\Carbon::parse($payment->due_date)->format('d/m/Y') }}</li>
-                                @if($payment->paid_date)
-                                <li class="custom-list-item"><strong>Date de Paiement:</strong> {{ \Carbon\Carbon::parse($payment->paid_date)->format('d/m/Y') }}</li>
-                                @endif
-                                @if($payment->late_fee > 0)
-                                <li class="custom-list-item"><strong>Frais de Retard:</strong> <span class="badge bg-danger">{{ number_format($payment->late_fee, 2) }} DH</span></li>
-                                @endif
-                                @if($payment->transaction_id)
-                                <li class="custom-list-item"><strong>ID de Transaction:</strong> {{ $payment->transaction_id }}</li>
-                                @endif
-                                @if($payment->receipt_path)
+                        <div class="row">
+                            {{-- Payment Information --}}
+                            <div class="col-md-6 mb-4">
+                                <h5 class="mb-3" style="color: var(--primary-red); font-weight: 700;">
+                                    <i class="fas fa-file-invoice-dollar me-2"></i> Informations du Paiement
+                                </h5>
+                                <ul class="list-group list-group-flush">
+                                    <li class="custom-list-item"><strong>Référence:</strong> {{ $payment->reference ?? 'N/A' }}</li>
+                                    <li class="custom-list-item"><strong>Montant:</strong> <span class="badge bg-success">{{ number_format($payment->amount, 2) }} DH</span></li>
+                                    <li class="custom-list-item"><strong>Méthode:</strong> {{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</li>
                                 <li class="custom-list-item">
-                                    <strong>Reçu:</strong>
-                                    <a href="{{ Storage::url($payment->receipt_path) }}" target="_blank" class="text-info hover:text-dark">
-                                        <i class="fas fa-file-pdf me-1"></i> Voir le reçu
-                                    </a>
+                                    <strong>Date d'échéance:</strong>
+                                    {{ $payment->due_date ? (is_string($payment->due_date) ? \Carbon\Carbon::parse($payment->due_date)->format('d/m/Y') : $payment->due_date->format('d/m/Y')) : 'N/A' }}
                                 </li>
-                                @endif
-                            </ul>
+                                    @if($payment->paid_date)
+                                    <li class="custom-list-item"><strong>Date de Paiement:</strong> {{ \Carbon\Carbon::parse($payment->paid_date)->format('d/m/Y') }}</li>
+                                    @endif
+                                    @if($payment->late_fee > 0)
+                                    <li class="custom-list-item"><strong>Frais de Retard:</strong> <span class="badge bg-danger">{{ number_format($payment->late_fee, 2) }} DH</span></li>
+                                    @endif
+                                    @if($payment->transaction_id)
+                                    <li class="custom-list-item"><strong>ID de Transaction:</strong> {{ $payment->transaction_id }}</li>
+                                    @endif
+                                    @if($payment->receipt_path)
+                                    <li class="custom-list-item">
+                                        <strong>Reçu:</strong>
+                                        <a href="{{ Storage::url($payment->receipt_path) }}" target="_blank" class="text-info hover:text-dark">
+                                            <i class="fas fa-file-pdf me-1"></i> Voir le reçu
+                                        </a>
+                                    </li>
+                                    @endif
+                                </ul>
+                            </div>
+
+                            {{-- Associated Inscription & User Details --}}
+                            <div class="col-md-6 mb-4">
+                                <h5 class="mb-3" style="color: var(--accent-pink); font-weight: 700;">
+                                    <i class="fas fa-user-graduate me-2"></i> Détails de l'Inscription
+                                </h5>
+                                <ul class="list-group list-group-flush">
+                                    <li class="custom-list-item"><strong>Étudiant:</strong> {{ $payment->inscription->user->name }}</li>
+                                    <li class="custom-list-item"><strong>Formation:</strong> {{ $payment->inscription->formation->title }}</li>
+                                    <li class="custom-list-item"><strong>Montant payé:</strong> <span class="badge bg-success">{{ number_format($payment->inscription->paid_amount, 2) }} DH</span></li>
+                                    <li class="custom-list-item"><strong>Reste à payer:</strong> <span class="badge bg-danger">{{ number_format($payment->inscription->total_amount - $payment->inscription->paid_amount, 2) }} DH</span></li>
+                                </ul>
+                            </div>
                         </div>
 
-                        {{-- Associated Inscription & User Details --}}
-                        <div class="col-md-6 mb-4">
-                            <h5 class="mb-3" style="color: var(--accent-pink); font-weight: 700;">
-                                <i class="fas fa-user-graduate me-2"></i> Détails de l'Inscription
-                            </h5>
-                            <ul class="list-group list-group-flush">
-                                <li class="custom-list-item"><strong>Étudiant:</strong> {{ $payment->inscription->user->name }}</li>
-                                <li class="custom-list-item"><strong>Formation:</strong> {{ $payment->inscription->formation->title }}</li>
-                                <li class="custom-list-item"><strong>Montant payé:</strong> <span class="badge bg-success">{{ number_format($payment->inscription->paid_amount, 2) }} DH</span></li>
-                                <li class="custom-list-item"><strong>Reste à payer:</strong> <span class="badge bg-danger">{{ number_format($payment->inscription->total_amount - $payment->inscription->paid_amount, 2) }} DH</span></li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    {{-- Action Buttons --}}
-                    <div class="d-flex justify-content-end gap-3 mt-4 pt-4 border-top">
-                        <a href="{{ route('payments.index') }}" class="btn btn-outline-secondary animated-btn text-white">
-                            <i class="fas fa-arrow-left me-2"></i> Retour
-                        </a>
-                        @can('payment-edit')
-                            <a href="{{ route('payments.edit', $payment->id) }}" class="btn btn-warning animated-btn">
-                                <i class="fas fa-edit me-2"></i> Modifier
+                        {{-- Action Buttons --}}
+                        <div class="d-flex justify-content-end gap-3 mt-4 pt-4 border-top">
+                            <a href="{{ route('payments.index') }}" class="btn btn-outline-secondary animated-btn text-white">
+                                <i class="fas fa-arrow-left me-2"></i> Retour
                             </a>
-                        @endcan
+                            @can('payment-edit')
+                                <a href="{{ route('payments.edit', $payment->id) }}" class="btn btn-warning animated-btn">
+                                    <i class="fas fa-edit me-2"></i> Modifier
+                                </a>
+                            @endcan
+                        </div>
                     </div>
                 </div>
-            </div>
 
+            </div>
         </div>
     </div>
-</div>
 @endsection
 @push('scripts')
 <script>
