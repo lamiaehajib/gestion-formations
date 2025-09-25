@@ -281,338 +281,351 @@
 @endpush
 
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-lg-8">
-            {{-- Header Card --}}
-            <div class="card animated-card mb-4 fade-in-left">
-                <div class="card-header gradient-header text-white d-flex justify-content-between align-items-center">
-                    <h3 class="card-title mb-0">
-                        <i class="fas fa-file-invoice fa-2x me-2 floating-icon"></i>
-                        Détails de l'inscription #{{ $inscription->id }}
-                    </h3>
-                    <div class="d-flex align-items-center">
-                        @php
-                            $statusConfig = [
-                                'pending' => ['class' => 'status-badge status-pending', 'text' => 'En attente'],
-                                'active' => ['class' => 'status-badge status-active', 'text' => 'Active'],
-                                'completed' => ['class' => 'status-badge status-completed', 'text' => 'Terminée'],
-                                'cancelled' => ['class' => 'status-badge status-cancelled', 'text' => 'Annulée']
-                            ];
-                            $currentStatus = $statusConfig[$inscription->status] ?? ['class' => 'status-badge bg-secondary', 'text' => $inscription->status];
-                        @endphp
-                        <span class="{{ $currentStatus['class'] }} me-3 fs-6">{{ $currentStatus['text'] }}</span>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-8">
+                {{-- Header Card --}}
+                <div class="card animated-card mb-4 fade-in-left">
+                    <div class="card-header gradient-header text-white d-flex justify-content-between align-items-center">
+                        <h3 class="card-title mb-0">
+                            <i class="fas fa-file-invoice fa-2x me-2 floating-icon"></i>
+                            Détails de l'inscription #{{ $inscription->id }}
+                        </h3>
+                        <div class="d-flex align-items-center">
+                            @php
+    $statusConfig = [
+        'pending' => ['class' => 'status-badge status-pending', 'text' => 'En attente'],
+        'active' => ['class' => 'status-badge status-active', 'text' => 'Active'],
+        'completed' => ['class' => 'status-badge status-completed', 'text' => 'Terminée'],
+        'cancelled' => ['class' => 'status-badge status-cancelled', 'text' => 'Annulée']
+    ];
+    $currentStatus = $statusConfig[$inscription->status] ?? ['class' => 'status-badge bg-secondary', 'text' => $inscription->status];
+                            @endphp
+                            <span class="{{ $currentStatus['class'] }} me-3 fs-6">{{ $currentStatus['text'] }}</span>
 
+                            @can('update', $inscription)
+                                <a href="{{ route('inscriptions.edit', $inscription) }}" class="btn animated-btn text-white me-2">
+                                    <i class="fas fa-edit me-1"></i> Modifier
+                                </a>
+                            @endcan
+                            <a href="{{ route('inscriptions.index') }}" class="btn btn-outline-light animated-btn">
+                                <i class="fas fa-arrow-left me-1"></i> Retour
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body glass-card">
+                        @if(session('success'))
+                            <div class="alert alert-success alert-custom alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Succès!</strong> {{ session('success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+
+                        @if(session('error'))
+                            <div class="alert alert-danger alert-custom alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                <strong>Erreur!</strong> {{ session('error') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="mb-3" style="color: var(--primary-red); font-weight: 700;">
+                                    <i class="fas fa-user-graduate me-2"></i>Informations Étudiant
+                                </h5>
+                                <ul class="list-group list-group-flush mb-3">
+                                    <li class="custom-list-item stagger-animation" style="--i: 1">
+                                        <strong style="color: var(--primary-red);">Nom :</strong> {{ $inscription->user->name }}
+                                    </li>
+                                    <li class="custom-list-item stagger-animation" style="--i: 2">
+                                        <strong style="color: var(--primary-red);">Email :</strong> {{ $inscription->user->email }}
+                                    </li>
+                                    @if($inscription->user->phone)
+                                    <li class="custom-list-item stagger-animation" style="--i: 3">
+                                        <strong style="color: var(--primary-red);">Téléphone :</strong> {{ $inscription->user->phone }}
+                                    </li>
+                                    @endif
+
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5 class="mb-3" style="color: var(--accent-pink); font-weight: 700;">
+                                    <i class="fas fa-clipboard-list me-2"></i>Détails de l'inscription
+                                </h5>
+                                <ul class="list-group list-group-flush mb-3">
+                                    <li class="custom-list-item stagger-animation" style="--i: 1">
+                                        <strong style="color: var(--accent-pink);">Date d'inscription :</strong> {{ $inscription->inscription_date->format('d/m/Y à H:i') }}
+                                    </li>
+                                    <li class="custom-list-item stagger-animation" style="--i: 2">
+                                        <strong style="color: var(--accent-pink);">Plan de paiement :</strong>
+                                        @php
+    $paymentPlans = [
+        'one_time' => 'Paiement unique',
+        'monthly' => 'Mensuel',
+        'custom' => 'Personnalisé'
+    ];
+                                        @endphp
+                                        {{ $paymentPlans[$inscription->payment_plan] ?? $inscription->payment_plan }}
+                                    </li>
+                                    <li class="custom-list-item stagger-animation" style="--i: 3">
+                                        <strong style="color: var(--accent-pink);">Montant total :</strong> 
+                                        <span class="amount-badge">{{ number_format($inscription->total_amount, 2) }} DH</span>
+                                    </li>
+                                    <li class="custom-list-item stagger-animation" style="--i: 4">
+                                        <strong style="color: var(--accent-pink);">Montant payé :</strong> 
+                                        <span class="badge bg-success pulse-animation">{{ number_format($inscription->paid_amount, 2) }} DH</span>
+                                    </li>
+                                    {{-- الكود ديال Reste à payer (باش نعرفو فين نحطو الإضافة) --}}
+                                    <li class="custom-list-item stagger-animation" style="--i: 5">
+                                        <strong style="color: var(--accent-pink);">Reste à payer :</strong>
+                                        <span class="badge" style="background: var(--gradient-secondary); color: white;">
+                                            {{ number_format($inscription->total_amount - $inscription->paid_amount, 2) }} DH
+                                        </span>
+                                    </li>
+
+                                    {{-- ✨ الإضافة الجديدة لعرض تاريخ الاستحقاق التالي ✨ --}}
+                                    @if($inscription->next_installment_due_date && $inscription->remaining_installments > 0)
+                                        <li class="custom-list-item stagger-animation pulse-animation"
+                                            style="--i: 6; background-color: #fff3cd; border: 2px solid #ffc107;">
+                                            <strong style="color: #ff9800;"><i class="fas fa-calendar-times me-2"></i> Date d'échéance du prochain acompte
+                                                :</strong>
+                                            <span class="fw-bold fs-5 text-danger">
+                                                {{ $inscription->next_installment_due_date->format('d/m/Y') }}
+                                            </span>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Formation Details Card --}}
+                <div class="card animated-card mb-4 fade-in-left" style="animation-delay: 0.2s;">
+                    <div class="card-header gradient-secondary text-white">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-graduation-cap me-2 floating-icon"></i>
+                            Détails de la formation
+                        </h4>
+                    </div>
+                    <div class="card-body glass-card">
+                        <h5 class="card-title" style="color: var(--primary-red); font-weight: 700;">{{ $inscription->formation->title }}</h5>
+                        <p class="card-text" style="color: #666; line-height: 1.6;">{{ $inscription->formation->description }}</p>
+                        <ul class="list-group list-group-flush mt-3">
+                            <li class="custom-list-item">
+                                <strong style="color: var(--primary-red);">Catégorie :</strong> {{ $inscription->formation->category->name ?? 'N/A' }}
+                            </li>
+                            <li class="custom-list-item">
+                                <strong style="color: var(--primary-red);">Prix :</strong> 
+                                <span class="amount-badge">{{ number_format($inscription->formation->price, 2) }} DH</span>
+                            </li>
+
+                            @if($inscription->formation->start_date)
+                            <li class="custom-list-item">
+                                <strong style="color: var(--primary-red);">Date de début :</strong> {{ $inscription->formation->start_date->format('d/m/Y') }}
+                            </li>
+                            @endif
+                            @if($inscription->formation->end_date)
+                            <li class="custom-list-item">
+                                <strong style="color: var(--primary-red);">Date de fin :</strong> {{ $inscription->formation->end_date->format('d/m/Y') }}
+                            </li>
+                            @endif
+                        </ul>
+                    </div>
+                </div>
+
+                {{-- Payment Schedule Card --}}
+                <div class="card animated-card mb-4 fade-in-left" style="animation-delay: 0.4s;">
+                    <div class="card-header gradient-header text-white d-flex justify-content-between align-items-center">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-calendar-alt me-2 floating-icon"></i>
+                            Calendrier de Paiement
+                        </h4>
                         @can('update', $inscription)
-                            <a href="{{ route('inscriptions.edit', $inscription) }}" class="btn animated-btn text-white me-2">
-                                <i class="fas fa-edit me-1"></i> Modifier
+                            <a href="{{ route('payments.create', ['inscription_id' => $inscription->id]) }}" class="btn animated-btn text-white">
+                                <i class="fas fa-plus me-1"></i> Ajouter un paiement
                             </a>
                         @endcan
-                        <a href="{{ route('inscriptions.index') }}" class="btn btn-outline-light animated-btn">
-                            <i class="fas fa-arrow-left me-1"></i> Retour
-                        </a>
                     </div>
-                </div>
-                <div class="card-body glass-card">
-                    @if(session('success'))
-                        <div class="alert alert-success alert-custom alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle me-2"></i>
-                            <strong>Succès!</strong> {{ session('success') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    @endif
-
-                    @if(session('error'))
-                        <div class="alert alert-danger alert-custom alert-dismissible fade show" role="alert">
-                            <i class="fas fa-exclamation-circle me-2"></i>
-                            <strong>Erreur!</strong> {{ session('error') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    @endif
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5 class="mb-3" style="color: var(--primary-red); font-weight: 700;">
-                                <i class="fas fa-user-graduate me-2"></i>Informations Étudiant
-                            </h5>
-                            <ul class="list-group list-group-flush mb-3">
-                                <li class="custom-list-item stagger-animation" style="--i: 1">
-                                    <strong style="color: var(--primary-red);">Nom :</strong> {{ $inscription->user->name }}
-                                </li>
-                                <li class="custom-list-item stagger-animation" style="--i: 2">
-                                    <strong style="color: var(--primary-red);">Email :</strong> {{ $inscription->user->email }}
-                                </li>
-                                @if($inscription->user->phone)
-                                <li class="custom-list-item stagger-animation" style="--i: 3">
-                                    <strong style="color: var(--primary-red);">Téléphone :</strong> {{ $inscription->user->phone }}
-                                </li>
-                                @endif
-                                
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <h5 class="mb-3" style="color: var(--accent-pink); font-weight: 700;">
-                                <i class="fas fa-clipboard-list me-2"></i>Détails de l'inscription
-                            </h5>
-                            <ul class="list-group list-group-flush mb-3">
-                                <li class="custom-list-item stagger-animation" style="--i: 1">
-                                    <strong style="color: var(--accent-pink);">Date d'inscription :</strong> {{ $inscription->inscription_date->format('d/m/Y à H:i') }}
-                                </li>
-                                <li class="custom-list-item stagger-animation" style="--i: 2">
-                                    <strong style="color: var(--accent-pink);">Plan de paiement :</strong>
-                                    @php
-                                        $paymentPlans = [
-                                            'one_time' => 'Paiement unique',
-                                            'monthly' => 'Mensuel',
-                                            'custom' => 'Personnalisé'
-                                        ];
-                                    @endphp
-                                    {{ $paymentPlans[$inscription->payment_plan] ?? $inscription->payment_plan }}
-                                </li>
-                                <li class="custom-list-item stagger-animation" style="--i: 3">
-                                    <strong style="color: var(--accent-pink);">Montant total :</strong> 
-                                    <span class="amount-badge">{{ number_format($inscription->total_amount, 2) }} DH</span>
-                                </li>
-                                <li class="custom-list-item stagger-animation" style="--i: 4">
-                                    <strong style="color: var(--accent-pink);">Montant payé :</strong> 
-                                    <span class="badge bg-success pulse-animation">{{ number_format($inscription->paid_amount, 2) }} DH</span>
-                                </li>
-                                <li class="custom-list-item stagger-animation" style="--i: 5">
-                                    <strong style="color: var(--accent-pink);">Reste à payer :</strong> 
-                                    <span class="badge" style="background: var(--gradient-secondary); color: white;">
-                                        {{ number_format($inscription->total_amount - $inscription->paid_amount, 2) }} DH
-                                    </span>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Formation Details Card --}}
-            <div class="card animated-card mb-4 fade-in-left" style="animation-delay: 0.2s;">
-                <div class="card-header gradient-secondary text-white">
-                    <h4 class="card-title mb-0">
-                        <i class="fas fa-graduation-cap me-2 floating-icon"></i>
-                        Détails de la formation
-                    </h4>
-                </div>
-                <div class="card-body glass-card">
-                    <h5 class="card-title" style="color: var(--primary-red); font-weight: 700;">{{ $inscription->formation->title }}</h5>
-                    <p class="card-text" style="color: #666; line-height: 1.6;">{{ $inscription->formation->description }}</p>
-                    <ul class="list-group list-group-flush mt-3">
-                        <li class="custom-list-item">
-                            <strong style="color: var(--primary-red);">Catégorie :</strong> {{ $inscription->formation->category->name ?? 'N/A' }}
-                        </li>
-                        <li class="custom-list-item">
-                            <strong style="color: var(--primary-red);">Prix :</strong> 
-                            <span class="amount-badge">{{ number_format($inscription->formation->price, 2) }} DH</span>
-                        </li>
-                       
-                        @if($inscription->formation->start_date)
-                        <li class="custom-list-item">
-                            <strong style="color: var(--primary-red);">Date de début :</strong> {{ $inscription->formation->start_date->format('d/m/Y') }}
-                        </li>
-                        @endif
-                        @if($inscription->formation->end_date)
-                        <li class="custom-list-item">
-                            <strong style="color: var(--primary-red);">Date de fin :</strong> {{ $inscription->formation->end_date->format('d/m/Y') }}
-                        </li>
-                        @endif
-                    </ul>
-                </div>
-            </div>
-
-            {{-- Payment Schedule Card --}}
-            <div class="card animated-card mb-4 fade-in-left" style="animation-delay: 0.4s;">
-                <div class="card-header gradient-header text-white d-flex justify-content-between align-items-center">
-                    <h4 class="card-title mb-0">
-                        <i class="fas fa-calendar-alt me-2 floating-icon"></i>
-                        Calendrier de Paiement
-                    </h4>
-                    @can('update', $inscription)
-                        <a href="{{ route('payments.create', ['inscription_id' => $inscription->id]) }}" class="btn animated-btn text-white">
-                            <i class="fas fa-plus me-1"></i> Ajouter un paiement
-                        </a>
-                    @endcan
-                </div>
-                <div class="card-body glass-card">
-                    @if($inscription->payments->isNotEmpty())
-                        <div class="table-responsive">
-                            <table class="table payment-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Date d'échéance</th>
-                                        <th>Montant</th>
-                                        <th>Statut</th>
-                                        <th>Méthode</th>
-                                        <th>Date de paiement</th>
-                                        @can('update', $inscription)
-                                        <th class="text-center">Actions</th>
-                                        @endcan
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($inscription->payments->sortBy('due_date') as $payment)
+                    <div class="card-body glass-card">
+                        @if($inscription->payments->isNotEmpty())
+                            <div class="table-responsive">
+                                <table class="table payment-table mb-0">
+                                    <thead>
                                         <tr>
-                                            <td>{{ $payment->due_date ? $payment->due_date->format('d/m/Y') : 'N/A' }}</td>
-                                            <td>
-                                                <span class="amount-badge">{{ number_format($payment->amount, 2) }} DH</span>
-                                            </td>
-                                            <td>
-                                                @php
-                                                    $paymentStatusClass = [
-                                                        'pending' => 'status-badge status-pending',
-                                                        'paid' => 'status-badge status-active',
-                                                        'overdue' => 'status-badge status-cancelled',
-                                                        'refunded' => 'status-badge bg-secondary',
-                                                        'failed' => 'status-badge status-cancelled',
-                                                    ][$payment->status] ?? 'status-badge bg-secondary';
-                                                @endphp
-                                                <span class="{{ $paymentStatusClass }}">{{ ucfirst($payment->status) }}</span>
-                                            </td>
-                                            <td>{{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</td>
-                                            <td>{{ $payment->paid_date ? $payment->paid_date->format('d/m/Y') : 'N/A' }}</td>
+                                           
+                                            <th>Montant</th>
+                                            <th>Statut</th>
+                                            <th>Méthode</th>
+                                            <th>Date de paiement</th>
                                             @can('update', $inscription)
-                                            <td class="text-center">
-                                                <div class="btn-group" role="group">
-                                                    @if($payment->status === 'pending' || $payment->status === 'overdue')
-                                                        <form action="{{ route('payments.markAsPaid', $payment) }}" method="POST" class="d-inline">
-                                                            @csrf
-                                                            @method('PATCH')
-                                                            <button type="submit" class="btn btn-sm animated-btn" title="Marquer comme payé" style="background: var(--gradient-primary);">
-                                                                <i class="fas fa-check"></i>
-                                                            </button>
-                                                        </form>
-                                                    @endif
-                                                    <a href="{{ route('payments.edit', $payment) }}" class="btn btn-sm btn-warning animated-btn" title="Modifier le paiement">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <form action="{{ route('payments.destroy', $payment) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce paiement ?');" class="d-inline">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm animated-btn" title="Supprimer le paiement" style="background: var(--gradient-primary);">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </td>
+                                            <th class="text-center">Actions</th>
                                             @endcan
                                         </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @else
-                        <p class="text-muted">Aucun calendrier de paiement défini pour cette inscription.</p>
-                    @endif
+                                    </thead>
+                                    <tbody>
+                                        @foreach($inscription->payments->sortBy('due_date') as $payment)
+                                            <tr>
+                                                
+                                                <td>
+                                                    <span class="amount-badge">{{ number_format($payment->amount, 2) }} DH</span>
+                                                </td>
+                                                <td>
+                                                    @php
+            $paymentStatusClass = [
+                'pending' => 'status-badge status-pending',
+                'paid' => 'status-badge status-active',
+                'overdue' => 'status-badge status-cancelled',
+                'refunded' => 'status-badge bg-secondary',
+                'failed' => 'status-badge status-cancelled',
+            ][$payment->status] ?? 'status-badge bg-secondary';
+                                                    @endphp
+                                                    <span class="{{ $paymentStatusClass }}">{{ ucfirst($payment->status) }}</span>
+                                                </td>
+                                                <td>{{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</td>
+                                                <td>{{ $payment->paid_date ? $payment->paid_date->format('d/m/Y') : 'N/A' }}</td>
+                                                @can('update', $inscription)
+                                                <td class="text-center">
+                                                    <div class="btn-group" role="group">
+                                                        @if($payment->status === 'pending' || $payment->status === 'overdue')
+                                                            <form action="{{ route('payments.markAsPaid', $payment) }}" method="POST" class="d-inline">
+                                                                @csrf
+                                                                @method('PATCH')
+                                                                <button type="submit" class="btn btn-sm animated-btn" title="Marquer comme payé" style="background: var(--gradient-primary);">
+                                                                    <i class="fas fa-check"></i>
+                                                                </button>
+                                                            </form>
+                                                        @endif
+                                                        <a href="{{ route('payments.edit', $payment) }}" class="btn btn-sm btn-warning animated-btn" title="Modifier le paiement">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <form action="{{ route('payments.destroy', $payment) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce paiement ?');" class="d-inline">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-sm animated-btn" title="Supprimer le paiement" style="background: var(--gradient-primary);">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </td>
+                                                @endcan
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <p class="text-muted">Aucun calendrier de paiement défini pour cette inscription.</p>
+                        @endif
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-lg-4">
-            {{-- Documents Card --}}
-            <div class="card animated-card mb-4 fade-in-right">
-                <div class="card-header gradient-secondary text-white">
-                    <h4 class="card-title mb-0">
-                        <i class="fas fa-paperclip me-2 floating-icon"></i>
-                        Documents joints
-                    </h4>
+            <div class="col-lg-4">
+                {{-- Documents Card --}}
+                <div class="card animated-card mb-4 fade-in-right">
+                    <div class="card-header gradient-secondary text-white">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-paperclip me-2 floating-icon"></i>
+                            Documents joints
+                        </h4>
+                    </div>
+                    <div class="card-body glass-card">
+                        @if($payment->receipt_path)
+                                                    <a href="{{ Storage::url($payment->receipt_path) }}" target="_blank" class="text-blue-500 hover:text-blue-700 ml-2" title="Voir reçu"><i class="fas fa-file-download"></i> Voir reçu</a>
+                                                @else
+                                                    <span class="text-gray-400 ml-2">(Pas de reçu)</span>
+                                                @endif
+                    </div>
                 </div>
-                <div class="card-body glass-card">
-                    @if($payment->receipt_path)
-                                                <a href="{{ Storage::url($payment->receipt_path) }}" target="_blank" class="text-blue-500 hover:text-blue-700 ml-2" title="Voir reçu"><i class="fas fa-file-download"></i> Voir reçu</a>
-                                            @else
-                                                <span class="text-gray-400 ml-2">(Pas de reçu)</span>
-                                            @endif
+
+                {{-- Notes Card --}}
+                <div class="card animated-card mb-4 fade-in-right notes-card" style="animation-delay: 0.2s;">
+                    <div class="card-header text-white" style="background: var(--gradient-primary);">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-comment-dots me-2 floating-icon"></i>
+                            Notes d'inscription
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        @if($inscription->notes)
+                            <p class="card-text text-white">{{ $inscription->notes }}</p>
+                        @else
+
+                            <p class="text-light opacity-75">Aucune note pour cette inscription.</p>
+                        @endif
+                            <strong class="card-text text-white">inscrit par : {{ $inscription->inscrit_par }}</strong> 
+                    </div>
                 </div>
+
+                 <div class="card animated-card mb-4 fade-in-right">
+            <div class="card-header gradient-secondary text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-paperclip me-2 floating-icon"></i>
+                    Documents joints du etudiant
+                </h4>
+            </div>
+            <div class="card-body glass-card">
+                @if($inscription->user->documents)
+                    <ul class="list-unstyled">
+                        @foreach($inscription->user->documents as $document)
+                            <li class="document-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="fas fa-file me-2"></i> {{ $document['name'] }}
+                                </span>
+                                <a href="{{ Storage::url($document['path']) }}" target="_blank" class="text-white btn btn-sm animated-btn" title="Voir le document">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <p class="text-muted">Aucun document joint pour ce client.</p>
+                @endif
             </div>
 
-            {{-- Notes Card --}}
-            <div class="card animated-card mb-4 fade-in-right notes-card" style="animation-delay: 0.2s;">
-                <div class="card-header text-white" style="background: var(--gradient-primary);">
-                    <h4 class="card-title mb-0">
-                        <i class="fas fa-comment-dots me-2 floating-icon"></i>
-                        Notes d'inscription
-                    </h4>
-                </div>
-                <div class="card-body">
-                    @if($inscription->notes)
-                        <p class="card-text text-white">{{ $inscription->notes }}</p>
-                    @else
-                 
-                        <p class="text-light opacity-75">Aucune note pour cette inscription.</p>
-                    @endif
-                        <strong class="card-text text-white">inscrit par : {{ $inscription->inscrit_par }}</strong> 
-                </div>
+
+        </div>
+
             </div>
-
-             <div class="card animated-card mb-4 fade-in-right">
-        <div class="card-header gradient-secondary text-white">
-            <h4 class="card-title mb-0">
-                <i class="fas fa-paperclip me-2 floating-icon"></i>
-                Documents joints du etudiant
-            </h4>
         </div>
-        <div class="card-body glass-card">
-            @if($inscription->user->documents)
-                <ul class="list-unstyled">
-                    @foreach($inscription->user->documents as $document)
-                        <li class="document-item d-flex justify-content-between align-items-center">
-                            <span>
-                                <i class="fas fa-file me-2"></i> {{ $document['name'] }}
-                            </span>
-                            <a href="{{ Storage::url($document['path']) }}" target="_blank" class="text-white btn btn-sm animated-btn" title="Voir le document">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
-            @else
-                <p class="text-muted">Aucun document joint pour ce client.</p>
-            @endif
-        </div>
-
-        
     </div>
-            
-        </div>
-    </div>
-</div>
 
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    
-    const listItems = document.querySelectorAll('.stagger-animation');
-    listItems.forEach((item, index) => {
-        item.style.animationDelay = `${index * 0.1}s`;
-    });
+    @push('scripts')
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
 
-        const buttons = document.querySelectorAll('.animated-btn');
-    buttons.forEach(button => {
-        button.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-3px) scale(1.05)';
+        const listItems = document.querySelectorAll('.stagger-animation');
+        listItems.forEach((item, index) => {
+            item.style.animationDelay = `${index * 0.1}s`;
         });
-        
-        button.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0) scale(1)';
-        });
-    });
 
-    // Add click animation to cards
-    const cards = document.querySelectorAll('.animated-card');
-    cards.forEach(card => {
-        card.addEventListener('click', function(e) {
-            if (!e.target.closest('button') && !e.target.closest('a')) {
-                this.style.transform = 'scale(0.98)';
-                setTimeout(() => {
-                    this.style.transform = 'scale(1)';
-                }, 150);
-            }
+            const buttons = document.querySelectorAll('.animated-btn');
+        buttons.forEach(button => {
+            button.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-3px) scale(1.05)';
+            });
+
+            button.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // Add click animation to cards
+        const cards = document.querySelectorAll('.animated-card');
+        cards.forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (!e.target.closest('button') && !e.target.closest('a')) {
+                    this.style.transform = 'scale(0.98)';
+                    setTimeout(() => {
+                        this.style.transform = 'scale(1)';
+                    }, 150);
+                }
+            });
         });
     });
-});
-</script>
-@endpush
+    </script>
+    @endpush
 @endsection

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 // use Illuminate->Support->Facades->DB; // هذا الـ import ليس ضروريا في هذا الموديل بعد الآن إذا تم حذف DB::beginTransaction/rollback
@@ -87,6 +88,8 @@ class Inscription extends Model
 public function addPayment($amount, $method = 'cash', $reference = null, $receiptPath = null)
 {
     try {
+        // ... (كود إنشاء الدفع - يبقى كما هو)
+
         $payment = $this->payments()->create([
             'amount' => $amount,
             'payment_method' => $method,
@@ -96,43 +99,62 @@ public function addPayment($amount, $method = 'cash', $reference = null, $receip
             'receipt_path' => $receiptPath,
         ]);
 
-        $this->paid_amount += $amount; // أضف المبلغ الجديد إلى paid_amount الحالي
+        $this->paid_amount += $amount; 
 
         // -----------------------------------------------------------
-        // هذا هو الجزء الذي يجب تعديله لتحسين حساب الأقساط المتبقية
+        // (كود إعادة حساب الأقساط المتبقية - يبقى كما هو)
         // -----------------------------------------------------------
+        $epsilon = 0.01;
         if ($this->chosen_installments > 1 && $this->amount_per_installment > 0) {
-            // نستخدم Epsilon لمعالجة مشاكل الأرقام العشرية في المقارنات
-            $epsilon = 0.01; // قيمة صغيرة جداً للمقارنة (1 سنت)
-
-            // إعادة حساب الأقساط المتبقية بناءً على المبلغ المدفوع الكلي
-            // وعدد الأقساط المفترض دفعها
             $paidInstallmentsCount = floor($this->paid_amount / $this->amount_per_installment + $epsilon);
-            
-            // تأكد أن عدد الأقساط المدفوعة لا يتجاوز العدد الكلي للأقساط المختارة
             $paidInstallmentsCount = min($paidInstallmentsCount, $this->chosen_installments);
-
             $this->remaining_installments = max(0, $this->chosen_installments - $paidInstallmentsCount);
-            
-            // إذا تم دفع المبلغ بالكامل (أو تقريباً بالكامل)
+             
             if ($this->remaining_amount <= $epsilon) {
                 $this->remaining_installments = 0;
             }
-        } else { // إذا كان دفعاً كاملاً (قسط واحد)
+        } else {
             if ($this->remaining_amount <= $epsilon) {
                 $this->remaining_installments = 0;
             }
         }
         // -----------------------------------------------------------
-        // نهاية التعديل على حساب الأقساط المتبقية
-        // -----------------------------------------------------------
+        
+        // ✨ المنطق الجديد لحساب 'next_installment_due_date' 
+        // تحقق من نوع الـ formation فقط إذا كان هناك أقساط متبقية
+        if ($this->remaining_installments > 0) {
+            $formationCategoryName = optional($this->formation)->category->name ?? null;
+
+            if (in_array($formationCategoryName, ['Master Professionnelle', 'Licence Professionnelle'])) {
+                // دالة Carbon::now() كتعطي التاريخ الحالي 
+                $nextDueDate = Carbon::now()->addMonth()->startOfMonth()->day(1);
+                
+                // ولكن باش نضمنو أن التاريخ كيبدا من الشهر الجاي (ماشي الشهر اللي فيه دفع الطالب)
+                // خاص نشوفو واش التاريخ ديال الدفعة الحالية فات 01 ديال هذا الشهر
+                // وإذا كانت أول دفعة، خاص يكون التاريخ ديال الشهر الجاي.
+                
+                // غادي نديرو تاريخ الإستحقاق هو 01 من الشهر المقبل
+                $this->next_installment_due_date = Carbon::parse($payment->paid_date)->addMonthNoOverflow()->day(1);
+
+            } else {
+                // إذا كان نوع الـ formation ماشي professionnelle، نخليوه فارغ ولا نحدوه بطريقة أخرى
+                // لكن غالباً غنعتامدو عليه فقط إذا كان فيه نظام الأقساط
+                $this->next_installment_due_date = null; // أو نديرو منطق افتراضي آخر إذا كان ضروري
+            }
+        } else {
+            // إذا ما بقاوش أقساط، كنمسحو التاريخ
+            $this->next_installment_due_date = null;
+        }
+
 
         // تحديث حالة التسجيل إذا تم دفع المبلغ بالكامل
-        if ($this->remaining_amount <= $epsilon) { // استخدام epsilon هنا أيضاً
+        if ($this->remaining_amount <= $epsilon) {
             if ($this->status !== 'completed' && $this->status !== 'cancelled') {
                 $this->status = 'active'; // أو 'completed' حسب سير العمل لديك
             }
+            $this->next_installment_due_date = null; // نأكدوا أنه كيتلغى إذا سالا الدفع
         }
+        
         $this->save(); // حفظ التغييرات على سجل التسجيل Inscription
 
         return $payment;

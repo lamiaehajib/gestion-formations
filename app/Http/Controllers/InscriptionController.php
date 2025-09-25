@@ -107,6 +107,8 @@ public function create(Request $request)
 
  // InscriptionController.php
 // InscriptionController.php
+// F'InscriptionController.php
+
 public function store(Request $request)
 {
     $user = Auth::user();
@@ -144,7 +146,9 @@ public function store(Request $request)
         return redirect()->back()->withErrors($validator)->withInput();
     }
 
-    $formation = Formation::findOrFail($request->formation_id);
+    // هنا يتم جلب Formation. من الأفضل أن نطلب العلاقة 'category' مباشرة 
+    // إذا كنتِ تستخدمين optional() في المنطق، يمكن أن تستمري كما كنتِ، لكن هذا أفضل للمردودية:
+    $formation = Formation::with('category')->findOrFail($request->formation_id); 
     $userToEnroll = $isAdminOrFinanceOrSuperAdmin ? User::findOrFail($request->user_id) : $user;
 
     $existingInscription = Inscription::where('user_id', $userToEnroll->id)
@@ -165,8 +169,8 @@ public function store(Request $request)
         $chosenInstallments = $request->selected_payment_option;
         
         $totalAmount = $isAdminOrFinanceOrSuperAdmin && $request->filled('total_amount_override') 
-                    ? (float) $request->total_amount_override 
-                    : $formation->price;
+                      ? (float) $request->total_amount_override 
+                      : $formation->price;
         
         $initialPaidAmount = $isAdminOrFinanceOrSuperAdmin ? $request->paid_amount : 0;
         $receiptPathForInitialPayment = null;
@@ -183,8 +187,8 @@ public function store(Request $request)
         $numberOfRemainingInstallments = $chosenInstallments; 
 
         $amountPerInstallment = ($remainingAmountToPayForInstallments > 0 && $numberOfRemainingInstallments > 0)
-                                    ? round($remainingAmountToPayForInstallments / $numberOfRemainingInstallments, 2)
-                                    : 0;
+                                     ? round($remainingAmountToPayForInstallments / $numberOfRemainingInstallments, 2)
+                                     : 0;
         
         $inscriptionStatus = $isAdminOrFinanceOrSuperAdmin ? $request->status : 'pending';
 
@@ -199,6 +203,24 @@ public function store(Request $request)
             $inscritPar = $request->inscrit_par;
         }
         
+        // ==========================================================
+        // ✨ المنطق الصحيح لتحديد 'next_installment_due_date'
+        // ==========================================================
+        $nextInstallmentDueDate = null;
+        $epsilon = 0.01;
+
+        // التحقق واش الدفع ماشي كامل (يعني كاين أقساط)
+        // وواش باقي شي حاجة يتخلص فيها
+        if ($chosenInstallments > 1 && $remainingAmountToPayForInstallments > $epsilon) {
+            $formationCategoryName = optional($formation->category)->name ?? null; 
+
+            if (in_array($formationCategoryName, ['Master Professionnelle', 'Licence Professionnelle'])) {
+                // تاريخ الإستحقاق هو اليوم 01 من الشهر المقبل
+                $nextInstallmentDueDate = Carbon::now()->addMonthNoOverflow()->day(1)->toDateString();
+            }
+        }
+        // ==========================================================
+
         $inscription = Inscription::create([
             'user_id' => $userToEnroll->id,
             'formation_id' => $request->formation_id,
@@ -211,7 +233,8 @@ public function store(Request $request)
             'remaining_installments' => $numberOfRemainingInstallments,
             'notes' => $request->notes,
             'documents' => [],
-            'inscrit_par' => $inscritPar, // ✨ Le nouveau champ
+            'inscrit_par' => $inscritPar, 
+            'next_installment_due_date' => $nextInstallmentDueDate, // ✨ إضافة التاريخ هنا
         ]);
 
         if (!$isAdminOrFinanceOrSuperAdmin && $request->hasFile('documents')) {
