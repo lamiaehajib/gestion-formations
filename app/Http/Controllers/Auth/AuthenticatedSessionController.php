@@ -28,6 +28,11 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+        
+        // Mettre à jour la date et le nombre de connexions de l'utilisateur
+        if ($user = $request->user()) {
+            $user->recordLogin();
+        }
 
         return redirect()->intended(RouteServiceProvider::HOME);
     }
