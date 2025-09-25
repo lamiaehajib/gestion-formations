@@ -153,7 +153,7 @@
                         @endif
 
                         <div class="row">
-                            {{-- Payment Information --}}
+                            
                             <div class="col-md-6 mb-4">
                                 <h5 class="mb-3" style="color: var(--primary-red); font-weight: 700;">
                                     <i class="fas fa-file-invoice-dollar me-2"></i> Informations du Paiement
