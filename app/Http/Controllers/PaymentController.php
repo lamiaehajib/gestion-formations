@@ -298,97 +298,116 @@ public function store(Request $request)
     /**
      * Update payment
      */
-   public function update(Request $request, $id)
-{
-    // Find the payment and its related inscription and creator
-    $payment = Payment::with('inscription')->findOrFail($id);
-    $inscription = $payment->inscription;
-    
-    // Check for authorization: Admin, Finance, Super Admin or the student who owns the inscription
-    if (!Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) && $inscription->user_id !== Auth::id()) {
-        abort(403, 'Unauthorized action. You do not have permission to update this payment.');
-    }
-    
-    // Define validation rules
-    $rules = [
-        'amount_to_pay' => 'required|numeric|min:0.01',
-        'payment_method' => 'required|in:cash,bank_transfer,cheque',
-        'payment_description' => 'nullable|string|max:1000',
-        'receipt_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-        // Admins, Finance, and Super Admins can change the status, students cannot
-        'status' => (Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) ? 'required|in:pending,paid' : 'nullable')
-    ];
+    public function update(Request $request, $id)
+    {
+        // Find the payment and its related inscription and creator
+        $payment = Payment::with('inscription')->findOrFail($id);
+        $inscription = $payment->inscription;
+        
+        // Check for authorization: Admin, Finance, Super Admin or the student who owns the inscription
+        if (!Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) && $inscription->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action. You do not have permission to update this payment.');
+        }
+        
+        // Define validation rules
+        $rules = [
+            'amount_to_pay' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|in:cash,bank_transfer,cheque,credit_card', // تأكد من إضافة credit_card هنا
+            'payment_description' => 'nullable|string|max:1000',
+            'receipt_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            
+            // Admins, Finance, and Super Admins can change the status, students cannot
+            'status' => (Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) ? 'required|in:pending,paid,late' : 'nullable'),
 
-    $validator = Validator::make($request->all(), $rules);
+            // ✨ إضافة قاعدة التحقق من due_date هنا ✨
+            'due_date' => (Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) ? 'nullable|date' : 'nullable'),
+        ];
 
-    if ($validator->fails()) {
-        return redirect()->back()->withErrors($validator)->withInput();
-    }
+        $validator = Validator::make($request->all(), $rules);
 
-    DB::beginTransaction();
-    try {
-        // Recalculate remaining amount for validation
-        $totalPaidExceptThis = $inscription->paid_amount - $payment->amount;
-        $remainingAmount = $inscription->total_amount - $totalPaidExceptThis;
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
 
-        $amountToPay = (float) $request->amount_to_pay;
+        DB::beginTransaction();
+        try {
+            // Recalculate remaining amount for validation
+            $totalPaidExceptThis = $inscription->paid_amount - $payment->amount;
+            $remainingAmount = $inscription->total_amount - $totalPaidExceptThis;
 
-        // Validation to prevent overpaying, similar to the store function
-        $epsilon = 0.01;
-        if ($amountToPay > $remainingAmount + $epsilon) {
+            $amountToPay = (float) $request->amount_to_pay;
+
+            // Validation to prevent overpaying, similar to the store function
+            $epsilon = 0.01;
+            if ($amountToPay > $remainingAmount + $epsilon) {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'Le montant à payer dépasse le reste dû pour cette inscription.')->withInput();
+            }
+
+            // Handle receipt file update
+            $receiptPath = $payment->receipt_path;
+            if ($request->hasFile('receipt_file')) {
+                // Delete old receipt if it exists
+                if ($receiptPath) {
+                    Storage::disk('public')->delete($receiptPath);
+                }
+                $receiptPath = $request->file('receipt_file')->store('payment_receipts/' . $inscription->id, 'public');
+            }
+
+            // Set payment status based on user role
+            $paymentStatus = $payment->status;
+            $paidDate = $payment->paid_date;
+            $oldStatus = $payment->status; // Keep old status for later logic
+            
+            if (Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) && $request->has('status')) {
+                $paymentStatus = $request->status;
+                if ($paymentStatus === 'paid' && !$paidDate) {
+                    $paidDate = now();
+                } elseif ($paymentStatus !== 'paid') {
+                    $paidDate = null;
+                }
+            }
+            
+            // Update the payment
+            $payment->update([
+                'amount' => $amountToPay,
+                'payment_method' => $request->payment_method,
+                'reference' => $request->payment_description,
+                'status' => $paymentStatus,
+                'paid_date' => $paidDate,
+                'receipt_path' => $receiptPath,
+                
+                // ✨ تحديث due_date فقط إذا كان المستخدم أدمن ✨
+                'due_date' => Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin'])
+                                ? $request->due_date
+                                : $payment->due_date,
+            ]);
+            
+            // Update the inscription's paid amount based on the new payment status and amount
+            $inscription->paid_amount = $totalPaidExceptThis + $payment->amount;
+            
+            // تحديث remaining_installments بناءً على التغيير في status
+            if ($oldStatus !== 'paid' && $payment->status === 'paid' && $inscription->remaining_installments > 0) {
+                 $inscription->remaining_installments -= 1;
+            } elseif ($oldStatus === 'paid' && $payment->status !== 'paid' && $inscription->remaining_installments < $inscription->chosen_installments) {
+                 $inscription->remaining_installments += 1;
+            }
+            
+            $inscription->save();
+
+            DB::commit();
+
+            return redirect()->route('payments.show', $payment->id)
+                ->with('success', 'Paiement mis à jour avec succès.');
+
+        } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Le montant à payer dépasse le reste dû pour cette inscription.')->withInput();
+            Log::error('Error updating payment: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+            return redirect()->back()
+                ->with('error', 'Une erreur est survenue lors de la mise à jour du paiement. Veuillez réessayer.')
+                ->withInput();
         }
-
-        // Handle receipt file update
-        $receiptPath = $payment->receipt_path;
-        if ($request->hasFile('receipt_file')) {
-            // Delete old receipt if it exists
-            if ($receiptPath) {
-                Storage::disk('public')->delete($receiptPath);
-            }
-            $receiptPath = $request->file('receipt_file')->store('payment_receipts/' . $inscription->id, 'public');
-        }
-
-        // Set payment status based on user role
-        $paymentStatus = $payment->status;
-        $paidDate = $payment->paid_date;
-        if (Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) && $request->has('status')) {
-            $paymentStatus = $request->status;
-            if ($paymentStatus === 'paid' && !$paidDate) {
-                $paidDate = now();
-            } elseif ($paymentStatus !== 'paid') {
-                $paidDate = null;
-            }
-        }
-        
-        // Update the payment
-        $payment->update([
-            'amount' => $amountToPay,
-            'payment_method' => $request->payment_method,
-            'reference' => $request->payment_description,
-            'status' => $paymentStatus,
-            'paid_date' => $paidDate,
-            'receipt_path' => $receiptPath,
-        ]);
-        
-        // Update the inscription's paid amount based on the new payment status and amount
-        $inscription->paid_amount = $totalPaidExceptThis + $payment->amount;
-        $inscription->save();
-
-        DB::commit();
-
-        return redirect()->route('payments.show', $payment->id)
-            ->with('success', 'Paiement mis à jour avec succès.');
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error('Error updating payment: ' . $e->getMessage());
-        return redirect()->back()
-            ->with('error', 'Une erreur est survenue lors de la mise à jour du paiement. Veuillez réessayer.')
-            ->withInput();
     }
-}
 
 
    

@@ -305,6 +305,24 @@
                                 @enderror
                             </div>
 
+                            <div>
+                                <label for="due_date" class="form-label-modern block">
+                                    <i class="fas fa-calendar-times"></i> Date d'échéance
+                                </label>
+                                <div class="relative">
+                                    <input type="date" class="form-input {{ ($currentUserIsAdmin) ? '' : 'bg-gray-100 cursor-not-allowed' }}"
+                                        id="due_date" name="due_date"
+                                        value="{{ old('due_date', $payment->due_date ? \Carbon\Carbon::parse($payment->due_date)->format('Y-m-d') : '') }}"
+                                        {{ ($currentUserIsAdmin) ? '' : 'readonly' }}>
+                                </div>
+                                @if (!$currentUserIsAdmin)
+                                    <small class="form-text-modern">Seul l'administrateur peut modifier cette date.</small>
+                                @endif
+                                @error('due_date')
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
                             {{-- Méthode de Paiement field --}}
                             <div class="md:col-span-1">
                                 <label for="payment_method" class="form-label-modern block">
