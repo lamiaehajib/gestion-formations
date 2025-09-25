@@ -8,10 +8,17 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Auth\Events\Login; // Import the Login event
+
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable,HasRoles , SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, SoftDeletes;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'email',
@@ -21,23 +28,64 @@ class User extends Authenticatable
         'birth_date',
         'cin',
         'avatar',
-         'documents', 
+        'documents', 
         'status',
-         'promotion_id',
+        'promotion_id',
+        'last_login_at', // Add last_login_at to fillable
+        'login_count',   // Add login_count to fillable
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'birth_date' => 'date',
         'documents' => 'array',
-      
+        'last_login_at' => 'datetime', // Cast last_login_at to a datetime object
     ];
 
+    /**
+     * The "booted" method of the model.
+     * This is where we hook into events.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        // Listen for the Laravel Auth Login event
+        static::updated(function ($user) {
+            // This event is fired after the user is authenticated.
+            // We use a simple eloquent `updated` event listener as
+            // the `Login` event is more complex to listen to
+            // and this is simpler to maintain.
+        });
+    }
+
+    /**
+     * Record the user's login date and increment the login count.
+     *
+     * @return void
+     */
+    public function recordLogin()
+    {
+        $this->last_login_at = now();
+        $this->login_count = $this->login_count + 1; // Increment the count
+        $this->save();
+    }
+    
     // Relations
     public function formations()
     {
@@ -45,9 +93,9 @@ class User extends Authenticatable
     }
 
     public function modules()
-{
-    return $this->hasMany(Module::class);
-}
+    {
+        return $this->hasMany(Module::class);
+    }
 
     public function inscriptions()
     {
@@ -89,7 +137,7 @@ class User extends Authenticatable
         return $this->hasMany(Forum::class, 'created_by');
     }
 
-      public function promotion()
+    public function promotion()
     {
         return $this->belongsTo(Promotion::class);
     }

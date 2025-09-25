@@ -215,8 +215,11 @@ public function index(Request $request)
      */
     public function show(User $user)
     {
-        // You can add a permission here if you want to control who can see user details
-        $user->load('roles'); // Load roles for display
+        // Load roles for display
+        $user->load('roles'); 
+
+        // Les informations 'last_login_at' et 'login_count' sont directement
+        // disponibles via l'objet $user
         return view('users.show', compact('user'));
     }
 
@@ -355,8 +358,8 @@ public function index(Request $request)
         // Get the 'Admin' role ID for more robust check
         $adminRole = Role::where('name', 'Admin')->first();
         if ($adminRole && $user->hasRole($adminRole) && User::role($adminRole)->count() <= 1) {
-             return redirect()->route('users.index')
-                 ->with('error', 'Impossible de supprimer le dernier administrateur!');
+            return redirect()->route('users.index')
+                ->with('error', 'Impossible de supprimer le dernier administrateur!');
         }
         // Also check for Super Admin if it's the only one left
         $superAdminRole = Role::where('name', 'Super Admin')->first();
@@ -448,10 +451,10 @@ public function toggleStatus(Request $request, User $user, string $status)
                 $remainingSuperAdmins = User::role($superAdminRole)->count() - $superAdminsToDelete;
 
                 if ($adminRole && $remainingAdmins <= 0 && User::role($superAdminRole)->count() === 0) {
-                     return response()->json([
-                         'success' => false,
-                         'message' => 'Impossible de supprimer tous les administrateurs et super administrateurs!'
-                     ]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Impossible de supprimer tous les administrateurs et super administrateurs!'
+                    ]);
                 }
                 if ($superAdminRole && $remainingSuperAdmins <= 0 && User::role($adminRole)->count() === 0) {
                     return response()->json([
@@ -542,8 +545,8 @@ public function toggleStatus(Request $request, User $user, string $status)
 {
     // Kanst3amlo onlyTrashed() bach njebdo GHI les Utilisateurs li mamsou7in
     $users = User::onlyTrashed()
-                  ->orderBy('deleted_at', 'desc')
-                  ->get();
+                     ->orderBy('deleted_at', 'desc')
+                     ->get();
 
     return view('users.corbeille', compact('users'));
 }

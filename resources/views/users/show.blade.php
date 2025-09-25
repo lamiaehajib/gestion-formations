@@ -102,7 +102,15 @@
                     </div>
                     @endif
                 </div>
-                
+                <div class="card">
+    <div class="card-header">
+        Détails de l'utilisateur
+    </div>
+    <div class="card-body">
+        <p><strong>Dernière connexion :</strong> {{ optional($user->last_login_at)->format('d/m/Y H:i') ?? 'N/A' }}</p>
+        <p><strong>Nombre de connexions :</strong> {{ $user->login_count ?? 0 }}</p>
+    </div>
+</div>
                 <div class="card-footer d-flex justify-content-between p-3 bg-light-subtle rounded-bottom-card">
                     <a href="{{ route('users.index') }}" class="btn btn-outline-primary animated-button-outline">
                         <i class="fas fa-arrow-alt-circle-left me-2"></i> Retour à la liste
