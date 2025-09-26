@@ -448,530 +448,546 @@
     background: linear-gradient(135deg,rgb(206, 49, 49) 0%, #ff5a1b 100%);
     color: white;
 }
+ .btn-duplicate {
+        background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); /* Using a blue gradient */
+        color: white;
+    }
+    .btn-duplicate:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(66, 153, 225, 0.3);
+        color: white;
+    }
 </style>
 @endpush
 
 @section('content')
-                <div class="animate-fade-in">
-                    <div class="course-header">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <h1><i class="fas fa-graduation-cap me-3"></i>Gestion des Cours</h1>
-                                <p>Gérez vos formations et cours efficacement</p>
-                            </div>
-                            <div class="col-md-4 text-end">
-
-                                @can('course-create')
-                                    <button type="button" class="btn-new-course" data-bs-toggle="modal" data-bs-target="#createCourseModal">
-                                        <i class="fas fa-plus me-2"></i>Nouveau Cours
-                                    </button>
-                                @endcan
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="filter-section">
-                        <div class="filter-title">
-                            <i class="fas fa-filter"></i>
-                            Filtres de recherche
-                        </div>
-
-                        <form method="GET" action="{{ route('courses.index') }}">
-                            <div class="row">
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label fw-semibold">Recherche</label>
-                                    <div class="position-relative">
-                                        <input type="text" name="search" value="{{ request('search') }}"
-                                               class="form-control ps-4" placeholder="Titre du cours...">
-                                        <i class="fas fa-search position-absolute" style="left: 12px; top: 50%; transform: translateY(-50%); color: #a0aec0;"></i>
-                                    </div>
+                    <div class="animate-fade-in">
+                        <div class="course-header">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h1><i class="fas fa-graduation-cap me-3"></i>Gestion des Cours</h1>
+                                    <p>Gérez vos formations et cours efficacement</p>
                                 </div>
+                                <div class="col-md-4 text-end">
 
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label fw-semibold">Date début</label>
-                                    <input type="date" name="start_date" value="{{ request('start_date') }}" class="form-control">
-                                </div>
-
-                                {{-- Filter by Formation (Visible to all users, but list depends on controller) --}}
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label fw-semibold">Formation</label>
-                                    <select name="filter_formation_id" class="form-control">
-                                        <option value="">Toutes les formations</option>
-                                        @foreach($formationsForFilter as $formation)
-                                            <option value="{{ $formation->id }}" {{ request('filter_formation_id') == $formation->id ? 'selected' : '' }}>
-                                                {{ $formation->title }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label fw-semibold"> </label>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-filter">
-                                            <i class="fas fa-search me-2"></i>Filtrer
-                                        </button>
-                                        <a href="{{ route('courses.index') }}" class="btn btn-reset">
-                                            <i class="fas fa-undo me-2"></i>Reset
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-
-                    <div class="row">
-                        @forelse($courses as $course)
-                            <div class="col-lg-4 col-md-6 mb-4">
-                                <div class="course-card">
-                                    <div class="course-card-header">
-                                        <div class="d-flex align-items-center justify-content-between">
-                                            <div class="d-flex align-items-center">
-                                                <div class="course-icon">
-                                                    <i class="fas fa-book"></i>
-                                                </div>
-                                                <div>
-                                                    <h5 class="course-title">{{ Str::limit($course->title, 30) }}</h5>
-                                                    @if($course->formation)
-                                                        <p class="course-formation">
-                                                            <span class="badge bg-secondary">{{ $course->formation->title }}</span>
-                                                        </p>
-                                                    @else
-                                                        <p class="course-formation">Aucune formation associée</p>
-                                                    @endif
-                                                     @if($course->module)
-                        <span class="badge bg-info ms-2">{{ $course->module->title }}</span>
-                    @endif
-                                                </div>
-                                            </div>
-                                            <div class="course-date-badge">
-                                                {{ \Carbon\Carbon::parse($course->course_date)->format('d/m/Y') }}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="course-card-body">
-                                        <p class="course-description">{{ Str::limit($course->description, 100) }}</p>
-
-                                        <div class="course-info">
-                                            <div class="info-item">
-                                                <i class="fas fa-clock"></i>
-                                                <span>{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}</span>
-                                            </div>
-
-                                            @if($course->zoom_link)
-                                                <div class="info-item">
-                                                    <i class="fas fa-video"></i>
-                                                    <span>Lien Zoom disponible</span>
-                                                </div>
-                                            @endif
-
-                                            @if($course->documents && count($course->documents) > 0)
-                                                <div class="info-item">
-                                                    <i class="fas fa-file-alt"></i>
-                                                    <span>{{ count($course->documents) }} document(s)</span>
-                                                </div>
-                                            @endif
-                                            @if($course->consultant)
-                                                <div class="info-item">
-                                                    <i class="fas fa-user-tie"></i>
-                                                    <span>Consultant: <strong>{{ $course->consultant->name }}</strong></span>
-                                                </div>
-                                            @endif
-                                        </div>
-
-                                        <div class="course-actions">
-                                            {{-- "Rejoindre" button --}}
-
-                                                @if($course->zoom_link)
-                                                    <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline flex-grow-1">
-                                                        @csrf
-                                                        <button type="submit" class="btn-join-card">
-                                                            <i class="fas fa-door-open"></i> Rejoindre
-                                                        </button>
-                                                    </form>
-                                                @endif
-
-
-
-                                                <a href="{{ route('courses.show', $course) }}" class="btn-action btn-view">
-                                                    <i class="fas fa-eye"></i>
-                                                    <span>Voir</span>
-                                                </a>
-
-
-                                            {{-- "Modifier" button --}}
-                                          @can('course-edit') {{-- Policy check for 'update' on this specific course --}}
-<button type="button" class="btn-action btn-edit" data-bs-toggle="modal" data-bs-target="#editCourseModal"
-    data-course-id="{{ $course->id }}"
-    data-formation-id="{{ $course->formation->id ?? '' }}"
-    data-module-id="{{ $course->module->id ?? '' }}"  
-    data-consultant-id="{{ $course->consultant_id }}"
-    data-title="{{ $course->title }}"
-    data-description="{{ $course->description }}"
-    data-course-date="{{ \Carbon\Carbon::parse($course->course_date)->format('Y-m-d') }}"
-    data-start-time="{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }}"
-    data-end-time="{{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}"
-    data-zoom-link="{{ $course->zoom_link }}"
-    data-recording-url="{{ $course->recording_url }}"
-    data-documents="{{ json_encode($course->documents) }}">
-    <i class="fas fa-edit"></i> Modifier
-</button>
-@endcan
-
-                                            {{-- "Supprimer" button --}}
-                                            @can('course-delete') {{-- Policy check for 'delete' on this specific course --}}
-                                                <button onclick="confirmDelete({{ $course->id }})" class="btn-action btn-delete">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            @endcan
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="col-12">
-                                <div class="empty-state">
-                                    <div class="empty-icon">
-                                        <i class="fas fa-book-open"></i>
-                                    </div>
-                                    <h3 class="empty-title">Aucun cours trouvé</h3>
-                                    <p class="empty-description">
-                                        @can('course-create')
-                                            Commencez par créer votre premier cours
-                                        @else
-                                            Aucun cours n'est visible pour le moment.
-                                        @endcan
-                                    </p>
-                                    {{-- Only show "Créer un cours" button if user can create courses --}}
                                     @can('course-create')
                                         <button type="button" class="btn-new-course" data-bs-toggle="modal" data-bs-target="#createCourseModal">
-                                            <i class="fas fa-plus me-2"></i>Créer un cours
+                                            <i class="fas fa-plus me-2"></i>Nouveau Cours
                                         </button>
                                     @endcan
                                 </div>
                             </div>
-                        @endforelse
-                    </div>
-
-                    @if($courses->hasPages())
-                        <div class="d-flex justify-content-center mt-4">
-                            <div class="bg-white rounded-3 shadow-sm p-3">
-                                {{ $courses->links() }}
-                            </div>
                         </div>
-                    @endif
-                </div>
 
-                {{-- Modals (Create & Edit) and Delete Confirmation are conditionally shown by Policy check in Controller --}}
+                        <div class="filter-section">
+                            <div class="filter-title">
+                                <i class="fas fa-filter"></i>
+                                Filtres de recherche
+                            </div>
 
-                <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="deleteModalLabel">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    Confirmer la suppression
-                                </h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <p class="mb-0">Êtes-vous sûr de vouloir supprimer ce cours ? Cette action est irréversible.</p>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                <form id="deleteForm" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger">
-                                        <i class="fas fa-trash"></i> Supprimer
-                                    </button>
-                                </form>
-                            </div>
+                            <form method="GET" action="{{ route('courses.index') }}">
+                                <div class="row">
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label fw-semibold">Recherche</label>
+                                        <div class="position-relative">
+                                            <input type="text" name="search" value="{{ request('search') }}"
+                                                   class="form-control ps-4" placeholder="Titre du cours...">
+                                            <i class="fas fa-search position-absolute" style="left: 12px; top: 50%; transform: translateY(-50%); color: #a0aec0;"></i>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label fw-semibold">Date début</label>
+                                        <input type="date" name="start_date" value="{{ request('start_date') }}" class="form-control">
+                                    </div>
+
+                                    {{-- Filter by Formation (Visible to all users, but list depends on controller) --}}
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label fw-semibold">Formation</label>
+                                        <select name="filter_formation_id" class="form-control">
+                                            <option value="">Toutes les formations</option>
+                                            @foreach($formationsForFilter as $formation)
+                                                <option value="{{ $formation->id }}" {{ request('filter_formation_id') == $formation->id ? 'selected' : '' }}>
+                                                    {{ $formation->title }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label fw-semibold"> </label>
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" class="btn btn-filter">
+                                                <i class="fas fa-search me-2"></i>Filtrer
+                                            </button>
+                                            <a href="{{ route('courses.index') }}" class="btn btn-reset">
+                                                <i class="fas fa-undo me-2"></i>Reset
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
-                    </div>
-                </div>
-                @can('course-create')
-    <div class="modal fade" id="createCourseModal" tabindex="-1" aria-labelledby="createCourseModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="createCourseModalLabel">
-                        <i class="fas fa-plus-circle me-2"></i>
-                        Créer un Nouveau Cours
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form action="{{ route('courses.store') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <div class="modal-body">
+
                         <div class="row">
-                            {{-- 1. Le select pour la Formation --}}
-                            <div class="col-md-6 mb-3">
-                                <label for="create_formation_id" class="form-label modal-form-label">Formation</label>
-                                <select name="formation_id" id="create_formation_id"
-                                    class="form-control @error('formation_id') is-invalid @enderror">
-                                    <option value="">Sélectionnez une formation</option>
-                                    @foreach($formationsForModals as $formation)
-                                    <option value="{{ $formation->id }}" {{ old('formation_id') == $formation->id ? 'selected' : '' }}>
-                                        {{ $formation->title }}
+                            @forelse($courses as $course)
+                                                            <div class="col-lg-4 col-md-6 mb-4">
+                                                                <div class="course-card">
+                                                                    <div class="course-card-header">
+                                                                        <div class="d-flex align-items-center justify-content-between">
+                                                                            <div class="d-flex align-items-center">
+                                                                                <div class="course-icon">
+                                                                                    <i class="fas fa-book"></i>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <h5 class="course-title">{{ Str::limit($course->title, 30) }}</h5>
+                                                                                    @if($course->formation)
+                                                                                        <p class="course-formation">
+                                                                                            <span class="badge bg-secondary">{{ $course->formation->title }}</span>
+                                                                                        </p>
+                                                                                    @else
+                                                                                        <p class="course-formation">Aucune formation associée</p>
+                                                                                    @endif
+                                                                                     @if($course->module)
+                                                        <span class="badge bg-info ms-2">{{ $course->module->title }}</span>
+                                                    @endif
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="course-date-badge">
+                                                                                {{ \Carbon\Carbon::parse($course->course_date)->format('d/m/Y') }}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div class="course-card-body">
+                                                                        <p class="course-description">{{ Str::limit($course->description, 100) }}</p>
+
+                                                                        <div class="course-info">
+                                                                            <div class="info-item">
+                                                                                <i class="fas fa-clock"></i>
+                                                                                <span>{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}</span>
+                                                                            </div>
+
+                                                                            @if($course->zoom_link)
+                                                                                <div class="info-item">
+                                                                                    <i class="fas fa-video"></i>
+                                                                                    <span>Lien Zoom disponible</span>
+                                                                                </div>
+                                                                            @endif
+
+                                                                            @if($course->documents && count($course->documents) > 0)
+                                                                                <div class="info-item">
+                                                                                    <i class="fas fa-file-alt"></i>
+                                                                                    <span>{{ count($course->documents) }} document(s)</span>
+                                                                                </div>
+                                                                            @endif
+                                                                            @if($course->consultant)
+                                                                                <div class="info-item">
+                                                                                    <i class="fas fa-user-tie"></i>
+                                                                                    <span>Consultant: <strong>{{ $course->consultant->name }}</strong></span>
+                                                                                </div>
+                                                                            @endif
+                                                                        </div>
+
+                                                                        <div class="course-actions">
+                                                                            {{-- "Rejoindre" button --}}
+
+                                                                                @if($course->zoom_link)
+                                                                                    <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline flex-grow-1">
+                                                                                        @csrf
+                                                                                        <button type="submit" class="btn-join-card">
+                                                                                            <i class="fas fa-door-open"></i> Rejoindre
+                                                                                        </button>
+                                                                                    </form>
+                                                                                @endif
+
+
+
+                                                                                <a href="{{ route('courses.show', $course) }}" class="btn-action btn-view">
+                                                                                    <i class="fas fa-eye"></i>
+                                                                                    <span>Voir</span>
+                                                                                </a>
+
+                                @can('course-create') {{-- Using course-create permission, or course-edit if only admins can edit --}}
+                                    <form action="{{ route('courses.duplicate', $course) }}" method="POST" class="d-inline flex-grow-1">
+                                        @csrf
+                                        <button type="submit" class="btn-action btn-duplicate" title="Dupliquer le Cours">
+                                            <i class="fas fa-copy"></i> Duplicate
+                                        </button>
+                                    </form>
+                                @endcan
+                                                                            {{-- "Modifier" button --}}
+                                                                          @can('course-edit') {{-- Policy check for 'update' on this specific course --}}
+                                                                            <button type="button" class="btn-action btn-edit" data-bs-toggle="modal" data-bs-target="#editCourseModal"
+                                                                                data-course-id="{{ $course->id }}"
+                                                                                data-formation-id="{{ $course->formation->id ?? '' }}"
+                                                                                data-module-id="{{ $course->module->id ?? '' }}"  
+                                                                                data-consultant-id="{{ $course->consultant_id }}"
+                                                                                data-title="{{ $course->title }}"
+                                                                                data-description="{{ $course->description }}"
+                                                                                data-course-date="{{ \Carbon\Carbon::parse($course->course_date)->format('Y-m-d') }}"
+                                                                                data-start-time="{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }}"
+                                                                                data-end-time="{{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}"
+                                                                                data-zoom-link="{{ $course->zoom_link }}"
+                                                                                data-recording-url="{{ $course->recording_url }}"
+                                                                                data-documents="{{ json_encode($course->documents) }}">
+                                                                                <i class="fas fa-edit"></i> Modifier
+                                                                            </button>
+                                                                        @endcan
+
+                                                                            {{-- "Supprimer" button --}}
+                                                                            @can('course-delete') {{-- Policy check for 'delete' on this specific course --}}
+                                                                                <button onclick="confirmDelete({{ $course->id }})" class="btn-action btn-delete">
+                                                                                    <i class="fas fa-trash"></i>
+                                                                                </button>
+                                                                            @endcan
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                            @empty
+                                <div class="col-12">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">
+                                            <i class="fas fa-book-open"></i>
+                                        </div>
+                                        <h3 class="empty-title">Aucun cours trouvé</h3>
+                                        <p class="empty-description">
+                                            @can('course-create')
+                                                Commencez par créer votre premier cours
+                                            @else
+                                                Aucun cours n'est visible pour le moment.
+                                            @endcan
+                                        </p>
+                                        {{-- Only show "Créer un cours" button if user can create courses --}}
+                                        @can('course-create')
+                                            <button type="button" class="btn-new-course" data-bs-toggle="modal" data-bs-target="#createCourseModal">
+                                                <i class="fas fa-plus me-2"></i>Créer un cours
+                                            </button>
+                                        @endcan
+                                    </div>
+                                </div>
+                            @endforelse
+                        </div>
+
+                        @if($courses->hasPages())
+                            <div class="d-flex justify-content-center mt-4">
+                                <div class="bg-white rounded-3 shadow-sm p-3">
+                                    {{ $courses->links() }}
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- Modals (Create & Edit) and Delete Confirmation are conditionally shown by Policy check in Controller --}}
+
+                    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="deleteModalLabel">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        Confirmer la suppression
+                                    </h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="mb-0">Êtes-vous sûr de vouloir supprimer ce cours ? Cette action est irréversible.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                    <form id="deleteForm" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger">
+                                            <i class="fas fa-trash"></i> Supprimer
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @can('course-create')
+        <div class="modal fade" id="createCourseModal" tabindex="-1" aria-labelledby="createCourseModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createCourseModalLabel">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            Créer un Nouveau Cours
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="{{ route('courses.store') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="modal-body">
+                            <div class="row">
+                                {{-- 1. Le select pour la Formation --}}
+                                <div class="col-md-6 mb-3">
+                                    <label for="create_formation_id" class="form-label modal-form-label">Formation</label>
+                                    <select name="formation_id" id="create_formation_id"
+                                        class="form-control @error('formation_id') is-invalid @enderror">
+                                        <option value="">Sélectionnez une formation</option>
+                                        @foreach($formationsForModals as $formation)
+                                        <option value="{{ $formation->id }}" {{ old('formation_id') == $formation->id ? 'selected' : '' }}>
+                                            {{ $formation->title }}
+                                        </option>
+                                        @endforeach
+                                    </select>
+                                    @error('formation_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                {{-- 2. Le select pour le Module --}}
+                                <div class="col-md-6 mb-3" id="module-select-container" style="display:none;">
+                                    <label for="create_module_id" class="form-label modal-form-label">Module</label>
+                                    <select name="module_id" id="create_module_id"
+                                        class="form-control @error('module_id') is-invalid @enderror">
+                                        <option value="">Sélectionnez un module</option>
+                                        {{-- Les options seront ajoutées par JavaScript --}}
+                                    </select>
+                                    @error('module_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="create_consultant_id" class="form-label modal-form-label">Consultant</label>
+                                <select name="consultant_id" id="create_consultant_id"
+                                    class="form-control @error('consultant_id') is-invalid @enderror">
+                                    <option value="">Sélectionnez un consultant (Optionnel)</option>
+                                    @foreach($consultants as $consultant)
+                                    <option value="{{ $consultant->id }}" {{ old('consultant_id') == $consultant->id ? 'selected' : '' }}>
+                                        {{ $consultant->name }}
                                     </option>
                                     @endforeach
                                 </select>
-                                @error('formation_id')
+                                @error('consultant_id')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
 
-                            {{-- 2. Le select pour le Module --}}
-                            <div class="col-md-6 mb-3" id="module-select-container" style="display:none;">
-                                <label for="create_module_id" class="form-label modal-form-label">Module</label>
-                                <select name="module_id" id="create_module_id"
-                                    class="form-control @error('module_id') is-invalid @enderror">
-                                    <option value="">Sélectionnez un module</option>
-                                    {{-- Les options seront ajoutées par JavaScript --}}
-                                </select>
-                                @error('module_id')
+                            {{-- ... le reste du formulaire ... --}}
+                            <div class="mb-3">
+                                <label for="create_course_title" class="form-label modal-form-label">Titre du Cours</label>
+                                <input type="text" name="title" id="create_course_title" class="form-control @error('title') is-invalid @enderror" value="{{ old('title') }}" required>
+                                @error('title')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                        </div>
 
-                        <div class="mb-3">
-                            <label for="create_consultant_id" class="form-label modal-form-label">Consultant</label>
-                            <select name="consultant_id" id="create_consultant_id"
-                                class="form-control @error('consultant_id') is-invalid @enderror">
-                                <option value="">Sélectionnez un consultant (Optionnel)</option>
-                                @foreach($consultants as $consultant)
-                                <option value="{{ $consultant->id }}" {{ old('consultant_id') == $consultant->id ? 'selected' : '' }}>
-                                    {{ $consultant->name }}
-                                </option>
-                                @endforeach
-                            </select>
-                            @error('consultant_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                            <div class="mb-3">
+                                <label for="create_course_description" class="form-label modal-form-label">Description</label>
+                                <textarea name="description" id="create_course_description" class="form-control @error('description') is-invalid @enderror" rows="4" required>{{ old('description') }}</textarea>
+                                @error('description')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
 
-                        {{-- ... le reste du formulaire ... --}}
-                        <div class="mb-3">
-                            <label for="create_course_title" class="form-label modal-form-label">Titre du Cours</label>
-                            <input type="text" name="title" id="create_course_title" class="form-control @error('title') is-invalid @enderror" value="{{ old('title') }}" required>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="create_course_date" class="form-label modal-form-label">Date du Cours</label>
+                                    <input type="date" name="course_date" id="create_course_date" class="form-control @error('course_date') is-invalid @enderror" value="{{ old('course_date') }}" required>
+                                    @error('course_date')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="create_start_time" class="form-label modal-form-label">Heure de Début</label>
+                                    <input type="time" name="start_time" id="create_start_time" class="form-control @error('start_time') is-invalid @enderror" value="{{ old('start_time') }}" required>
+                                    @error('start_time')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="create_end_time" class="form-label modal-form-label">Heure de Fin</label>
+                                    <input type="time" name="end_time" id="create_end_time" class="form-control @error('end_time') is-invalid @enderror" value="{{ old('end_time') }}" required>
+                                    @error('end_time')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="create_zoom_link" class="form-label modal-form-label">Lien Zoom (Optionnel)</label>
+                                <input type="url" name="zoom_link" id="create_zoom_link" class="form-control @error('zoom_link') is-invalid @enderror" value="{{ old('zoom_link') }}" placeholder="https://zoom.us/j/123456789">
+                                @error('zoom_link')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="create_documents" class="form-label modal-form-label">Documents (PDF, DOCX, PPTX - Max 10MB par fichier)</label>
+                                <input type="file" name="documents[]" id="create_documents" class="form-control @error('documents.*') is-invalid @enderror" multiple>
+                                @error('documents.*')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                            <button type="submit" class="btn btn-new-course">
+                                <i class="fas fa-save"></i> Créer le Cours
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        @endcan
+                  @can('course-edit') 
+    <div class="modal fade" id="editCourseModal" tabindex="-1" aria-labelledby="editCourseModalLabel" aria-hidden="true"> 
+        <div class="modal-dialog modal-dialog-centered modal-lg"> 
+            <div class="modal-content"> 
+                <div class="modal-header"> 
+                    <h5 class="modal-title" id="editCourseModalLabel"> 
+                        <i class="fas fa-edit me-2"></i> 
+                        Modifier le Cours 
+                    </h5> 
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" 
+                        aria-label="Close"></button> 
+                </div> 
+                <form id="editCourseForm" method="POST" enctype="multipart/form-data"> 
+                    @csrf 
+                    @method('PUT') 
+                    <div class="modal-body"> 
+                        <div class="row"> 
+
+                            {{-- FIX 1: Sélection Formation --}} 
+                            <div class="col-md-6 mb-3"> 
+                                <label for="edit_formation_id" class="form-label modal-form-label">Formation</label> 
+                                <select name="formation_id" id="edit_formation_id" 
+                                    class="form-control @error('formation_id') is-invalid @enderror" required> 
+                                    <option value="">Sélectionnez une formation</option> 
+                                    @foreach($formationsForModals as $formation) 
+                                        <option value="{{ $formation->id }}">{{ $formation->title }}</option> 
+                                    @endforeach 
+                                </select> 
+                                @error('formation_id') 
+                                    <div class="invalid-feedback d-block">{{ $message }}</div> 
+                                @enderror 
+                            </div> 
+
+                            {{-- FIX 2: Sélection Module (Loaded via AJAX) --}} 
+                            <div class="col-md-6 mb-3" id="edit-module-select-container"> 
+                                <label for="edit_module_id" class="form-label modal-form-label">Module</label> 
+                                <select name="module_id" id="edit_module_id" 
+                                    class="form-control @error('module_id') is-invalid @enderror" required> 
+                                    <option value="">Sélectionnez un module</option> 
+                                    {{-- Options will be loaded by JavaScript --}} 
+                                </select> 
+                                @error('module_id') 
+                                    <div class="invalid-feedback d-block">{{ $message }}</div> 
+                                @enderror 
+                            </div> 
+                        </div> 
+
+                        {{-- 🛑 LA ZONE MANQUANTE : Titre du Cours 🛑 --}}
+                        <div class="mb-3"> 
+                            <label for="edit_title" class="form-label modal-form-label">Titre du Cours</label> 
+                            <input type="text" name="title" id="edit_title"
+                                class="form-control @error('title') is-invalid @enderror" required>
                             @error('title')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                        </div>
+                        </div> 
+                        {{-- 🛑 FIN ZONE MANQUANTE 🛑 --}}
 
-                        <div class="mb-3">
-                            <label for="create_course_description" class="form-label modal-form-label">Description</label>
-                            <textarea name="description" id="create_course_description" class="form-control @error('description') is-invalid @enderror" rows="4" required>{{ old('description') }}</textarea>
-                            @error('description')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="create_course_date" class="form-label modal-form-label">Date du Cours</label>
-                                <input type="date" name="course_date" id="create_course_date" class="form-control @error('course_date') is-invalid @enderror" value="{{ old('course_date') }}" required>
-                                @error('course_date')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="create_start_time" class="form-label modal-form-label">Heure de Début</label>
-                                <input type="time" name="start_time" id="create_start_time" class="form-control @error('start_time') is-invalid @enderror" value="{{ old('start_time') }}" required>
-                                @error('start_time')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="create_end_time" class="form-label modal-form-label">Heure de Fin</label>
-                                <input type="time" name="end_time" id="create_end_time" class="form-control @error('end_time') is-invalid @enderror" value="{{ old('end_time') }}" required>
-                                @error('end_time')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="create_zoom_link" class="form-label modal-form-label">Lien Zoom (Optionnel)</label>
-                            <input type="url" name="zoom_link" id="create_zoom_link" class="form-control @error('zoom_link') is-invalid @enderror" value="{{ old('zoom_link') }}" placeholder="https://zoom.us/j/123456789">
-                            @error('zoom_link')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="create_documents" class="form-label modal-form-label">Documents (PDF, DOCX, PPTX - Max 10MB par fichier)</label>
-                            <input type="file" name="documents[]" id="create_documents" class="form-control @error('documents.*') is-invalid @enderror" multiple>
-                            @error('documents.*')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-new-course">
-                            <i class="fas fa-save"></i> Créer le Cours
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    @endcan
-              @can('course-edit') 
-<div class="modal fade" id="editCourseModal" tabindex="-1" aria-labelledby="editCourseModalLabel" aria-hidden="true"> 
-    <div class="modal-dialog modal-dialog-centered modal-lg"> 
-        <div class="modal-content"> 
-            <div class="modal-header"> 
-                <h5 class="modal-title" id="editCourseModalLabel"> 
-                    <i class="fas fa-edit me-2"></i> 
-                    Modifier le Cours 
-                </h5> 
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" 
-                    aria-label="Close"></button> 
-            </div> 
-            <form id="editCourseForm" method="POST" enctype="multipart/form-data"> 
-                @csrf 
-                @method('PUT') 
-                <div class="modal-body"> 
-                    <div class="row"> 
-                        
-                        {{-- FIX 1: Sélection Formation --}} 
-                        <div class="col-md-6 mb-3"> 
-                            <label for="edit_formation_id" class="form-label modal-form-label">Formation</label> 
-                            <select name="formation_id" id="edit_formation_id" 
-                                class="form-control @error('formation_id') is-invalid @enderror" required> 
-                                <option value="">Sélectionnez une formation</option> 
-                                @foreach($formationsForModals as $formation) 
-                                    <option value="{{ $formation->id }}">{{ $formation->title }}</option> 
+                        <div class="mb-3"> 
+                            <label for="edit_consultant_id" class="form-label modal-form-label">Consultant</label> 
+                            <select name="consultant_id" id="edit_consultant_id" 
+                                class="form-control @error('consultant_id') is-invalid @enderror"> 
+                                <option value="">Sélectionnez un consultant (Optionnel)</option> 
+                                @foreach($consultants as $consultant) 
+                                    <option value="{{ $consultant->id }}">{{ $consultant->name }}</option> 
                                 @endforeach 
                             </select> 
-                            @error('formation_id') 
-                                <div class="invalid-feedback d-block">{{ $message }}</div> 
-                            @enderror 
-                        </div> 
-
-                        {{-- FIX 2: Sélection Module (Loaded via AJAX) --}} 
-                        <div class="col-md-6 mb-3" id="edit-module-select-container"> 
-                            <label for="edit_module_id" class="form-label modal-form-label">Module</label> 
-                            <select name="module_id" id="edit_module_id" 
-                                class="form-control @error('module_id') is-invalid @enderror" required> 
-                                <option value="">Sélectionnez un module</option> 
-                                {{-- Options will be loaded by JavaScript --}} 
-                            </select> 
-                            @error('module_id') 
-                                <div class="invalid-feedback d-block">{{ $message }}</div> 
-                            @enderror 
-                        </div> 
-                    </div> 
-
-                    {{-- 🛑 LA ZONE MANQUANTE : Titre du Cours 🛑 --}}
-                    <div class="mb-3"> 
-                        <label for="edit_title" class="form-label modal-form-label">Titre du Cours</label> 
-                        <input type="text" name="title" id="edit_title"
-                            class="form-control @error('title') is-invalid @enderror" required>
-                        @error('title')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div> 
-                    {{-- 🛑 FIN ZONE MANQUANTE 🛑 --}}
-
-                    <div class="mb-3"> 
-                        <label for="edit_consultant_id" class="form-label modal-form-label">Consultant</label> 
-                        <select name="consultant_id" id="edit_consultant_id" 
-                            class="form-control @error('consultant_id') is-invalid @enderror"> 
-                            <option value="">Sélectionnez un consultant (Optionnel)</option> 
-                            @foreach($consultants as $consultant) 
-                                <option value="{{ $consultant->id }}">{{ $consultant->name }}</option> 
-                            @endforeach 
-                        </select> 
-                        @error('consultant_id') 
-                            <div class="invalid-feedback">{{ $message }}</div> 
-                        @enderror 
-                    </div> 
-
-                    <div class="mb-3"> 
-                        <label for="edit_description" class="form-label modal-form-label">Description</label> 
-                        <textarea name="description" id="edit_description" 
-                            class="form-control @error('description') is-invalid @enderror" rows="4" 
-                            required></textarea> 
-                        @error('description') 
-                            <div class="invalid-feedback">{{ $message }}</div> 
-                        @enderror 
-                    </div> 
-                    <div class="row"> 
-                        <div class="col-md-4 mb-3"> 
-                            <label for="edit_course_date" class="form-label modal-form-label">Date du Cours</label> 
-                            <input type="date" name="course_date" id="edit_course_date" 
-                                class="form-control @error('course_date') is-invalid @enderror" required> 
-                            @error('course_date') 
+                            @error('consultant_id') 
                                 <div class="invalid-feedback">{{ $message }}</div> 
                             @enderror 
                         </div> 
-                        <div class="col-md-4 mb-3"> 
-                            <label for="edit_start_time" class="form-label modal-form-label">Heure de Début</label> 
-                            <input type="time" name="start_time" id="edit_start_time" 
-                                class="form-control @error('start_time') is-invalid @enderror" required> 
-                            @error('start_time') 
+
+                        <div class="mb-3"> 
+                            <label for="edit_description" class="form-label modal-form-label">Description</label> 
+                            <textarea name="description" id="edit_description" 
+                                class="form-control @error('description') is-invalid @enderror" rows="4" 
+                                required></textarea> 
+                            @error('description') 
                                 <div class="invalid-feedback">{{ $message }}</div> 
                             @enderror 
                         </div> 
-                        <div class="col-md-4 mb-3"> 
-                            <label for="edit_end_time" class="form-label modal-form-label">Heure de Fin</label> 
-                            <input type="time" name="end_time" id="edit_end_time" 
-                                class="form-control @error('end_time') is-invalid @enderror" required> 
-                            @error('end_time') 
+                        <div class="row"> 
+                            <div class="col-md-4 mb-3"> 
+                                <label for="edit_course_date" class="form-label modal-form-label">Date du Cours</label> 
+                                <input type="date" name="course_date" id="edit_course_date" 
+                                    class="form-control @error('course_date') is-invalid @enderror" required> 
+                                @error('course_date') 
+                                    <div class="invalid-feedback">{{ $message }}</div> 
+                                @enderror 
+                            </div> 
+                            <div class="col-md-4 mb-3"> 
+                                <label for="edit_start_time" class="form-label modal-form-label">Heure de Début</label> 
+                                <input type="time" name="start_time" id="edit_start_time" 
+                                    class="form-control @error('start_time') is-invalid @enderror" required> 
+                                @error('start_time') 
+                                    <div class="invalid-feedback">{{ $message }}</div> 
+                                @enderror 
+                            </div> 
+                            <div class="col-md-4 mb-3"> 
+                                <label for="edit_end_time" class="form-label modal-form-label">Heure de Fin</label> 
+                                <input type="time" name="end_time" id="edit_end_time" 
+                                    class="form-control @error('end_time') is-invalid @enderror" required> 
+                                @error('end_time') 
+                                    <div class="invalid-feedback">{{ $message }}</div> 
+                                @enderror 
+                            </div> 
+                        </div> 
+                        <div class="mb-3"> 
+                            <label for="edit_zoom_link" class="form-label modal-form-label">Lien Zoom (Optionnel)</label> 
+                            <input type="url" name="zoom_link" id="edit_zoom_link" 
+                                class="form-control @error('zoom_link') is-invalid @enderror" 
+                                placeholder="https://zoom.us/j/123456789"> 
+                            @error('zoom_link') 
                                 <div class="invalid-feedback">{{ $message }}</div> 
                             @enderror 
                         </div> 
-                    </div> 
-                    <div class="mb-3"> 
-                        <label for="edit_zoom_link" class="form-label modal-form-label">Lien Zoom (Optionnel)</label> 
-                        <input type="url" name="zoom_link" id="edit_zoom_link" 
-                            class="form-control @error('zoom_link') is-invalid @enderror" 
-                            placeholder="https://zoom.us/j/123456789"> 
-                        @error('zoom_link') 
-                            <div class="invalid-feedback">{{ $message }}</div> 
-                        @enderror 
-                    </div> 
-                    <div class="mb-3"> 
-                        <label for="edit_recording_url" class="form-label modal-form-label">Lien d'enregistrement 
-                            (Optionnel)</label> 
-                        <input type="url" name="recording_url" id="edit_recording_url" 
-                            class="form-control @error('recording_url') is-invalid @enderror" 
-                            placeholder="https://youtube.com/watch?v=..."> 
-                        @error('recording_url') 
-                            <div class="invalid-feedback">{{ $message }}</div> 
-                        @enderror 
-                    </div> 
-                    <div class="mb-3"> 
-                        <label for="edit_documents" class="form-label modal-form-label">Documents (PDF, DOCX, PPTX - Max 
-                            10MB par fichier)</label> 
-                        <input type="file" name="documents[]" id="edit_documents" 
-                            class="form-control @error('documents.*') is-invalid @enderror" multiple> 
-                        @error('documents.*') 
-                            <div class="invalid-feedback">{{ $message }}</div> 
-                        @enderror 
-                        <div id="existing_documents" class="mt-2"> 
-                            {{-- Existing documents will be loaded here by JavaScript --}} 
+                        <div class="mb-3"> 
+                            <label for="edit_recording_url" class="form-label modal-form-label">Lien d'enregistrement 
+                                (Optionnel)</label> 
+                            <input type="url" name="recording_url" id="edit_recording_url" 
+                                class="form-control @error('recording_url') is-invalid @enderror" 
+                                placeholder="https://youtube.com/watch?v=..."> 
+                            @error('recording_url') 
+                                <div class="invalid-feedback">{{ $message }}</div> 
+                            @enderror 
+                        </div> 
+                        <div class="mb-3"> 
+                            <label for="edit_documents" class="form-label modal-form-label">Documents (PDF, DOCX, PPTX - Max 
+                                10MB par fichier)</label> 
+                            <input type="file" name="documents[]" id="edit_documents" 
+                                class="form-control @error('documents.*') is-invalid @enderror" multiple> 
+                            @error('documents.*') 
+                                <div class="invalid-feedback">{{ $message }}</div> 
+                            @enderror 
+                            <div id="existing_documents" class="mt-2"> 
+                                {{-- Existing documents will be loaded here by JavaScript --}} 
+                            </div> 
                         </div> 
                     </div> 
-                </div> 
-                <div class="modal-footer"> 
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button> 
-                    <button type="submit" class="btn btn-edit"> 
-                        <i class="fas fa-save"></i> Mettre à jour 
-                    </button> 
-                </div> 
-            </form> 
+                    <div class="modal-footer"> 
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button> 
+                        <button type="submit" class="btn btn-edit"> 
+                            <i class="fas fa-save"></i> Mettre à jour 
+                        </button> 
+                    </div> 
+                </form> 
+            </div> 
         </div> 
     </div> 
-</div> 
-@endcan 
+    @endcan 
 
 @endsection
 

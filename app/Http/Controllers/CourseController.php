@@ -380,4 +380,23 @@ class CourseController extends Controller
         
         return redirect()->back()->with('error', 'No meeting link available for this course.');
     }
+
+     public function duplicate(Course $course)
+    {
+        // 1. Kanakhdou les attributes dyal l'course l'9dim
+        $newCourse = $course->replicate();
+
+        // 2. ✅ Kanbeddlou ghir l'title bach n3erfoha duplicate
+        $newCourse->title = 'COPY: ' . $course->title;
+        
+        // 🔥 Les autres champs dyal course_date, start_time, end_time, w recording_url
+        // kaytkaffaw kima kanou f l'course l'9dim 7itach ma baddalnaha walou!
+        
+        // 3. Kan-savew l'course l'jdid
+        $newCourse->save();
+        
+        // 4. Redirect l'page dyal l'edit bach l'user ybeddel ghir li bgha
+        return redirect()->route('courses.index', $newCourse->id)
+            ->with('success', 'Course duplicated successfully! Please review and update the details.');
+    }
 }

@@ -180,9 +180,9 @@ Route::delete('/payments/{id}/forceDelete', [PaymentController::class, 'forceDel
     Route::resource('payments', PaymentController::class);
 
     
-    
+   
      Route::resource('courses', CourseController::class);
-    
+     Route::post('courses/{course}/duplicate', [CourseController::class, 'duplicate'])->name('courses.duplicate');
     // Additional course routes
     Route::get('formations/{formation}/courses', [CourseController::class, 'getByFormation'])
     ->name('courses.by-formation');
