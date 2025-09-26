@@ -304,7 +304,7 @@
 
                 // --- NEW LOGIC: Calculate remaining amount for installments ---
                 let fixedFee = 0;
-                if (formationCategory === 'Master Professionnelle' || formationCategory === 'Licence Professionnelle') {
+                if (formationCategory === 'Master Professionnelle' || formationCategory === 'Licence Professionnelle'|| formationCategory === 'LICENCE PROFESSIONNELLE RECONNU') {
                     fixedFee = 1600;
                 }
                 

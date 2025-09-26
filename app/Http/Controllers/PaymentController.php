@@ -203,7 +203,7 @@ public function store(Request $request)
 
             // إذا كان نظام أقساط (chosen_installments > 1) 
             // ونوع الـ formation هو Master/Licence Professionnelle
-            if ($inscription->chosen_installments > 1 && in_array($formationCategoryName, ['Master Professionnelle', 'Licence Professionnelle'])) {
+            if ($inscription->chosen_installments > 1 && in_array($formationCategoryName, ['Master Professionnelle', 'Licence Professionnelle','LICENCE PROFESSIONNELLE RECONNU'])) {
                 // نحدد تاريخ الاستحقاق هو اليوم 01 من الشهر الحالي
                 $paymentDueDate = Carbon::now()->startOfMonth()->day(1);
 
@@ -242,7 +242,7 @@ public function store(Request $request)
                      $inscription->remaining_installments -= 1;
                 }
 
-                if ($inscription->remaining_installments > 0 && in_array($formationCategoryName, ['Master Professionnelle', 'Licence Professionnelle'])) {
+                if ($inscription->remaining_installments > 0 && in_array($formationCategoryName, ['Master Professionnelle', 'Licence Professionnelle','LICENCE PROFESSIONNELLE RECONNU'])) {
                     // إذا كان باقي أقساط، نحدد تاريخ الاستحقاق التالي هو 01 من الشهر المقبل
                     $inscription->next_installment_due_date = Carbon::now()->addMonthNoOverflow()->day(1);
                 } else {

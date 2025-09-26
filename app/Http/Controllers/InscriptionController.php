@@ -176,7 +176,7 @@ public function store(Request $request)
         $receiptPathForInitialPayment = null;
         
         $fixedFee = 0;
-        if ($formation->category && in_array($formation->category->name, ['Master Professionnelle', 'Licence Professionnelle'])) {
+        if ($formation->category && in_array($formation->category->name, ['Master Professionnelle', 'Licence Professionnelle','LICENCE PROFESSIONNELLE RECONNU'])) {
             $fixedFee = 1600;
         }
 
@@ -214,7 +214,7 @@ public function store(Request $request)
         if ($chosenInstallments > 1 && $remainingAmountToPayForInstallments > $epsilon) {
             $formationCategoryName = optional($formation->category)->name ?? null; 
 
-            if (in_array($formationCategoryName, ['Master Professionnelle', 'Licence Professionnelle'])) {
+            if (in_array($formationCategoryName, ['Master Professionnelle', 'Licence Professionnelle','LICENCE PROFESSIONNELLE RECONNU'])) {
                 // تاريخ الإستحقاق هو اليوم 01 من الشهر المقبل
                 $nextInstallmentDueDate = Carbon::now()->addMonthNoOverflow()->day(1)->toDateString();
             }

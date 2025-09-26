@@ -32,102 +32,148 @@ class UserController extends Controller
     /**
      * Display a listing of the users.
      */
-public function index(Request $request)
-{
-    // Start building the query
-    $query = User::with('roles');
-
-    // Apply search filter if present
-    if ($request->filled('search')) {
-        $search = $request->get('search');
-        $query->where(function ($q) use ($search) {
-            $q->where('name', 'like', '%' . $search . '%')
-                ->orWhere('email', 'like', '%' . $search . '%')
-                ->orWhere('phone', 'like', '%' . $search . '%');
-        });
-    }
-
-    // Apply status filter if present
-    if ($request->filled('status')) {
-        $query->where('status', $request->get('status'));
-    }
-
-    // Apply role filter if present
-    if ($request->filled('role')) {
-        $query->whereHas('roles', function ($q) use ($request) {
-            $q->where('name', $request->get('role'));
-        });
-    }
+ 
     
-    // Ajoute le tri pour afficher les utilisateurs les plus récents en premier
-    $query->orderBy('created_at', 'desc');
+    /**
+     * Display a listing of the users.
+     * (FiX: Tri et filtrage par rôle corrigés).
+     */
+ public function index(Request $request)
+    {
+        // 1. بناء الاستعلام الأساسي (Query Builder)
+        $query = User::with('roles');
 
-    // Separate users by role BEFORE pagination
-    $consultants = (clone $query)->whereHas('roles', function ($q) {
-        $q->where('name', 'Consultant');
-    })->get();
+        // 2. تطبيق فلتر البحث العام
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('email', 'like', '%' . $search . '%')
+                    ->orWhere('phone', 'like', '%' . $search . '%');
+            });
+        }
 
-    $etudiants = (clone $query)->whereHas('roles', function ($q) {
-        $q->where('name', 'Etudiant');
-    })->get();
-
-    $admis = (clone $query)->whereHas('roles', function ($q) {
-        $q->where('name', 'Admin');
-    })->get();
-
-    // Paginate each collection
-    $perPage = 10;
-    $consultantsPaginated = $this->paginateCollection($consultants, $perPage, $request->get('page_consultant'), 'page_consultant');
-    $etudiantsPaginated = $this->paginateCollection($etudiants, $perPage, $request->get('page_etudiant'), 'page_etudiant');
-    $admisPaginated = $this->paginateCollection($admis, $perPage, $request->get('page_admis'), 'page_admis');
-
-    // Statistics
-    $stats = [
-        'total' => User::count(),
-        'active' => User::where('status', 'active')->count(),
-        'inactive' => User::where('status', 'inactive')->count(),
-        'recent' => User::where('created_at', '>=', now()->subDays(30))->count(),
-    ];
-    
-    $allRoles = Role::all();
-
-    // Return JSON response for AJAX requests
-    if ($request->ajax()) {
-        $group = $request->get('group');
-        $users = [];
-        $pagination = '';
-        
-        if ($group === 'consultant') {
-            $users = $consultantsPaginated;
-            $pagination = $consultantsPaginated->appends($request->except('page_consultant'))->links('vendor.pagination.bootstrap-5')->toHtml();
-        } elseif ($group === 'etudiant') {
-            $users = $etudiantsPaginated;
-            $pagination = $etudiantsPaginated->appends($request->except('page_etudiant'))->links('vendor.pagination.bootstrap-5')->toHtml();
-        } elseif ($group === 'admis') {
-            $users = $admisPaginated;
-            $pagination = $admisPaginated->appends($request->except('page_admis'))->links('vendor.pagination.bootstrap-5')->toHtml();
+        // 3. تطبيق فلتر الحالة العام
+        if ($request->filled('status')) {
+            $query->where('status', $request->get('status'));
         }
         
-        return response()->json([
-            'users' => $users,
-            'pagination' => $pagination,
-            'stats' => $stats,
-        ]);
+        // 4. تطبيق فلتر الدور (هذا الفلتر سيؤثر على أي المستخدمين سيتم جلبهم مبدئيًا)
+        if ($request->filled('role')) {
+            $roleFilter = ucfirst($request->get('role'));
+            
+            // ملاحظة: بما أن "Admis" يستخدم دور "Admin"، نقوم بتوحيد الاسم
+            $roleToFilter = ($roleFilter === 'Admis') ? 'Admin' : $roleFilter;
+            
+            // استخدام whereHas لتصفية المستخدمين الذين لديهم الدور المطلوب
+            $query->whereHas('roles', function ($q) use ($roleToFilter) {
+                $q->where('name', $roleToFilter);
+            });
+        }
+
+
+        // 5. الفرز: عرض الأحدث أولاً
+        $query->orderBy('created_at', 'desc');
+
+        // 6. جلب جميع المستخدمين المُصفّاة (هذا هو المكان الذي تم فيه التعديل لتطبيق التصفية أولاً)
+        // عند استخدام get() هنا، فإننا نحصل على جميع النتائج التي نجحت في التصفية والبحث
+        $filteredUsers = $query->get();
+
+        // 7. فصل المستخدمين حسب الدور (باستخدام الأسماء الدقيقة للأدوار)
+        $consultants = $filteredUsers->filter(function ($user) {
+            return $user->hasRole('Consultant');
+        });
+
+        $etudiants = $filteredUsers->filter(function ($user) {
+            return $user->hasRole('Etudiant');
+        });
+
+        $admis = $filteredUsers->filter(function ($user) {
+            // كما ذكرت، 'Admin' يُستخدم لدور 'Admis'
+            return $user->hasRole('Admin');
+        });
+        
+        // 8. الترقيم لكل مجموعة
+        $perPage = 2; // زيادة عدد العناصر في الصفحة إلى 10 مثلاً لتحسين الأداء
+        
+        $consultantsPaginated = $this->paginateCollection($consultants, $perPage, $request->get('page_consultant'), 'page_consultant');
+        $etudiantsPaginated = $this->paginateCollection($etudiants, $perPage, $request->get('page_etudiant'), 'page_etudiant');
+        $admisPaginated = $this->paginateCollection($admis, $perPage, $request->get('page_admin'), 'page_admin');
+
+        // 9. الإحصائيات (يمكنك تحسينها لتأخذ الفلاتر في الاعتبار إذا لزم الأمر)
+        $stats = [
+            'total' => User::count(),
+            'active' => User::where('status', 'active')->count(),
+            'inactive' => User::where('status', 'inactive')->count(),
+            'recent' => User::where('created_at', '>=', now()->subDays(30))->count(),
+        ];
+        
+        // 10. جميع الأدوار لتعبئة قائمة الفلتر
+        $allRoles = Role::all();
+
+        // 11. الاستجابة لطلبات AJAX
+        if ($request->ajax()) {
+            $group = $request->get('group');
+            $usersPaginated = collect([]); // لضمان قيمة أولية
+            $pagination = '';
+
+            // نحدد مجموعة المستخدمين المرقّمة المطلوبة بناءً على الـ 'group'
+            if ($group === 'consultant') {
+                $usersPaginated = $consultantsPaginated;
+            } elseif ($group === 'etudiant') {
+                $usersPaginated = $etudiantsPaginated;
+            } elseif ($group === 'admis') {
+                $usersPaginated = $admisPaginated;
+            }
+
+            // يتم توليد HTML الترقيم هنا ليتم إرساله كجزء من استجابة AJAX
+            if ($usersPaginated instanceof LengthAwarePaginator) {
+                 // نستثني جميع معلمات الصفحة لضمان عمل الترقيم الصحيح
+                $pagination = $usersPaginated->appends($request->except(['page_consultant', 'page_etudiant', 'page_admin', 'group']))->links('vendor.pagination.bootstrap-5')->toHtml();
+            }
+            
+            return response()->json([
+                'users' => $usersPaginated, 
+                'pagination' => $pagination,
+                'stats' => $stats,
+            ]);
+        }
+
+        // 12. الاستجابة لطلب العرض العادي
+        return view('users.index', compact('consultantsPaginated', 'etudiantsPaginated', 'admisPaginated', 'stats', 'allRoles'));
     }
 
-    return view('users.index', compact('consultantsPaginated', 'etudiantsPaginated', 'admisPaginated', 'stats', 'allRoles'));
-}
-
-    protected function paginateCollection($items, $perPage = 10, $page = null, $pageName = 'page')
+    /**
+     * دالة مساعدة لترقيم Collection.
+     *
+     * @param Collection|array $items
+     * @param int $perPage
+     * @param int|null $page
+     * @param string $pageName
+     * @return LengthAwarePaginator
+     */
+   protected function paginateCollection($items, $perPage = 2, $page = null, $pageName = 'page')
     {
+        // ... (نستخدم الكود الذي تم تصحيحه في المرة السابقة مع values()) ...
         $page = $page ?: (Paginator::resolveCurrentPage($pageName) ?: 1);
+
         $items = $items instanceof Collection ? $items : Collection::make($items);
+        
+        // هذا السطر هو مفتاح الترقيم الصحيح بعد التصفية
+        $items = $items->sortByDesc('created_at')->values(); 
+        
         $paginatedItems = $items->forPage($page, $perPage);
+
         return new LengthAwarePaginator($paginatedItems, $items->count(), $perPage, $page, [
             'path' => Paginator::resolveCurrentPath(),
-            'pageName' => $pageName,
+            'pageName' => $pageName, 
         ]);
     }
+
+    /**
+     * Toggle user status (active/inactive).
+     */
+    
     /**
      * Show the form for creating a new user.
      */
