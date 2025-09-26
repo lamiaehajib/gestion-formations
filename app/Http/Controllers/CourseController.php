@@ -25,7 +25,7 @@ class CourseController extends Controller
     }
 
 
-    public function index(Request $request)
+      public function index(Request $request)
 {
     $user = Auth::user();
 
@@ -76,24 +76,11 @@ class CourseController extends Controller
         $query->where('title', 'like', '%' . $request->search . '%');
     }
     
-    // **Remove the date filter block for Etudiants**
-    // The following block is the one you need to delete or comment out:
-    /*
-    if ($user && $user->hasRole('Etudiant')) {
-        $now = Carbon::now();
-        $query->where(function ($q) use ($now) {
-            $q->where('course_date', '<', $now->toDateString())
-                ->orWhere(function ($q2) use ($now) {
-                    $q2->where('course_date', $now->toDateString())
-                        ->whereRaw("TIME_TO_SEC(CONCAT(course_date, ' ', start_time)) <= TIME_TO_SEC(?)", [
-                            $now->copy()->addMinutes(5)->toDateTimeString()
-                        ]);
-                });
-        });
-    }
-    */
+    // The date filter block for Etudiants was already commented out in your code, 
+    // so we keep it that way.
 
-    $courses = $query->orderBy('created_at', 'asc')->paginate(15);
+    // ✅ Ligne li khassha tbaddal: Kanrtbou b 'course_date' w 'start_time' ASC
+    $courses = $query->orderBy('course_date', 'asc')->orderBy('start_time', 'asc')->paginate(15);
 
     $formationsForModals = Formation::where('status', 'published')->get();
     $formationsForFilter = collect();
