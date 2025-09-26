@@ -94,7 +94,7 @@ class UserController extends Controller
         });
         
         // 8. الترقيم لكل مجموعة
-        $perPage = 2; // زيادة عدد العناصر في الصفحة إلى 10 مثلاً لتحسين الأداء
+        $perPage = 10; // زيادة عدد العناصر في الصفحة إلى 10 مثلاً لتحسين الأداء
         
         $consultantsPaginated = $this->paginateCollection($consultants, $perPage, $request->get('page_consultant'), 'page_consultant');
         $etudiantsPaginated = $this->paginateCollection($etudiants, $perPage, $request->get('page_etudiant'), 'page_etudiant');
@@ -152,7 +152,7 @@ class UserController extends Controller
      * @param string $pageName
      * @return LengthAwarePaginator
      */
-   protected function paginateCollection($items, $perPage = 2, $page = null, $pageName = 'page')
+   protected function paginateCollection($items, $perPage = 10, $page = null, $pageName = 'page')
     {
         // ... (نستخدم الكود الذي تم تصحيحه في المرة السابقة مع values()) ...
         $page = $page ?: (Paginator::resolveCurrentPage($pageName) ?: 1);
