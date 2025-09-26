@@ -612,7 +612,7 @@
                                     <form action="{{ route('courses.duplicate', $course) }}" method="POST" class="d-inline flex-grow-1">
                                         @csrf
                                         <button type="submit" class="btn-action btn-duplicate" title="Dupliquer le Cours">
-                                            <i class="fas fa-copy"></i> Duplicate
+                                            <i class="fas fa-copy"></i> 
                                         </button>
                                     </form>
                                 @endcan
