@@ -55,7 +55,7 @@
     <td>
         <div class="action-buttons">
             <a href="{{ route('users.show', $user->id) }}"
-               class="btn btn-action btn-view tooltip-custom"
+              class="btn btn-action btn-edit tooltip-custom"
                data-tooltip="Voir"
                title="Voir">
                 <i class="fas fa-eye"></i>
