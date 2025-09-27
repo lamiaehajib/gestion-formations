@@ -141,7 +141,7 @@ class UserController extends Controller
         });
 
         // Pagination manuelle pour l'affichage initial
-        $perPage = 2;
+        $perPage = 10;
         
         $consultantsPaginated = $this->paginateCollection($consultants, $perPage, $request->get('page_consultant'), 'page_consultant');
         $etudiantsPaginated = $this->paginateCollection($etudiants, $perPage, $request->get('page_etudiant'), 'page_etudiant');
@@ -179,7 +179,7 @@ class UserController extends Controller
             'recent' => User::where('created_at', '>=', now()->subDays(30))->count(),
         ];
     }
-    protected function paginateCollection($items, $perPage = 2, $page = null, $pageName = 'page')
+    protected function paginateCollection($items, $perPage = 10, $page = null, $pageName = 'page')
     {
         $page = $page ?: (Paginator::resolveCurrentPage($pageName) ?: 1);
         $items = $items instanceof Collection ? $items : Collection::make($items);
