@@ -38,136 +38,168 @@ class UserController extends Controller
      * Display a listing of the users.
      * (FiX: Tri et filtrage par rôle corrigés).
      */
- public function index(Request $request)
+  public function index(Request $request)
     {
-        // 1. بناء الاستعلام الأساسي (Query Builder)
-        $query = User::with('roles');
+        // 1. Construire la requête de base avec eager loading
+        $baseQuery = User::with('roles');
 
-        // 2. تطبيق فلتر البحث العام
+        // 2. Appliquer les filtres de base sur la requête
         if ($request->filled('search')) {
             $search = $request->get('search');
-            $query->where(function ($q) use ($search) {
+            $baseQuery->where(function ($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%')
                     ->orWhere('email', 'like', '%' . $search . '%')
                     ->orWhere('phone', 'like', '%' . $search . '%');
             });
         }
 
-        // 3. تطبيق فلتر الحالة العام
         if ($request->filled('status')) {
-            $query->where('status', $request->get('status'));
+            $baseQuery->where('status', $request->get('status'));
         }
-        
-        // 4. تطبيق فلتر الدور (هذا الفلتر سيؤثر على أي المستخدمين سيتم جلبهم مبدئيًا)
+
+        // 3. Appliquer le filtre de rôle si spécifié
         if ($request->filled('role')) {
-            $roleFilter = ucfirst($request->get('role'));
+            $roleFilter = $request->get('role');
+            $roleToFilter = ($roleFilter === 'admis') ? 'Admin' : ucfirst($roleFilter);
             
-            // ملاحظة: بما أن "Admis" يستخدم دور "Admin"، نقوم بتوحيد الاسم
-            $roleToFilter = ($roleFilter === 'Admis') ? 'Admin' : $roleFilter;
-            
-            // استخدام whereHas لتصفية المستخدمين الذين لديهم الدور المطلوب
-            $query->whereHas('roles', function ($q) use ($roleToFilter) {
+            $baseQuery->whereHas('roles', function ($q) use ($roleToFilter) {
                 $q->where('name', $roleToFilter);
             });
         }
 
+        // 4. Tri par date de création
+        $baseQuery->orderBy('created_at', 'desc');
 
-        // 5. الفرز: عرض الأحدث أولاً
-        $query->orderBy('created_at', 'desc');
+        // 5. Pour les requêtes AJAX (pagination spécifique à un groupe)
+        if ($request->ajax()) {
+            $group = $request->get('group');
+            
+            // Cloner la requête de base pour ce groupe spécifique
+            $groupQuery = clone $baseQuery;
+            
+            // Appliquer le filtre de rôle spécifique au groupe
+            switch ($group) {
+                case 'consultant':
+                    $groupQuery->whereHas('roles', function ($q) {
+                        $q->where('name', 'Consultant');
+                    });
+                    $pageParam = 'page_consultant';
+                    break;
+                    
+                case 'etudiant':
+                    $groupQuery->whereHas('roles', function ($q) {
+                        $q->where('name', 'Etudiant');
+                    });
+                    $pageParam = 'page_etudiant';
+                    break;
+                    
+                case 'admis':
+                    $groupQuery->whereHas('roles', function ($q) {
+                        $q->where('name', 'Admin');
+                    });
+                    $pageParam = 'page_admin';
+                    break;
+                    
+                default:
+                    return response()->json(['success' => false, 'message' => 'Groupe invalide']);
+            }
 
-        // 6. جلب جميع المستخدمين المُصفّاة (هذا هو المكان الذي تم فيه التعديل لتطبيق التصفية أولاً)
-        // عند استخدام get() هنا، فإننا نحصل على جميع النتائج التي نجحت في التصفية والبحث
-        $filteredUsers = $query->get();
+            // Pagination directe avec Eloquent
+            $perPage = 2;
+            $page = $request->get($pageParam, 1);
+            
+            $paginatedUsers = $groupQuery->paginate($perPage, ['*'], $pageParam, $page);
+            
+            // Conserver les paramètres de requête pour la pagination
+            $paginatedUsers->appends($request->except([$pageParam, 'group']));
 
-        // 7. فصل المستخدمين حسب الدور (باستخدام الأسماء الدقيقة للأدوار)
-        $consultants = $filteredUsers->filter(function ($user) {
+            // Générer le HTML de pagination
+            $paginationHtml = $paginatedUsers->links('vendor.pagination.bootstrap-5')->toHtml();
+
+            return response()->json([
+                'success' => true,
+                'users' => $paginatedUsers,
+                'pagination' => $paginationHtml,
+                'stats' => $this->getStats()
+            ]);
+        }
+
+        // 6. Pour l'affichage initial (non-AJAX)
+        $allFilteredUsers = $baseQuery->get();
+
+        // Séparer les utilisateurs par rôle
+        $consultants = $allFilteredUsers->filter(function ($user) {
             return $user->hasRole('Consultant');
         });
 
-        $etudiants = $filteredUsers->filter(function ($user) {
+        $etudiants = $allFilteredUsers->filter(function ($user) {
             return $user->hasRole('Etudiant');
         });
 
-        $admis = $filteredUsers->filter(function ($user) {
-            // كما ذكرت، 'Admin' يُستخدم لدور 'Admis'
+        $admis = $allFilteredUsers->filter(function ($user) {
             return $user->hasRole('Admin');
         });
-        
-        // 8. الترقيم لكل مجموعة
-        $perPage = 10; // زيادة عدد العناصر في الصفحة إلى 10 مثلاً لتحسين الأداء
+
+        // Pagination manuelle pour l'affichage initial
+        $perPage = 2;
         
         $consultantsPaginated = $this->paginateCollection($consultants, $perPage, $request->get('page_consultant'), 'page_consultant');
         $etudiantsPaginated = $this->paginateCollection($etudiants, $perPage, $request->get('page_etudiant'), 'page_etudiant');
         $admisPaginated = $this->paginateCollection($admis, $perPage, $request->get('page_admin'), 'page_admin');
 
-        // 9. الإحصائيات (يمكنك تحسينها لتأخذ الفلاتر في الاعتبار إذا لزم الأمر)
-        $stats = [
+        // Conserver les paramètres de requête
+        $consultantsPaginated->appends($request->except('page_consultant'));
+        $etudiantsPaginated->appends($request->except('page_etudiant'));
+        $admisPaginated->appends($request->except('page_admin'));
+
+        // Stats et rôles
+        $stats = $this->getStats();
+        $allRoles = Role::all();
+
+        return view('users.index', compact(
+            'consultantsPaginated',
+            'etudiantsPaginated', 
+            'admisPaginated',
+            'stats',
+            'allRoles'
+        ));
+    }
+
+    /**
+     * Pagination manuelle pour les collections
+     */
+
+
+     private function getStats()
+    {
+        return [
             'total' => User::count(),
             'active' => User::where('status', 'active')->count(),
             'inactive' => User::where('status', 'inactive')->count(),
             'recent' => User::where('created_at', '>=', now()->subDays(30))->count(),
         ];
-        
-        // 10. جميع الأدوار لتعبئة قائمة الفلتر
-        $allRoles = Role::all();
-
-        // 11. الاستجابة لطلبات AJAX
-        if ($request->ajax()) {
-            $group = $request->get('group');
-            $usersPaginated = collect([]); // لضمان قيمة أولية
-            $pagination = '';
-
-            // نحدد مجموعة المستخدمين المرقّمة المطلوبة بناءً على الـ 'group'
-            if ($group === 'consultant') {
-                $usersPaginated = $consultantsPaginated;
-            } elseif ($group === 'etudiant') {
-                $usersPaginated = $etudiantsPaginated;
-            } elseif ($group === 'admis') {
-                $usersPaginated = $admisPaginated;
-            }
-
-            // يتم توليد HTML الترقيم هنا ليتم إرساله كجزء من استجابة AJAX
-            if ($usersPaginated instanceof LengthAwarePaginator) {
-                 // نستثني جميع معلمات الصفحة لضمان عمل الترقيم الصحيح
-                $pagination = $usersPaginated->appends($request->except(['page_consultant', 'page_etudiant', 'page_admin', 'group']))->links('vendor.pagination.bootstrap-5')->toHtml();
-            }
-            
-            return response()->json([
-                'users' => $usersPaginated, 
-                'pagination' => $pagination,
-                'stats' => $stats,
-            ]);
-        }
-
-        // 12. الاستجابة لطلب العرض العادي
-        return view('users.index', compact('consultantsPaginated', 'etudiantsPaginated', 'admisPaginated', 'stats', 'allRoles'));
     }
-
-    /**
-     * دالة مساعدة لترقيم Collection.
-     *
-     * @param Collection|array $items
-     * @param int $perPage
-     * @param int|null $page
-     * @param string $pageName
-     * @return LengthAwarePaginator
-     */
-   protected function paginateCollection($items, $perPage = 10, $page = null, $pageName = 'page')
+    protected function paginateCollection($items, $perPage = 2, $page = null, $pageName = 'page')
     {
-        // ... (نستخدم الكود الذي تم تصحيحه في المرة السابقة مع values()) ...
         $page = $page ?: (Paginator::resolveCurrentPage($pageName) ?: 1);
-
         $items = $items instanceof Collection ? $items : Collection::make($items);
         
-        // هذا السطر هو مفتاح الترقيم الصحيح بعد التصفية
-        $items = $items->sortByDesc('created_at')->values(); 
+        // Tri des éléments par date de création
+        $items = $items->sortByDesc('created_at')->values();
         
+        // Récupération des éléments pour la page courante
         $paginatedItems = $items->forPage($page, $perPage);
 
-        return new LengthAwarePaginator($paginatedItems, $items->count(), $perPage, $page, [
-            'path' => Paginator::resolveCurrentPath(),
-            'pageName' => $pageName, 
-        ]);
+        return new LengthAwarePaginator(
+            $paginatedItems,
+            $items->count(),
+            $perPage,
+            $page,
+            [
+                'path' => Paginator::resolveCurrentPath(),
+                'pageName' => $pageName,
+            ]
+        );
     }
 
     /**
@@ -429,33 +461,23 @@ class UserController extends Controller
      */
     // Le code de ton contrôleur est déjà bien pour cette partie :
 
-public function toggleStatus(Request $request, User $user, string $status)
-{
-    // Check if the authenticated user has permission to edit users
-    // You can also use the Spatie middleware here:
-    // $this->authorize('user-edit');
-    if (!Auth::user()->can('user-edit')) {
-        return response()->json(['success' => false, 'message' => 'Permission denied.'], 403);
+ public function toggleStatus(User $user, $status)
+    {
+        try {
+            $user->update(['status' => $status]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Statut mis à jour avec succès',
+                'status' => $status
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la mise à jour du statut'
+            ], 500);
+        }
     }
-
-    if (!in_array($status, ['active', 'inactive'])) {
-        return response()->json(['success' => false, 'message' => 'Invalid status provided.'], 400);
-    }
-    
-    // Check if the user is trying to deactivate their own account
-    if (Auth::user()->id === $user->id && $status === 'inactive') {
-        return response()->json(['success' => false, 'message' => 'You cannot deactivate your own account.'], 403);
-    }
-
-    $user->status = $status;
-    $user->save();
-
-    return response()->json([
-        'success' => true,
-        'message' => 'User status updated successfully.',
-        'newStatus' => $user->status
-    ]);
-}
 
     /**
      * Perform bulk actions for users.

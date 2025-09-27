@@ -67,7 +67,7 @@ Route::delete('/users/{id}/forceDelete', [UserController::class, 'forceDelete'])
     Route::resource('users', UserController::class); // Cette ligne définit users.index, users.create, users.show, etc.
 
     // Ces routes khas ykouno mgroupin m3a users.resource bach tkoun la syntaxe users.toggle-status
-  Route::put('/users/{user}/toggle-status/{status}', [UserController::class, 'toggleStatus'])->name('users.toggleStatus');
+  Route::put('/users/{user}/toggle-status/{status}', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
     Route::post('users/bulk-action', [UserController::class, 'bulkAction'])->name('users.bulk-action');
     Route::get('users/export/data', [UserController::class, 'export'])->name('users.export'); // Bdelna "/export/data" l "users/export/data" w smitha "users.export"
 Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggleStatus');
