@@ -105,7 +105,7 @@ class UserController extends Controller
             }
 
             // Pagination directe avec Eloquent
-            $perPage = 2;
+            $perPage = 10;
             $page = $request->get($pageParam, 1);
             
             $paginatedUsers = $groupQuery->paginate($perPage, ['*'], $pageParam, $page);
