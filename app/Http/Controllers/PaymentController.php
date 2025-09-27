@@ -465,144 +465,113 @@ public function store(Request $request)
     /**
      * Update payment status via Ajax
      */
-      public function updateStatus(Request $request, $id)
-    {
-        try {
-            $payment = Payment::with('inscription')->findOrFail($id);
+     public function updateStatus(Request $request, $id)
+{
+    try {
+        $payment = Payment::with('inscription')->findOrFail($id);
 
-            if (!Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin'])) {
-                \Log::warning("Unauthorized attempt to update payment status. User ID: " . (Auth::id() ?? 'Guest'));
-                return response()->json(['success' => false, 'message' => 'Unauthorized action.'], 403);
-            }
-
-            $validator = Validator::make($request->all(), [
-                'status' => 'required|in:pending,paid,late',
-                'paid_date' => 'nullable|date',
-                'late_fee' => 'nullable|numeric|min:0',
-            ]);
-
-            if ($validator->fails()) {
-                \Log::error('Validation failed for updateStatus. Payment ID: ' . $id . ', Errors: ' . json_encode($validator->errors()->toArray()));
-                return response()->json(['errors' => $validator->errors(), 'message' => 'Validation failed.'], 422);
-            }
-
-            DB::beginTransaction();
-
-            $oldStatus = $payment->status;
-            $oldAmount = $payment->amount;
-
-            $payment->status = $request->status;
-
-            if ($request->status === 'paid') {
-                $payment->paid_date = $request->paid_date ?? now();
-            }
-
-            \Log::info("Attempting to save payment status. Payment ID: {$id}, Old Status: {$oldStatus}, New Status: {$payment->status}");
-            $payment->save();
-            \Log::info("Payment status saved successfully. Payment ID: {$id}");
-
-            $inscription = $payment->inscription;
-            if (!$inscription) {
-                \Log::error("Inscription not found for Payment ID: {$id} after eager loading attempt.");
-                throw new \Exception("Associated inscription could not be loaded.");
-            }
-
-            \Log::info("Checking inscription update for Payment ID: {$id}. Inscription ID: {$inscription->id}, Old Inscription Paid Amount: {$inscription->paid_amount}");
-
-            // --- منطق تحديث paid_amount و remaining_installments في سجل التسجيل ---
-            if ($oldStatus !== 'paid' && $payment->status === 'paid') {
-                // الحالة 1: الدفعة كانت غير مدفوعة وأصبحت مدفوعة (مثلاً من pending إلى paid)
-
-                // تحقق مما إذا كانت هذه هي الدفعة الأولى التي يتم تأكيدها لهذا التسجيل.
-                // إذا كان paid_amount في Inscription قبل إضافة هذه الدفعة هو 0، فهذه هي الدفعة الأولى.
-                $isFirstPaymentConfirmationForInscription = (abs($inscription->paid_amount) < 0.01);
-
-                $inscription->paid_amount += $payment->amount;
-
-                // *** التعديل هنا: خصم remaining_installments فقط إذا لم تكن هذه هي الدفعة الأولى ***
-                // الدفعة الأولى (رسوم التسجيل الثابتة) تم خصمها بالفعل في EtudiantController.
-                // لذا، يجب أن نخصم remaining_installments فقط للدفعات اللاحقة.
-                if (!$isFirstPaymentConfirmationForInscription) {
-                    if ($inscription->remaining_installments > 0) {
-                        $inscription->remaining_installments -= 1;
-                    }
-                }
-                // **********************************************************************************
-
-                $inscription->save();
-                \Log::info("Inscription paid_amount updated (added). Inscription ID: {$inscription->id}, New Paid Amount: {$inscription->paid_amount}");
-                $this->createPaymentNotification($payment);
-            } elseif ($oldStatus === 'paid' && $payment->status !== 'paid') {
-                // الحالة 2: الدفعة كانت مدفوعة وأصبحت غير مدفوعة (مثلاً من paid إلى pending أو late)
-                $inscription->paid_amount -= $oldAmount;
-                // زد عدد الأقساط المتبقية بواحد (لأن هذا القسط لم يعد مدفوعاً)
-                // هذا يجب أن يحدث فقط إذا لم تكن هذه الدفعة الأولى التي تم خصمها في EtudiantController
-                // يمكننا التحقق من مرجع الدفعة أو ID الدفعة
-
-                // الأبسط: إذا كان المبلغ المدفوع في التسجيل سيصبح أقل من الرسوم الثابتة، لا نزيد
-                // وإلا، نزيد
-                $fixedFeeAmount = 1600.00; // يجب أن تجلب هذا من مكان مركزي (مثل config)
-                if (abs($inscription->paid_amount - $oldAmount) >= $fixedFeeAmount - 0.01) { // إذا كان المبلغ المتبقي بعد الطرح لا يزال يغطي الرسوم الثابتة
-                    $inscription->remaining_installments += 1;
-                }
-                $inscription->save();
-                \Log::info("Inscription paid_amount updated (subtracted). Inscription ID: {$inscription->id}, New Paid Amount: {$inscription->paid_amount}");
-            } elseif ($oldStatus === 'paid' && $payment->status === 'paid' && $payment->amount !== $oldAmount) {
-                // الحالة 3: الدفعة كانت مدفوعة وما زالت مدفوعة، ولكن مبلغ الدفعة نفسه تغير (عبر التعديل الكامل)
-                $inscription->paid_amount = $inscription->paid_amount - $oldAmount + $payment->amount;
-                // لا نلمس remaining_installments هنا
-                $inscription->save();
-                \Log::info("Inscription paid_amount updated (adjusted). Inscription ID: {$inscription->id}, New Paid Amount: {$inscription->paid_amount}");
-            }
-            // --------------------------------------------------------------------------------
-
-            // --- تحديث next_installment_due_date بعد تأكيد الدفعة ---
-            // هذا المنطق يضمن تحديث تاريخ الاستحقاق التالي بعد دفع القسط.
-            // يتم التحديث فقط إذا أصبحت الدفعة 'paid' وكان لا يزال هناك أقساط متبقية.
-            if ($payment->status === 'paid' && $inscription->remaining_installments > 0) {
-                // هنا يجب أن نتحقق مما إذا كانت هذه هي الدفعة الأولى التي تم تأكيدها
-                // إذا كانت كذلك، فإن next_installment_due_date يجب أن يكون 2025-08-05
-                // إذا كانت دفعة لاحقة، يجب أن يكون 2025-09-05 وهكذا.
-
-                // الطريقة الأبسط: دائماً قم بتحديثه إلى الشهر التالي إذا كانت الدفعة مدفوعة وهناك أقساط متبقية.
-                // هذا سيعمل بشكل صحيح بعد الدفعة الأولى أيضاً.
-                $inscription->next_installment_due_date = Carbon::now()->addMonth()->day(5);
-                $inscription->save();
-                \Log::info("Next installment due date updated for Inscription ID: {$inscription->id} to {$inscription->next_installment_due_date->format('Y-m-d')}");
-            } elseif ($payment->status !== 'paid' && $oldStatus === 'paid') {
-                // إذا تم إلغاء دفع قسط (أصبح غير مدفوع)، قد تحتاج لإعادة تعيين تاريخ الاستحقاق.
-                // هذا يعتمد على منطق عملك: هل تريد تعيينه إلى null، أو إلى تاريخ الاستحقاق الأصلي للقسط الذي لم يدفع؟
-            }
-            // -------------------------------------------------------
-
-            DB::commit();
-
-            \Log::info("Transaction committed successfully for Payment ID: {$id}");
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Payment status updated successfully',
-                'new_status' => $payment->status,
-                'updated_paid_amount' => number_format($inscription->paid_amount, 2),
-                'updated_remaining_amount' => number_format($inscription->total_amount - $inscription->paid_amount, 2)
-            ]);
-
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            \Log::error('Payment not found. ID: ' . $id . '. Error: ' . $e->getMessage());
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Payment not found.'
-            ], 404);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Error updating payment status (General Exception): ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while updating payment status. Please try again.'
-            ], 500);
+        if (!Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin'])) {
+            \Log::warning("Unauthorized attempt to update payment status. User ID: " . (Auth::id() ?? 'Guest'));
+            return response()->json(['success' => false, 'message' => 'Unauthorized action.'], 403);
         }
+
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|in:pending,paid,late',
+            'paid_date' => 'nullable|date',
+            'late_fee' => 'nullable|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            \Log::error('Validation failed for updateStatus. Payment ID: ' . $id . ', Errors: ' . json_encode($validator->errors()->toArray()));
+            return response()->json(['errors' => $validator->errors(), 'message' => 'Validation failed.'], 422);
+        }
+
+        DB::beginTransaction();
+
+        $inscription = $payment->inscription;
+        $oldStatus = $payment->status;
+        
+        // 1. Mettre à jour le statut du paiement
+        $payment->status = $request->status;
+        $payment->paid_date = ($request->status === 'paid') ? ($request->paid_date ?? now()) : null;
+        $payment->save();
+
+        // --------------------------------------------------------------------------------
+        // LOGIQUE CLÉ: RECALCULER PAID_AMOUNT ET GÉRER LES STATUTS
+        // --------------------------------------------------------------------------------
+
+        // 2. Recalculer le montant total payé (le FIX contre le doublage)
+        // La source de vérité est la somme de TOUS les paiements 'paid'
+        $totalPaidVerified = $inscription->payments()->where('status', 'paid')->sum('amount');
+        
+        // Mettre à jour paid_amount de l'inscription avec la somme vérifiée
+        $inscription->paid_amount = $totalPaidVerified;
+        
+        // 3. Gérer la déduction/réintégration des acomptes (remaining_installments)
+        if ($oldStatus !== 'paid' && $payment->status === 'paid') {
+            // Un paiement vient d'être validé -> Déduire un acompte
+            if ($inscription->remaining_installments > 0) {
+                 $inscription->remaining_installments -= 1;
+            }
+        } elseif ($oldStatus === 'paid' && $payment->status !== 'paid') {
+            // Un paiement est annulé -> Rajouter un acompte
+             if ($inscription->remaining_installments < $inscription->chosen_installments) {
+                 $inscription->remaining_installments += 1;
+             }
+        }
+
+        // 4. Mettre à jour le statut de l'inscription (Active / Completed)
+        $epsilon = 0.01;
+        if ($inscription->paid_amount >= $inscription->total_amount - $epsilon) {
+            $inscription->status = 'completed';
+            $inscription->remaining_installments = 0;
+            $inscription->next_installment_due_date = null;
+        } elseif ($inscription->status === 'pending' && $payment->status === 'paid' && $totalPaidVerified > 0) {
+            // Activation de l'inscription si elle était en attente et que la première preuve est validée
+            $inscription->status = 'active'; 
+        }
+
+        // 5. Mise à jour de la date d'échéance suivante
+        if ($inscription->status === 'active' && $inscription->remaining_installments > 0) {
+            // Si l'inscription est active et qu'il reste des acomptes, définir le prochain
+            $inscription->next_installment_due_date = Carbon::now()->addMonth()->day(5);
+        } else {
+             // S'il n'y a plus d'acomptes (completed), on efface la date
+            $inscription->next_installment_due_date = null;
+        }
+
+        $inscription->save();
+        
+        // --------------------------------------------------------------------------------
+        // FIN DE LA LOGIQUE DE CORRECTION
+        // --------------------------------------------------------------------------------
+
+        // Logique de notification (à garder telle quelle)
+        if ($payment->status === 'paid') {
+             $this->createPaymentNotification($payment);
+        }
+       
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment status updated successfully',
+            'new_status' => $payment->status,
+            'updated_paid_amount' => number_format($inscription->paid_amount, 2),
+            'updated_remaining_amount' => number_format($inscription->total_amount - $inscription->paid_amount, 2),
+            'inscription_status' => $inscription->status
+        ]);
+
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        \Log::error('Payment not found. ID: ' . $id . '. Error: ' . $e->getMessage());
+        DB::rollBack();
+        return response()->json(['success' => false, 'message' => 'Payment not found.'], 404);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Error updating payment status (General Exception): ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+        return response()->json(['success' => false, 'message' => 'An error occurred while updating payment status. Please try again.'], 500);
     }
+}
 
     /**
      * Get payments by inscription

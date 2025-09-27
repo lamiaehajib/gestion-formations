@@ -184,10 +184,10 @@ public function showChooseFormationForm(Request $request)
             'status' => 'pending',
             'inscription_date' => now(),
             'total_amount' => $formation->price,
-            'paid_amount' => $initialPaidAmount, // Store the exact amount the student paid
+            'paid_amount' => 0.00, // Store the exact amount the student paid
             'chosen_installments' => $chosenInstallments,
             'amount_per_installment' => $amountPerInstallment,
-            'remaining_installments' => $remainingInstallmentsCount,
+            'remaining_installments' =>  $chosenInstallments,
             'notes' => $request->notes,
             'documents' => null, 
             'access_restricted' => false,
