@@ -171,9 +171,11 @@ class PromotionController extends Controller
         $promotion->load([
             'formation.category',
             'users' => function ($query) use ($promotion) {
-                $query->with(['inscriptions' => function ($q) use ($promotion) {
-                    $q->where('formation_id', $promotion->formation_id)->with('payments');
-                }]);
+                $query->with([
+                    'inscriptions' => function ($q) use ($promotion) {
+                        $q->where('formation_id', $promotion->formation_id)->with('payments');
+                    }
+                ]);
             },
         ]);
 
@@ -228,22 +230,62 @@ class PromotionController extends Controller
                 }
             }
         }
-        
+
         $format = $request->input('format', 'html');
 
         if ($format === 'pdf') {
             $pdf = PDF::loadView('promotions.report', compact('reportData'));
             return $pdf->download('rapport-' . $promotion->name . '.pdf');
         } elseif ($format === 'excel') {
-            $csv = "Nom Étudiant,Email,Montant Total,Montant Payé,Reste à Payer,Type de Paiement\n";
-            foreach ($reportData['students'] as $student) {
-                $csv .= "{$student['name']},{$student['email']},{$student['total_amount']},{$student['paid_amount']},{$student['remaining_amount']},{$student['payment_type']}\n";
-            }
-            $headers = [
-                'Content-Type' => 'text/csv',
-                'Content-Disposition' => 'attachment; filename="rapport-' . $promotion->name . '.csv"',
+            // ⭐ Début du code optimisé pour Excel CSV (séparateur ;) ⭐
+
+            $output = fopen('php://temp', 'r+'); // Ouvre un flux temporaire en mémoire
+
+            // 1. AJOUT DU BOM POUR L'ENCODAGE UTF-8 CORRECT DANS EXCEL
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // 2. DÉFINITION DES EN-TÊTES ET UTILISATION DU POINT-VIRGULE (;)
+            $headers_excel = [
+                'Nom Étudiant',
+                'Email',
+                'Montant Total',
+                'Montant Payé',
+                'Reste à Payer',
+                'Type de Paiement',
+                'Statut Paiement'
             ];
+            fputcsv($output, $headers_excel, ';'); // Utilisation de ';' comme séparateur
+
+            foreach ($reportData['students'] as $student) {
+                // Nettoyage des chaînes pour éviter les problèmes d'exportation
+                $name = str_replace(';', ',', $student['name']);
+                $email = str_replace(';', ',', $student['email']);
+
+                fputcsv($output, [
+                    $name,
+                    $email,
+                    // Utiliser point ('.') pour les décimales et pas de séparateur de milliers
+                    number_format($student['total_amount'], 2, '.', ''),
+                    number_format($student['paid_amount'], 2, '.', ''),
+                    number_format($student['remaining_amount'], 2, '.', ''),
+                    $student['payment_type'],
+                    $student['payment_status'],
+                ], ';'); // Utilisation de ';'
+            }
+
+            rewind($output);
+            $csv = stream_get_contents($output);
+            fclose($output);
+
+            $headers = [
+                // 3. CHANGER LE TYPE DE CONTENU POUR UNE MEILLEURE COMPATIBILITÉ EXCEL
+                'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+                'Content-Disposition' => 'attachment; filename="rapport-' . $promotion->name . '_' . date('Ymd') . '.csv"',
+            ];
+
             return response($csv, 200, $headers);
+
+            // ⭐ Fin du code optimisé pour Excel CSV ⭐
         } else {
             return view('promotions.report', compact('reportData'));
         }

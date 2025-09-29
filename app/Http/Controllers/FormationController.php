@@ -437,65 +437,94 @@ class FormationController extends Controller
     /**
      * Export formations to CSV.
      */
-    public function exportCsv()
-    {
-        // Ensure the user has the 'formation-export' permission
-        if (!Auth::user()->can('formation-export')) {
-            abort(403, 'Unauthorized action. You do not have permission to export formations.');
+   public function exportCsv(Request $request) // ⚠️ Ajout de (Request $request)
+{
+    // Ensure the user has the 'formation-export' permission
+    if (!Auth::user()->can('formation-export')) {
+        abort(403, 'Unauthorized action. You do not have permission to export formations.');
+    }
+
+    $headers = [
+        'Content-Type' => 'text/csv',
+        'Content-Disposition' => 'attachment; filename="formations_' . date('Ymd_His') . '.csv"',
+    ];
+
+    $callback = function() use ($request) { // ⚠️ Ajout de 'use ($request)'
+        $query = Formation::with(['category', 'consultant']);
+
+        // 💡 APPLICATION DES FILTRES DE LA REQUÊTE (nfs l'logique dyal index)
+        
+        // Filtrer par catégorie
+        if ($request->has('category_id') && $request->category_id) {
+            $query->where('category_id', $request->category_id);
         }
 
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="formations_' . date('Ymd_His') . '.csv"',
-        ];
+        // Filtrer par statut
+        if ($request->has('status') && $request->status) {
+            $query->where('status', $request->status);
+        }
 
-        $callback = function() {
-            $formations = Formation::with(['category', 'consultant'])->get();
-            $file = fopen('php://output', 'w');
+        // Pour les consultants, afficher uniquement leurs formations
+        if (Auth::check() && Auth::user()->hasRole('Consultant')) { // J'ai utilisé hasRole au lieu de $user->role === 'consultant'
+            $query->where('consultant_id', Auth::id());
+        }
 
-            // Add CSV headers
+        // Rechercher par titre ou description
+        if ($request->has('search') && $request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('title', 'like', '%' . $request->search . '%')
+                  ->orWhere('description', 'like', '%' . $request->search . '%');
+            });
+        }
+        
+        // -----------------------------------------------------------
+        
+        $formations = $query->orderBy('created_at', 'desc')->get();
+        $file = fopen('php://output', 'w');
+
+        // Add CSV headers
+        fputcsv($file, [
+            'ID',
+            'Titre',
+            'Description',
+            'Prix',
+            'Durée',
+            'Unité de Durée',
+            'Capacité',
+            'Date de Début',
+            'Date de Fin',
+            'Catégorie',
+            'Consultant',
+            'Prérequis',
+            'Documents Requis',
+            'Statut',
+            'Options de Paiement'
+        ]);
+
+        foreach ($formations as $formation) {
             fputcsv($file, [
-                'ID',
-                'Titre',
-                'Description',
-                'Prix',
-                'Durée',
-                'Unité de Durée',
-                'Capacité',
-                'Date de Début',
-                'Date de Fin',
-                'Catégorie',
-                'Consultant',
-                'Prérequis',
-                'Documents Requis',
-                'Statut',
-                'Options de Paiement'
+                $formation->id,
+                $formation->title,
+                strip_tags($formation->description), // Remove HTML tags from description
+                $formation->price,
+                $formation->duration_hours,
+                $formation->duration_unit,
+                $formation->capacity,
+                $formation->start_date ? $formation->start_date->format('Y-m-d') : 'N/A',
+                $formation->end_date ? $formation->end_date->format('Y-m-d') : 'N/A',
+                $formation->category ? $formation->category->name : 'N/A',
+                $formation->consultant ? $formation->consultant->name : 'N/A',
+                json_encode($formation->prerequisites), // Prerequisites are stored as JSON
+                json_encode($formation->documents_required), // Documents are stored as JSON
+                $formation->status,
+                json_encode($formation->available_payment_options) // Payment options are stored as JSON
             ]);
+        }
+        fclose($file);
+    };
 
-            foreach ($formations as $formation) {
-                fputcsv($file, [
-                    $formation->id,
-                    $formation->title,
-                    strip_tags($formation->description), // Remove HTML tags from description
-                    $formation->price,
-                    $formation->duration_hours,
-                    $formation->duration_unit,
-                    $formation->capacity,
-                    $formation->start_date ? $formation->start_date->format('Y-m-d') : 'N/A',
-                    $formation->end_date ? $formation->end_date->format('Y-m-d') : 'N/A',
-                    $formation->category ? $formation->category->name : 'N/A',
-                    $formation->consultant ? $formation->consultant->name : 'N/A',
-                    json_encode($formation->prerequisites), // Prerequisites are stored as JSON
-                    json_encode($formation->documents_required), // Documents are stored as JSON
-                    $formation->status,
-                    json_encode($formation->available_payment_options) // Payment options are stored as JSON
-                ]);
-            }
-            fclose($file);
-        };
-
-        return new StreamedResponse($callback, 200, $headers);
-    }
+    return new StreamedResponse($callback, 200, $headers);
+}
 
     public function corbeille()
 {

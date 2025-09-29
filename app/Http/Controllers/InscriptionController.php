@@ -588,89 +588,115 @@ public function update(Request $request, Inscription $inscription)
     }
 
 
-    public function export()
+    public function export(Request $request) // ⚠️ Ajout de (Request $request)
     {
-        // The permission 'inscription-list' is already checked by the middleware in the constructor.
-        // If you want a specific permission for export (e.g., 'inscription-export'),
-        // you should add it to the __construct middleware and check it here instead.
-        // Example: if (!Auth::user()->can('inscription-export')) { abort(403, 'Unauthorized action.'); }
+        // L'autorisation 'inscription-list' déjà vérifiée par le middleware.
 
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="inscriptions_' . date('Ymd_His') . '.csv"',
-        ];
+      $headers = [
+        // ⚠️ Modification 1: Changer le Content-Type pour une meilleure compatibilité Excel
+        'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8', 
+        'Content-Disposition' => 'attachment; filename="inscriptions_' . date('Ymd_His') . '.csv"',
+        // Ziyada: Bach matkhrab9ch l'encodage f'bzaf dial les versions dial Excel
+        'Pragma' => 'no-cache',
+        'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+        'Expires' => '0'
+    ];
 
-        $callback = function() {
-            // Adjust the query based on roles, similar to your index method,
-            // so that regular users only export their own inscriptions if that's the desired behavior.
-            $user = Auth::user();
-            $query = Inscription::with(['user', 'formation', 'payments']);
+    $callback = function () use ($request) {
+        $user = Auth::user();
+        $query = Inscription::with(['user', 'formation', 'payments']);
 
-            if (!$user->hasAnyRole(['Admin', 'Finance', 'Super Admin'])) {
-                $query->where('user_id', $user->id);
-            }
+        // 1. Appliquer la restriction par rôle, comme dans index()
+        if (!$user->hasAnyRole(['Admin', 'Finance', 'Super Admin'])) {
+            $query->where('user_id', $user->id);
+        }
+
+        // 2. AJOUT DES FILTRES À PARTIR DE LA REQUÊTE ($request) - (Déjà fait, c'est bon)
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('formation_id')) {
+            $query->where('formation_id', $request->formation_id);
+        }
+
+        if ($request->filled('search') && $user->hasAnyRole(['Admin', 'Finance', 'Super Admin'])) {
+            $search = $request->search;
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        
+        $inscriptions = $query->orderBy('created_at', 'desc')->get();
+        $file = fopen('php://output', 'w');
+        
+        // ⚠️ Ziyada: Ajouter le Byte Order Mark (BOM) bach Excel yfham l'UTF-8 mzn (pour l'arabe/français)
+        fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+        // Add CSV headers
+        // ⚠️ Modification 2: Utiliser le point-virgule (';') comme séparateur
+        fputcsv($file, [
+            'ID Inscription',
+            'Nom Utilisateur',
+            'Email Utilisateur',
+            'ID Formation',
+            'Titre Formation',
+            'Statut Inscription',
+            'Date Inscription',
+            'Montant Total',
+            'Montant Payé',
+            'Montant Restant',
+            'Option Paiement (acomptes)',
+            'Montant par acompte',
+            'Acomptes Restants',
+            'Notes',
+            'Documents Liés',
+            'Date Prochain Acompte',
+            'Accès Restreint',
+            'Nombre de Paiements',
+            'Montant Total des Paiements Enregistrés',
+        ], ';'); // <--- IMPORTANT: Utilisation du point-virgule
+
+        foreach ($inscriptions as $inscription) {
+            // Calculate remaining amount based on database values
+            $remainingAmount = $inscription->total_amount - $inscription->paid_amount;
+
+            // Get payment details
+            $paymentsCount = $inscription->payments->count();
+            $paymentsTotalAmount = $inscription->payments->sum('amount');
             
-            $inscriptions = $query->orderBy('created_at', 'desc')->get();
-            $file = fopen('php://output', 'w');
+            // Format documents for better readability in CSV
+            $documents = !empty($inscription->documents) ? str_replace(',', ' | ', implode(', ', $inscription->documents)) : 'Aucun';
 
-            // Add CSV headers
+            // ⚠️ Modification 2 (Suite): Utiliser le point-virgule (';')
             fputcsv($file, [
-                'ID Inscription',
-                'Nom Utilisateur',
-                'Email Utilisateur',
-                'ID Formation',
-                'Titre Formation',
-                'Statut Inscription',
-                'Date Inscription',
-                'Montant Total',
-                'Montant Payé',
-                'Montant Restant',
-                'Option Paiement (acomptes)',
-                'Montant par acompte',
-                'Acomptes Restants',
-                'Notes',
-                'Documents Liés',
-                'Date Prochain Acompte',
-                'Accès Restreint',
-                'Nombre de Paiements',
-                'Montant Total des Paiements Enregistrés',
-            ]);
+                $inscription->id,
+                $inscription->user->name ?? 'N/A',
+                $inscription->user->email ?? 'N/A',
+                $inscription->formation->id ?? 'N/A',
+                $inscription->formation->title ?? 'N/A',
+                $inscription->status,
+                $inscription->inscription_date ? $inscription->inscription_date->format('Y-m-d H:i:s') : 'N/A',
+                $inscription->total_amount,
+                $inscription->paid_amount,
+                number_format($remainingAmount, 2, '.', ''), // Utiliser point pour les décimales
+                $inscription->chosen_installments,
+                number_format($inscription->amount_per_installment, 2, '.', ''), // Utiliser point pour les décimales
+                $inscription->remaining_installments,
+                str_replace(array("\r", "\n", ';'), ' ', $inscription->notes ?? ''), // Nettoyer les notes
+                $documents,
+                $inscription->next_installment_due_date ? $inscription->next_installment_due_date->format('Y-m-d') : 'N/A',
+                $inscription->access_restricted ? 'Oui' : 'Non',
+                $paymentsCount,
+                number_format($paymentsTotalAmount, 2, '.', ''),
+            ], ';'); // <--- IMPORTANT: Utilisation du point-virgule
+        }
+        fclose($file);
+    };
 
-            foreach ($inscriptions as $inscription) {
-                // Calculate remaining amount based on database values
-                $remainingAmount = $inscription->total_amount - $inscription->paid_amount;
-                
-                // Get payment details
-                $paymentsCount = $inscription->payments->count();
-                $paymentsTotalAmount = $inscription->payments->sum('amount');
-
-                fputcsv($file, [
-                    $inscription->id,
-                    $inscription->user->name ?? 'N/A',
-                    $inscription->user->email ?? 'N/A',
-                    $inscription->formation->id ?? 'N/A',
-                    $inscription->formation->title ?? 'N/A',
-                    $inscription->status,
-                    $inscription->inscription_date ? $inscription->inscription_date->format('Y-m-d H:i:s') : 'N/A',
-                    $inscription->total_amount,
-                    $inscription->paid_amount,
-                    number_format($remainingAmount, 2), // Format remaining amount
-                    $inscription->chosen_installments,
-                    number_format($inscription->amount_per_installment, 2),
-                    $inscription->remaining_installments,
-                    $inscription->notes,
-                    !empty($inscription->documents) ? implode(', ', $inscription->documents) : 'Aucun', // Join document paths
-                    $inscription->next_installment_due_date ? $inscription->next_installment_due_date->format('Y-m-d') : 'N/A',
-                    $inscription->access_restricted ? 'Oui' : 'Non',
-                    $paymentsCount,
-                    number_format($paymentsTotalAmount, 2),
-                ]);
-            }
-            fclose($file);
-        };
-
-        return new StreamedResponse($callback, 200, $headers);
-    }
+    return new StreamedResponse($callback, 200, $headers);
+}
 
     // In InscriptionController.php
 
