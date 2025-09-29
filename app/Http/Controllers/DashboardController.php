@@ -158,7 +158,7 @@ class DashboardController extends Controller
                     $query->whereBetween('due_date', [$startDate, $endDate]);
                 })
                 ->orderBy('due_date', 'asc')
-                ->take(5)
+                ->take(10)
                 ->get(),
             'topFormationsByEnrollment' => Formation::withCount(['inscriptions' => function($q) use ($startDate, $endDate) {
                     $q->whereIn('status', ['active', 'completed']);
@@ -172,7 +172,7 @@ class DashboardController extends Controller
             'upcomingFormations' => Formation::where('start_date', '>=', Carbon::now())
     // Remove the `when` block that filters by $startDate and $endDate
     ->orderBy('start_date', 'asc')
-    ->take(5)
+    ->take(10)
     ->get(),
             'newRegistrationsLast30Days' => $newRegistrationsLast30Days, // Already filtered above
             'reclamationsByStatus' => Reclamation::select('status', DB::raw('count(*) as count'))
