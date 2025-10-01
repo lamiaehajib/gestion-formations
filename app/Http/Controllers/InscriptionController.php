@@ -99,9 +99,15 @@ class InscriptionController extends Controller
 
 public function create(Request $request)
 {
-    $users = Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) ? User::role('etudiant')->get() : collect();
+    // Order the 'etudiant' role users by their creation date (created_at) in descending order (DESC)
+    // so the latest-created students appear first.
+    $users = Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']) 
+        ? User::role('etudiant')->orderBy('created_at', 'desc')->get() 
+        : collect();
+
     // This line will now fetch ALL formations
     $formations = Formation::with('category')->get(); 
+    
     return view('inscriptions.create', compact('users', 'formations'));
 }
 
