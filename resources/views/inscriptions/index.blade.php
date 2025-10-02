@@ -273,8 +273,8 @@
         </div>
 
         <div class="pagination-wrapper">
-            {{ $inscriptions->links() }}
-        </div>
+    {{ $inscriptions->appends(request()->query())->links() }}
+</div>
 
         {{-- Résumé des statistiques --}}
         @if(Auth::user()->hasAnyRole(['Admin', 'Finance', 'Super Admin']))
