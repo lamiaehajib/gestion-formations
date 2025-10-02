@@ -22,7 +22,8 @@ class Course extends Model
         'documents',
         'module_id',
         'formation_id',
-        
+        'last_notification_time', 
+        'notification_count',
     ];
 
     protected $casts = [
@@ -30,7 +31,8 @@ class Course extends Model
         'start_time' => 'datetime:H:i',
         'end_time' => 'datetime:H:i',
         'documents' => 'array',
-        
+         // ✅ زدنا هادا باش last_notification_time يتقرا كـ Carbon instance
+        'last_notification_time' => 'datetime', 
     ];
 
 

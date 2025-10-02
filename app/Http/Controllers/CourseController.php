@@ -25,42 +25,42 @@ class CourseController extends Controller
     }
 
 
-      public function index(Request $request)
+    public function index(Request $request)
 {
     $user = Auth::user();
 
+    // 🗓️ Calcul de la semaine (pour navigation)
+    $weekOffset = $request->get('week_offset', 0);
+    $weekStart = Carbon::now()->startOfWeek()->addWeeks($weekOffset);
+    $weekEnd = Carbon::now()->startOfWeek()->addWeeks($weekOffset)->endOfWeek();
+
     // Load relations 'consultant' and 'formation'
-    $query = Course::with(['consultant', 'formation']);
+    $query = Course::with(['consultant', 'formation', 'module']);
 
     if ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance')) {
-        // Admins see all courses, no filter needed
+        // Admins see all courses
     } elseif ($user->hasRole('Consultant')) {
-        // Consultants see their courses, regardless of date
         $query->where('consultant_id', $user->id);
     } elseif ($user->hasRole('Etudiant')) {
-        // Students see all courses for the formations they are enrolled in, regardless of date
         $enrolledFormationIds = $user->inscriptions()
             ->whereIn('status', ['active', 'completed'])
             ->where('access_restricted', false)
             ->pluck('formation_id');
 
         if ($enrolledFormationIds->isEmpty()) {
-            // If they have no enrolled formations, they see nothing
             $query->whereRaw('1 = 0');
         } else {
-            // Filter by 'formation_id'
             $query->whereIn('formation_id', $enrolledFormationIds);
-
-            // Eager load only the formations relevant to these courses
-            $query->with([
-                'formation' => function ($q) use ($enrolledFormationIds) {
-                    $q->whereIn('id', $enrolledFormationIds);
-                }
-            ]);
         }
     } else {
-        // Other roles see nothing
         $query->whereRaw('1 = 0');
+    }
+
+    // 🔥 NOUVEAU: Filtrage par semaine (si view_mode = 'planning')
+    $viewMode = $request->get('view_mode', 'list'); // 'list' ou 'planning'
+    
+    if ($viewMode === 'planning') {
+        $query->whereBetween('course_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')]);
     }
 
     // Filters based on request parameters
@@ -75,17 +75,25 @@ class CourseController extends Controller
     if ($request->has('search') && $request->search) {
         $query->where('title', 'like', '%' . $request->search . '%');
     }
-    
-    // The date filter block for Etudiants was already commented out in your code, 
-    // so we keep it that way.
 
-    // ✅ Ligne li khassha tbaddal: Kanrtbou b 'course_date' w 'start_time' ASC
-    $courses = $query->orderBy('course_date', 'asc')->orderBy('start_time', 'asc')->paginate(15);
+    // Tri par date et heure
+    $query->orderBy('course_date', 'asc')->orderBy('start_time', 'asc');
+
+    // 🔥 Selon le mode d'affichage
+    if ($viewMode === 'planning') {
+        $courses = $query->get();
+        // Grouper par jour
+        $coursesByDay = $courses->groupBy(function($course) {
+            return Carbon::parse($course->course_date)->format('Y-m-d');
+        });
+    } else {
+        $courses = $query->paginate(15);
+        $coursesByDay = null;
+    }
 
     $formationsForModals = Formation::where('status', 'published')->get();
     $formationsForFilter = collect();
 
-    // Determine which formations to show in the filter
     if ($user && ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance'))) {
         $formationsForFilter = Formation::all();
     } elseif ($user && $user->hasRole('Etudiant')) {
@@ -100,7 +108,17 @@ class CourseController extends Controller
 
     $consultants = User::role('Consultant')->get();
 
-    return view('courses.index', compact('courses', 'formationsForModals', 'formationsForFilter', 'consultants'));
+    return view('courses.index', compact(
+        'courses', 
+        'coursesByDay', 
+        'viewMode', 
+        'weekStart', 
+        'weekEnd', 
+        'weekOffset',
+        'formationsForModals', 
+        'formationsForFilter', 
+        'consultants'
+    ));
 }
     /**
      * Show the form for creating a new resource.

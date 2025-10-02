@@ -452,27 +452,33 @@
                     <li><i class="fas fa-calendar-day"></i> Date: <strong>{{ \Carbon\Carbon::parse($course->course_date)->format('d/m/Y') }}</strong></li>
                     {{-- L'partie li khassha tji 9bel had l'block bach tchouf l'date dyal lyoma --}}
                     @php
- // Had l'ligne hiya li kat-provoki l'erreur, khassha t7iyed!
-// use Carbon\Carbon; // REMOVED!
- 
-                        // W nsta3mlu ghir l'full namespace:
-$courseDate = \Carbon\Carbon::parse($course->course_date)->startOfDay();
- $today = \Carbon\Carbon::today();
- $isCourseUpcomingOrToday = $courseDate->gte($today); 
- @endphp
-           
-                      {{-- Lien Zoom: N'affichew lien ghir ila kan mazal --}}
-                                @if ($course->zoom_link && $isCourseUpcomingOrToday)
-                                        <li><i class="fas fa-video"></i> Lien Zoom: <a href="{{ $course->zoom_link }}" target="_blank"
-                                class="text-primary-emphasis">Rejoindre la réunion</a></li>
-                                @elseif ($course->zoom_link && !$isCourseUpcomingOrToday)
-                                        {{-- Ila kan daz: Kan'affichew 'Disponible' bghir Lien ghir maktoub --}}
-                                        <li><i class="fas fa-video"></i> Lien Zoom: <span class="text-success">Disponible (Cours passé)</span>
-                        </li>
-                                @else
-                                        {{-- Ila ma kan la zoom link la walo --}}
-                                        <li><i class="fas fa-video-slash"></i> Lien Zoom: <span class="text-muted">Non disponible</span></li>
-                                @endif
+    // ... (Your existing date comparison logic)
+    $courseDate = \Carbon\Carbon::parse($course->course_date)->startOfDay();
+    $today = \Carbon\Carbon::today();
+    $isCourseUpcomingOrToday = $courseDate->gte($today); 
+@endphp
+        
+{{-- Lien Zoom: N'affichew l'action dyal "Rejoindre" ghir ila kan mazal --}}
+@if ($course->zoom_link && $isCourseUpcomingOrToday)
+    <li>
+        <i class="fas fa-video"></i> Lien Zoom/Teams: 
+        
+        {{-- Hna khassna nst3mlo un Form bach n9dro nsjlo l'click --}}
+        <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline">
+            @csrf
+            <button type="submit" class="btn btn-link p-0 m-0 align-baseline text-primary-emphasis" style="text-decoration: underline;">
+                Rejoindre la réunion
+            </button>
+        </form>
+    </li>
+@elseif ($course->zoom_link && !$isCourseUpcomingOrToday)
+    {{-- Ila kan daz: Kan'affichew 'Disponible' bghir Lien ghir maktoub --}}
+    <li><i class="fas fa-video"></i> Lien Zoom: <span class="text-success">Disponible (Cours passé)</span></li>
+@else
+    {{-- Ila ma kan la zoom link la walo --}}
+    <li><i class="fas fa-video-slash"></i> Lien Zoom: <span class="text-muted">Non disponible</span></li>
+@endif
+
 
                     @if ($course->recording_url)
                         <li><i class="fas fa-record-vinyl"></i> Enregistrement: <a href="{{ $course->recording_url }}" target="_blank" class="text-primary-emphasis">Voir l'enregistrement</a></li>
