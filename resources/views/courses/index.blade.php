@@ -590,16 +590,34 @@
                                                                         </div>
 
                                                                         <div class="course-actions">
-                                                                            {{-- "Rejoindre" button --}}
+                                                                            {{-- Khassna n3erfu wach l'course mazal ma dazch. --}}
+                                                                            @php
+                                                                                // Nsta3mlou l'full namespace \Carbon\Carbon bach ma ykounch conflict
+                                                                                $courseDate = \Carbon\Carbon::parse($course->course_date)->startOfDay();
+                                                                                $today = \Carbon\Carbon::today();
+                                                                                $isCourseUpcomingOrToday = $courseDate->gte($today); // True ila kan mazal aw lyoma
+                                                                            @endphp
 
-                                                                                @if($course->zoom_link)
-                                                                                    <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline flex-grow-1">
-                                                                                        @csrf
-                                                                                        <button type="submit" class="btn-join-card">
-                                                                                            <i class="fas fa-door-open"></i> Rejoindre
-                                                                                        </button>
-                                                                                    </form>
-                                                                                @endif
+                                                                            {{-- "Rejoindre" button - Ghadi yban ghir ila kan l'link kayn W l'course mazal ma dazch --}}
+                                                                            @if($course->zoom_link && $isCourseUpcomingOrToday)
+                                                                                <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline flex-grow-1">
+                                                                                    @csrf
+                                                                                    <button type="submit" class="btn-join-card">
+                                                                                        <i class="fas fa-door-open"></i> Rejoindre
+                                                                                    </button>
+                                                                                </form>
+                                                                            @elseif($course->zoom_link && !$isCourseUpcomingOrToday)
+                                                                                {{-- Ila kan l'course daz w 3andna zoom link --}}
+                                                                                <span class="badge bg-secondary p-2 flex-grow-1 text-center">
+                                                                                    Terminé
+                                                                                </span>
+                                                                            @else
+                                                                                {{-- Ila ma kan la zoom link la walo --}}
+                                                                                <span class="badge bg-warning p-2 flex-grow-1 text-center">
+                                                                                    Non lié
+                                                                                </span>
+                                                                            @endif
+
 
 
 
