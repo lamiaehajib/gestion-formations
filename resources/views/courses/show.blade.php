@@ -466,7 +466,8 @@
     {{-- Course Description --}}
     <h2 class="section-title"><i class="fas fa-align-left"></i> Description du Cours</h2>
     <div class="description-content">
-        <p>{{ $course->description }}</p>
+        <p> {!! nl2br(e($course->description)) !!}</p>
+       
     </div>
 
     {{-- Documents Section --}}
