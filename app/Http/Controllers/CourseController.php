@@ -174,10 +174,15 @@ class CourseController extends Controller
      */
     public function show(Course $course)
 {
- 
-    $course->load(['formation', 'module', 'consultant', 'evaluations']);
+    // Load relations 'formation', 'module', 'consultant', 'evaluations'
+    // 🔥 Jdida: Load aussi l'utilisateurs li daro join
+    $course->load(['formation', 'module', 'consultant', 'evaluations', 'usersJoined']); 
     
-    return view('courses.show', compact('course'));
+    // N9adro nzidou l'compteur w l'list f l'view b7al haka:
+    $joinCount = $course->usersJoined->count();
+    $joinedUsers = $course->usersJoined->pluck('name')->all(); // N9adro n'assuméw belli l'User model 3andou champ 'name'
+
+    return view('courses.show', compact('course', 'joinCount', 'joinedUsers'));
 }
 
     /**
@@ -374,10 +379,23 @@ class CourseController extends Controller
      */
     public function join(Course $course)
     {
+        $user = Auth::user();
+
+        // 🔥 Jdida: Kan enregistriw belli l'utilisateur dar join l'had l'course
+        // attach() kat'ajouté l'enregistrement f l'table course_joins
+        // w kaychecki 3la l'unique constraint ila kayn.
+        try {
+            $course->usersJoined()->attach($user->id);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Had l'exception katla3 ila l'user déjà dar join (li m'assuré b unique constraint)
+            // Mais ma khasshach t'blocki l'redirection.
+            // Nقدرو ndirou log hna ila bghina, wela n'ignoréwha.
+        }
+
         if ($course->zoom_link) {
             return redirect($course->zoom_link);
         }
-        
+
         return redirect()->back()->with('error', 'No meeting link available for this course.');
     }
 

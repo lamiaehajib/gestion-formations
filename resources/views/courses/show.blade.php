@@ -311,6 +311,94 @@
             justify-content: center;
         }
     }
+
+    .participation-section {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.stat-card {
+    background-color: #ffffff;
+    border-radius: 15px;
+    padding: 1.5rem;
+    border: 1px solid #ebf4f8;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.stat-card .icon-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #e6fffa; /* Light green-blue */
+    color: #38a169; /* Green icon */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+}
+.stat-card .stat-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #2d3748;
+    line-height: 1;
+}
+.stat-card .stat-label {
+    font-size: 0.9rem;
+    color: #718096;
+    font-weight: 600;
+    margin-top: 5px;
+}
+
+.participants-list-container {
+    background-color: #f7fafc;
+    border-radius: 15px;
+    padding: 1.5rem;
+    border: 1px solid #ebf4f8;
+    max-height: 400px; /* Limite la hauteur de la liste */
+    overflow-y: auto; /* Permet le défilement */
+}
+
+.participants-list-container .list-title {
+    color: #4a5568;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed #e2e8f0;
+}
+
+.participants-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.participants-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #edf2f7;
+    color: #4a5568;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.participants-list li:last-child {
+    border-bottom: none;
+}
+.participants-list li i {
+    color: #e53e3e; /* Red accent for bullet point */
+    font-size: 0.7rem;
+}
+
+@media (max-width: 768px) {
+    .stat-card {
+        margin-bottom: 1.5rem;
+    }
+}
 </style>
 @endpush
 
@@ -427,7 +515,49 @@
           
         </div>
     </div>
+    <div class="participation-section">
+    <h2 class="section-title"><i class="fas fa-chart-bar"></i> Statistiques de participation</h2>
+
+    {{-- Stat Card for Count --}}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stat-card">
+                <div class="icon-circle">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div>
+                    <div class="stat-value">{{ $joinCount }}</div>
+                    <div class="stat-label">Personnes ayant cliqué sur "Rejoindre"</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- List of Participants --}}
+    <div class="participants-list-container">
+        <div class="list-title">
+            <i class="fas fa-list-ul me-2"></i> Liste des Participants ({{ $joinCount }} Utilisateurs)
+        </div>
+
+        @if(!empty($joinedUsers))
+            <ul class="participants-list">
+                @foreach($joinedUsers as $userName)
+                    <li>
+                        <i class="fas fa-circle"></i> {{ $userName }}
+                    </li>
+                @endforeach
+            </ul>
+        @else
+            <div class="alert alert-warning alert-message text-center mb-0">
+                <i class="fas fa-exclamation-circle"></i> Aucun utilisateur n'a encore cliqué sur "Rejoindre".
+            </div>
+        @endif
+    </div>
 </div>
+{{-- END NEW SECTION --}}
+</div>
+
+
 
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

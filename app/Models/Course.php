@@ -35,6 +35,15 @@ class Course extends Model
 
 
 
+
+    public function usersJoined()
+{
+    // 'course_joins' hiya smit l'table dyal pivot li khassk tcreer
+    return $this->belongsToMany(User::class, 'course_joins', 'course_id', 'user_id')
+                ->withTimestamps(); // Bach n3erfo imta dar l'join
+}
+
+
     public function module()
     {
         return $this->belongsTo(Module::class);

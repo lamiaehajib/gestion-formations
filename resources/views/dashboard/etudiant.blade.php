@@ -787,559 +787,563 @@
 @endpush
 
 @section('content')
-<div class="dashboard-body">
-    <div class="dashboard-container">
-        <div class="card-base header-card">
-            <h1><i class="fa-solid fa-graduation-cap"></i> Mon Tableau de Bord Étudiant</h1>
-            <p class="header-subtitle">Bienvenue ! Gérez vos cours, paiements et progrès en toute simplicité.</p>
+    <div class="dashboard-body">
+        <div class="dashboard-container">
+            <div class="card-base header-card">
+                <h1><i class="fa-solid fa-graduation-cap"></i> Mon Tableau de Bord Étudiant</h1>
+                <p class="header-subtitle">Bienvenue ! Gérez vos cours, paiements et progrès en toute simplicité.</p>
 
-            <form action="{{ route('dashboard') }}" method="GET" class="date-filter">
-                <label for="selected_month" class="sr-only">Filtrer par mois :</label>
-                <select name="selected_month" id="selected_month">
-                    <option value="">Tous les mois</option>
-                    @foreach($months as $num => $name)
-                        <option value="{{ $num }}" {{ (int)$selectedMonth === $num ? 'selected' : '' }}>
-                            {{ $name }}
-                        </option>
-                    @endforeach
-                </select>
-                <label for="selected_year" class="sr-only">Année :</label>
-                <input type="number" name="selected_year" id="selected_year" value="{{ $selectedYear ?? \Carbon\Carbon::now()->year }}" min="2020" max="{{ \Carbon\Carbon::now()->addYears(5)->year }}">
-                <button type="submit" class="filter-btn"><i class="fa-solid fa-filter"></i> Filtrer</button>
-                @if($selectedMonth || request()->filled('selected_year') && request()->selected_year != \Carbon\Carbon::now()->year)
-                    <a href="{{ route('dashboard') }}" class="filter-btn" style="background: var(--text-light); color: white; box-shadow: none;">
-                        <i class="fa-solid fa-rotate-right"></i> Réinitialiser
-                    </a>
-                @endif
-            </form>
-        </div>
-
-        
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-number">{{ $activeInscriptions->count() }}</div>
-                        <div class="stat-label">Inscriptions Actives</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon"><i class="fas fa-hourglass-half"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-number">{{ $pendingInscriptions->count() }}</div>
-                        <div class="stat-label">Inscriptions en Attente</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-number">{{ number_format($totalPaid, 2) }}</div>
-                        <div class="stat-label">Montant Payé (MAD)</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-number">{{ number_format($totalOutstanding, 2) }}</div>
-                        <div class="stat-label">Montant Dû (MAD)</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
-        <!-- 🔥 NEW: Modules Progress Statistics Cards -->
-        <div class="stats-grid">
-            <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <div class="stat-content">
-                    <div class="stat-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-book"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-number" style="background: linear-gradient(45deg, #fff, #f8f9fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: #fff;">{{ $totalModulesCount ?? 0 }}</div>
-                        <div class="stat-label" style="color: rgba(255,255,255,0.9);">Total Modules</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="stat-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
-                <div class="stat-content">
-                    <div class="stat-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-check-circle"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-number" style="background: linear-gradient(45deg, #fff, #f8f9fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: #fff;">{{ $completedModulesCount ?? 0 }}</div>
-                        <div class="stat-label" style="color: rgba(255,255,255,0.9);">Modules Terminés</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="stat-card" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
-                <div class="stat-content">
-                    <div class="stat-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-spinner"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-number" style="background: linear-gradient(45deg, #fff, #f8f9fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: #fff;">{{ $inProgressModulesCount ?? 0 }}</div>
-                        <div class="stat-label" style="color: rgba(255,255,255,0.9);">En Cours</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <div class="stat-content">
-                    <div class="stat-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-chart-line"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-number" style="background: linear-gradient(45deg, #fff, #f8f9fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: #fff;">{{ $averageModuleProgress ?? 0 }}%</div>
-                        <div class="stat-label" style="color: rgba(255,255,255,0.9);">Progression Moyenne</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 🔥 NEW: Global Modules Progress Chart -->
-        <div class="row">
-            <div class="col-12 mb-4">
-                <div class="card-base chart-card">
-                    <h3 class="chart-title"><i class="fa-solid fa-chart-bar"></i> Vue d'ensemble - Progression de tous mes Modules</h3>
-                    @if(isset($globalModulesChart) && !empty($globalModulesChart['data']) && array_sum($globalModulesChart['data']) > 0)
-                        <div class="chart-container" style="height: 400px;">
-                            <canvas id="globalModulesChart"></canvas>
-                        </div>
-                    @else
-                        <div class="empty-state">
-                            <div class="icon"><i class="fa-solid fa-chart-bar"></i></div>
-                            <p>Aucun module disponible pour afficher la progression.</p>
-                            <a href="{{ route('formations.index') }}" class="btn btn-outline-primary">Découvrir nos formations</a>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        <!-- 🔥 NEW: Formations with Modules Progress -->
-        @if(isset($formationsWithModulesProgress) && $formationsWithModulesProgress->count() > 0)
-        <div class="row">
-            <div class="col-12 mb-4">
-                <div class="card-base">
-                    <h3 class="chart-title"><i class="fa-solid fa-graduation-cap"></i> Mes Formations & Progression des Modules</h3>
-                    
-                    <div class="formations-accordion" style="margin-top: 20px;">
-                        @foreach($formationsWithModulesProgress as $index => $formation)
-                        <div class="formation-card" style="margin-bottom: 25px; border: 2px solid var(--border-light); border-radius: 16px; overflow: hidden; background: var(--card-background); box-shadow: var(--shadow-sm);">
-                            <!-- Formation Header -->
-                            <div class="formation-header" style="background: linear-gradient(135deg, var(--union-dark-blu), var(--union-light-ble)); padding: 20px; cursor: pointer;" 
-                                 onclick="toggleFormation({{ $index }})">
-                                <div style="display: flex; justify-content: between; align-items: center; color: white;">
-                                    <div style="flex-grow: 1;">
-                                        <h4 style="margin: 0; font-weight: 700; font-size: 1.3rem;">
-                                            <i class="fas fa-book-open" style="margin-right: 10px;"></i>
-                                            {{ $formation->title }}
-                                        </h4>
-                                        <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 0.95rem;">
-                                            {{ $formation->modules->count() }} modules - Progression globale: {{ $formation->overall_progress }}%
-                                        </p>
-                                    </div>
-                                    <div style="display: flex; align-items: center; gap: 15px;">
-                                        <!-- Overall Progress Circle -->
-                                        <div style="position: relative; width: 60px; height: 60px;">
-                                            <div style="width: 60px; height: 60px; border-radius: 50%; background: conic-gradient(#fff 0deg, #fff {{ $formation->overall_progress * 3.6 }}deg, rgba(255,255,255,0.3) {{ $formation->overall_progress * 3.6 }}deg, rgba(255,255,255,0.3) 360deg); display: flex; align-items: center; justify-content: center;">
-                                                <div style="width: 45px; height: 45px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;">
-                                                    <span style="font-weight: 700; font-size: 0.8rem; color: white;">{{ $formation->overall_progress }}%</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!-- Toggle Arrow -->
-                                        <i class="fas fa-chevron-down" id="arrow{{ $index }}" style="font-size: 1.2rem; transition: transform 0.3s ease; color: rgba(255,255,255,0.8);"></i>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Formation Content (Collapsible) -->
-                            <div id="formationContent{{ $index }}" style="display: {{ $index === 0 ? 'block' : 'none' }}; padding: 25px;">
-                                <div class="row">
-                                    <!-- Left side: Modules Chart -->
-                                    <div class="col-lg-5 mb-3">
-                                        <div style="background: var(--background-light); border-radius: 12px; padding: 20px; text-align: center;">
-                                            <h6 style="color: var(--text-dark); margin-bottom: 20px; font-weight: 600;">Répartition des modules</h6>
-                                            <div style="height: 250px; position: relative;">
-                                                <canvas id="formationChart{{ $index }}"></canvas>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Right side: Modules List -->
-                                    <div class="col-lg-7">
-                                        <h6 style="color: var(--text-dark); margin-bottom: 15px; font-weight: 600;">
-                                            <i class="fas fa-list-ul" style="margin-right: 8px; color: var(--primary-blue);"></i>
-                                            Détails des Modules
-                                        </h6>
-                                        <div class="modules-list" style="max-height: 350px; overflow-y: auto;">
-                                            @foreach($formation->modules as $moduleIndex => $module)
-                                            <div class="module-item" style="background: var(--card-background); border: 1px solid var(--border-light); border-radius: 12px; padding: 15px; margin-bottom: 12px; transition: all 0.3s ease;">
-                                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                                    <div style="flex-grow: 1;">
-                                                        <h6 style="margin: 0 0 8px 0; color: var(--text-dark); font-weight: 600; font-size: 1rem;">
-                                                            {{ $module->title }}
-                                                        </h6>
-                                                        @if($module->user)
-                                                        <p style="margin: 0 0 10px 0; color: var(--text-medium); font-size: 0.85rem;">
-                                                            <i class="fas fa-user-tie" style="margin-right: 5px; color: var(--primary-blue);"></i>
-                                                            {{ $module->user->name }}
-                                                        </p>
-                                                        @endif
-                                                        
-                                                        <!-- Progress Bar -->
-                                                        <div style="margin-bottom: 8px;">
-                                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                                                                <span style="color: var(--text-medium); font-size: 0.8rem; font-weight: 500;">Progression</span>
-                                                                <span style="color: var(--text-dark); font-size: 0.8rem; font-weight: 600;">{{ $module->progress }}%</span>
-                                                            </div>
-                                                            <div style="width: 100%; height: 8px; background: var(--border-light); border-radius: 4px; overflow: hidden;">
-                                                                <div style="height: 100%; background: {{ $module->progress >= 80 ? 'linear-gradient(90deg, #28a745, #20c997)' : ($module->progress >= 60 ? 'linear-gradient(90deg, #17a2b8, #20c997)' : ($module->progress >= 40 ? 'linear-gradient(90deg, #ffc107, #fd7e14)' : ($module->progress >= 20 ? 'linear-gradient(90deg, #fd7e14, #dc3545)' : 'linear-gradient(90deg, #dc3545, #c82333)'))) }}; width: {{ $module->progress }}%; transition: width 0.4s ease; border-radius: 4px;"></div>
-                                                            </div>
-                                                        </div>
-
-                                                        <!-- Module Details -->
-                                                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                                                            @if($module->number_seance)
-                                                            <div style="display: flex; align-items: center; color: var(--text-medium); font-size: 0.8rem;">
-                                                                <i class="fas fa-calendar-day" style="margin-right: 5px; color: var(--accent-orange);"></i>
-                                                                {{ \App\Models\Course::where('module_id', $module->id)->count() }}/{{ $module->number_seance }} séances
-                                                            </div>
-                                                            @endif
-                                                            
-                                                            @if($module->duration_hours)
-                                                            <div style="display: flex; align-items: center; color: var(--text-medium); font-size: 0.8rem;">
-                                                                <i class="fas fa-clock" style="margin-right: 5px; color: var(--accent-green);"></i>
-                                                                {{ $module->duration_hours }}h
-                                                            </div>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-
-                                                    <!-- Status Badge -->
-                                                    <div style="margin-left: 15px;">
-                                                        <span class="badge {{ $module->status === 'published' ? 'bg-success' : 'bg-secondary' }}" style="font-size: 0.7rem; padding: 4px 8px;">
-                                                            {{ ucfirst($module->status) }}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                <form action="{{ route('dashboard') }}" method="GET" class="date-filter">
+                    <label for="selected_month" class="sr-only">Filtrer par mois :</label>
+                    <select name="selected_month" id="selected_month">
+                        <option value="">Tous les mois</option>
+                        @foreach($months as $num => $name)
+                            <option value="{{ $num }}" {{ (int) $selectedMonth === $num ? 'selected' : '' }}>
+                                {{ $name }}
+                            </option>
                         @endforeach
+                    </select>
+                    <label for="selected_year" class="sr-only">Année :</label>
+                    <input type="number" name="selected_year" id="selected_year" value="{{ $selectedYear ?? \Carbon\Carbon::now()->year }}" min="2020" max="{{ \Carbon\Carbon::now()->addYears(5)->year }}">
+                    <button type="submit" class="filter-btn"><i class="fa-solid fa-filter"></i> Filtrer</button>
+                    @if($selectedMonth || request()->filled('selected_year') && request()->selected_year != \Carbon\Carbon::now()->year)
+                        <a href="{{ route('dashboard') }}" class="filter-btn" style="background: var(--text-light); color: white; box-shadow: none;">
+                            <i class="fa-solid fa-rotate-right"></i> Réinitialiser
+                        </a>
+                    @endif
+                </form>
+            </div>
+
+
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-number">{{ $activeInscriptions->count() }}</div>
+                            <div class="stat-label">Inscriptions Actives</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon"><i class="fas fa-hourglass-half"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-number">{{ $pendingInscriptions->count() }}</div>
+                            <div class="stat-label">Inscriptions en Attente</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-number">{{ number_format($totalPaid, 2) }}</div>
+                            <div class="stat-label">Montant Payé (MAD)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-number">{{ number_format($totalOutstanding, 2) }}</div>
+                            <div class="stat-label">Montant Dû (MAD)</div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        @endif
 
-        <div class="row">
-            <div class="col-lg-8 mb-4">
-                <div class="card-base">
-                    <h3 class="chart-title"><i class="fa-solid fa-calendar-day"></i> Mes Cours Aujourd'hui ({{ \Carbon\Carbon::today()->format('d/m/Y') }})</h3>
-                    @if($coursesToday->isEmpty())
-                        <div class="empty-state">
-                            <div class="icon"><i class="fa-solid fa-calendar-check"></i></div>
-                            <p>Vous n'avez aucun cours prévu pour aujourd'hui.</p>
-                            <a href="{{ route('courses.index', ['start_date' => \Carbon\Carbon::today()->toDateString()]) }}" class="btn btn-outline-primary">Voir tous mes cours</a>
+
+            <!-- 🔥 NEW: Modules Progress Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="stat-content">
+                        <div class="stat-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-book"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-number" style="background: linear-gradient(45deg, #fff, #f8f9fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: #fff;">{{ $totalModulesCount ?? 0 }}</div>
+                            <div class="stat-label" style="color: rgba(255,255,255,0.9);">Total Modules</div>
                         </div>
-                    @else
-                        <div class="table-responsive">
-                            {{-- Applying the "Minimalist Dark Header" style --}}
-                            <table class="table table-dark-header">
-                                <thead>
-                                    <tr>
-                                        <th>Cours</th>
-                                        <th>Formation</th>
-                                        <th>Heure</th>
-                                        <th>Consultant</th>
-                                        <th>Lien Zoom</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($coursesToday as $course)
-                                    <tr>
-                                        <td><strong>{{ $course->title }}</strong></td>
-                                     
-    <td class="course-formation">
-        
-            <span class="badge bg-secondary">{{ $course->formation->title }}</span>
-    
-    </td>
+                    </div>
+                </div>
 
-                                        <td>
-                                            <span class="badge bg-secondary">{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }}</span>
-                                            -
-                                            <span class="badge bg-secondary">{{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}</span>
-                                        </td>
-                                        <td>{{ $course->consultant->name ?? 'N/A' }}</td>
-                                        <td>
-                                            @if($course->zoom_link)
-                                                <a href="{{ $course->zoom_link }}" target="_blank" class="btn btn-sm btn-success">
-                                                    <i class="fas fa-video"></i> Rejoindre
+                <div class="stat-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                    <div class="stat-content">
+                        <div class="stat-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-number" style="background: linear-gradient(45deg, #fff, #f8f9fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: #fff;">{{ $completedModulesCount ?? 0 }}</div>
+                            <div class="stat-label" style="color: rgba(255,255,255,0.9);">Modules Terminés</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
+                    <div class="stat-content">
+                        <div class="stat-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-spinner"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-number" style="background: linear-gradient(45deg, #fff, #f8f9fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: #fff;">{{ $inProgressModulesCount ?? 0 }}</div>
+                            <div class="stat-label" style="color: rgba(255,255,255,0.9);">En Cours</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="stat-content">
+                        <div class="stat-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-chart-line"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-number" style="background: linear-gradient(45deg, #fff, #f8f9fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: #fff;">{{ $averageModuleProgress ?? 0 }}%</div>
+                            <div class="stat-label" style="color: rgba(255,255,255,0.9);">Progression Moyenne</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🔥 NEW: Global Modules Progress Chart -->
+            <div class="row">
+                <div class="col-12 mb-4">
+                    <div class="card-base chart-card">
+                        <h3 class="chart-title"><i class="fa-solid fa-chart-bar"></i> Vue d'ensemble - Progression de tous mes Modules</h3>
+                        @if(isset($globalModulesChart) && !empty($globalModulesChart['data']) && array_sum($globalModulesChart['data']) > 0)
+                            <div class="chart-container" style="height: 400px;">
+                                <canvas id="globalModulesChart"></canvas>
+                            </div>
+                        @else
+                            <div class="empty-state">
+                                <div class="icon"><i class="fa-solid fa-chart-bar"></i></div>
+                                <p>Aucun module disponible pour afficher la progression.</p>
+                                <a href="{{ route('formations.index') }}" class="btn btn-outline-primary">Découvrir nos formations</a>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🔥 NEW: Formations with Modules Progress -->
+            @if(isset($formationsWithModulesProgress) && $formationsWithModulesProgress->count() > 0)
+            <div class="row">
+                <div class="col-12 mb-4">
+                    <div class="card-base">
+                        <h3 class="chart-title"><i class="fa-solid fa-graduation-cap"></i> Mes Formations & Progression des Modules</h3>
+
+                        <div class="formations-accordion" style="margin-top: 20px;">
+                            @foreach($formationsWithModulesProgress as $index => $formation)
+                            <div class="formation-card" style="margin-bottom: 25px; border: 2px solid var(--border-light); border-radius: 16px; overflow: hidden; background: var(--card-background); box-shadow: var(--shadow-sm);">
+                                <!-- Formation Header -->
+                                <div class="formation-header" style="background: linear-gradient(135deg, var(--union-dark-blu), var(--union-light-ble)); padding: 20px; cursor: pointer;" 
+                                     onclick="toggleFormation({{ $index }})">
+                                    <div style="display: flex; justify-content: between; align-items: center; color: white;">
+                                        <div style="flex-grow: 1;">
+                                            <h4 style="margin: 0; font-weight: 700; font-size: 1.3rem;">
+                                                <i class="fas fa-book-open" style="margin-right: 10px;"></i>
+                                                {{ $formation->title }}
+                                            </h4>
+                                            <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 0.95rem;">
+                                                {{ $formation->modules->count() }} modules - Progression globale: {{ $formation->overall_progress }}%
+                                            </p>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 15px;">
+                                            <!-- Overall Progress Circle -->
+                                            <div style="position: relative; width: 60px; height: 60px;">
+                                                <div style="width: 60px; height: 60px; border-radius: 50%; background: conic-gradient(#fff 0deg, #fff {{ $formation->overall_progress * 3.6 }}deg, rgba(255,255,255,0.3) {{ $formation->overall_progress * 3.6 }}deg, rgba(255,255,255,0.3) 360deg); display: flex; align-items: center; justify-content: center;">
+                                                    <div style="width: 45px; height: 45px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;">
+                                                        <span style="font-weight: 700; font-size: 0.8rem; color: white;">{{ $formation->overall_progress }}%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Toggle Arrow -->
+                                            <i class="fas fa-chevron-down" id="arrow{{ $index }}" style="font-size: 1.2rem; transition: transform 0.3s ease; color: rgba(255,255,255,0.8);"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Formation Content (Collapsible) -->
+                                <div id="formationContent{{ $index }}" style="display: {{ $index === 0 ? 'block' : 'none' }}; padding: 25px;">
+                                    <div class="row">
+                                        <!-- Left side: Modules Chart -->
+                                        <div class="col-lg-5 mb-3">
+                                            <div style="background: var(--background-light); border-radius: 12px; padding: 20px; text-align: center;">
+                                                <h6 style="color: var(--text-dark); margin-bottom: 20px; font-weight: 600;">Répartition des modules</h6>
+                                                <div style="height: 250px; position: relative;">
+                                                    <canvas id="formationChart{{ $index }}"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Right side: Modules List -->
+                                        <div class="col-lg-7">
+                                            <h6 style="color: var(--text-dark); margin-bottom: 15px; font-weight: 600;">
+                                                <i class="fas fa-list-ul" style="margin-right: 8px; color: var(--primary-blue);"></i>
+                                                Détails des Modules
+                                            </h6>
+                                            <div class="modules-list" style="max-height: 350px; overflow-y: auto;">
+                                                @foreach($formation->modules as $moduleIndex => $module)
+                                                <div class="module-item" style="background: var(--card-background); border: 1px solid var(--border-light); border-radius: 12px; padding: 15px; margin-bottom: 12px; transition: all 0.3s ease;">
+                                                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                                        <div style="flex-grow: 1;">
+                                                            <h6 style="margin: 0 0 8px 0; color: var(--text-dark); font-weight: 600; font-size: 1rem;">
+                                                                {{ $module->title }}
+                                                            </h6>
+                                                            @if($module->user)
+                                                            <p style="margin: 0 0 10px 0; color: var(--text-medium); font-size: 0.85rem;">
+                                                                <i class="fas fa-user-tie" style="margin-right: 5px; color: var(--primary-blue);"></i>
+                                                                {{ $module->user->name }}
+                                                            </p>
+                                                            @endif
+
+                                                            <!-- Progress Bar -->
+                                                            <div style="margin-bottom: 8px;">
+                                                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                                                    <span style="color: var(--text-medium); font-size: 0.8rem; font-weight: 500;">Progression</span>
+                                                                    <span style="color: var(--text-dark); font-size: 0.8rem; font-weight: 600;">{{ $module->progress }}%</span>
+                                                                </div>
+                                                                <div style="width: 100%; height: 8px; background: var(--border-light); border-radius: 4px; overflow: hidden;">
+                                                                    <div style="height: 100%; background: {{ $module->progress >= 80 ? 'linear-gradient(90deg, #28a745, #20c997)' : ($module->progress >= 60 ? 'linear-gradient(90deg, #17a2b8, #20c997)' : ($module->progress >= 40 ? 'linear-gradient(90deg, #ffc107, #fd7e14)' : ($module->progress >= 20 ? 'linear-gradient(90deg, #fd7e14, #dc3545)' : 'linear-gradient(90deg, #dc3545, #c82333)'))) }}; width: {{ $module->progress }}%; transition: width 0.4s ease; border-radius: 4px;"></div>
+                                                                </div>
+                                                            </div>
+
+                                                            <!-- Module Details -->
+                                                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                                                @if($module->number_seance)
+                                                                <div style="display: flex; align-items: center; color: var(--text-medium); font-size: 0.8rem;">
+                                                                    <i class="fas fa-calendar-day" style="margin-right: 5px; color: var(--accent-orange);"></i>
+                                                                    {{ \App\Models\Course::where('module_id', $module->id)->count() }}/{{ $module->number_seance }} séances
+                                                                </div>
+                                                                @endif
+
+                                                                @if($module->duration_hours)
+                                                                <div style="display: flex; align-items: center; color: var(--text-medium); font-size: 0.8rem;">
+                                                                    <i class="fas fa-clock" style="margin-right: 5px; color: var(--accent-green);"></i>
+                                                                    {{ $module->duration_hours }}h
+                                                                </div>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Status Badge -->
+                                                        <div style="margin-left: 15px;">
+                                                            <span class="badge {{ $module->status === 'published' ? 'bg-success' : 'bg-secondary' }}" style="font-size: 0.7rem; padding: 4px 8px;">
+                                                                {{ ucfirst($module->status) }}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <div class="row">
+                <div class="col-lg-8 mb-4">
+                    <div class="card-base">
+                        <h3 class="chart-title"><i class="fa-solid fa-calendar-day"></i> Mes Cours Aujourd'hui ({{ \Carbon\Carbon::today()->format('d/m/Y') }})</h3>
+                        @if($coursesToday->isEmpty())
+                            <div class="empty-state">
+                                <div class="icon"><i class="fa-solid fa-calendar-check"></i></div>
+                                <p>Vous n'avez aucun cours prévu pour aujourd'hui.</p>
+                                <a href="{{ route('courses.index', ['start_date' => \Carbon\Carbon::today()->toDateString()]) }}" class="btn btn-outline-primary">Voir tous mes cours</a>
+                            </div>
+                        @else
+                            <div class="table-responsive">
+                                {{-- Applying the "Minimalist Dark Header" style --}}
+                                <table class="table table-dark-header">
+                                    <thead>
+                                        <tr>
+                                            <th>Cours</th>
+                                            <th>Formation</th>
+                                            <th>Heure</th>
+                                            <th>Consultant</th>
+                                            <th>Lien Zoom</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($coursesToday as $course)
+                                                                            <tr>
+                                                                                <td><strong>{{ $course->title }}</strong></td>
+
+                                            <td class="course-formation">
+
+                                                    <span class="badge bg-secondary">{{ $course->formation->title }}</span>
+
+                                            </td>
+
+                                                                                <td>
+                                                                                    <span class="badge bg-secondary">{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }}</span>
+                                                                                    -
+                                                                                    <span class="badge bg-secondary">{{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}</span>
+                                                                                </td>
+                                                                                <td>{{ $course->consultant->name ?? 'N/A' }}</td>
+                                                                                <td>
+                                                                                    @if($course->zoom_link)
+                                                                                        {{-- 🔥 Zid had l'Form bash l'click ydoz 3la courses.join --}}
+                                                                                        <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline">
+                                                                                            @csrf
+                                                                                            <button type="submit" class="btn btn-sm btn-success">
+                                                                                                <i class="fas fa-video"></i> Rejoindre
+                                                                                            </button>
+                                                                                        </form>
+                                                                                    @else
+                                                                                        <span class="badge bg-secondary"><i class="fas fa-link-slash"></i> Indisponible</span>
+                                                                                    @endif
+                                                                                </td>
+                                                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="{{ route('courses.index') }}" class="btn btn-outline-primary">Voir tous mes cours</a>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="col-lg-4 mb-4">
+                    <div class="card-base chart-card">
+                        <h3 class="chart-title"><i class="fa-solid fa-chart-pie"></i> Statut des Paiements</h3>
+                        @if(array_sum($paymentChartData) > 0)
+                            <div class="chart-container">
+                                <canvas id="paymentStatusChart"></canvas>
+                            </div>
+                        @else
+                            <div class="empty-state">
+                                <div class="icon"><i class="fa-solid fa-coins"></i></div>
+                                <p>Aucune donnée de paiement disponible pour le graphique.</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8 mb-4">
+                    <div class="card-base">
+                        <h3 class="chart-title"><i class="fa-solid fa-calendar-refresh"></i> Dernières Reprogrammations de mes Cours</h3>
+                        @if($recentCourseReschedules->isEmpty())
+                            <div class="empty-state">
+                                <div class="icon"><i class="fa-solid fa-check-circle"></i></div>
+                                <p>Aucune reprogrammation de cours récente vous concernant.</p>
+                                <a href="{{ route('course_reschedules.index') }}" class="btn btn-outline-primary">Voir toutes les reprogrammations</a>
+                            </div>
+                        @else
+                            <div class="table-responsive">
+                                {{-- Applying the "Clean Lines with Subtle Depth" style --}}
+                                <table class="table table-subtle-depth">
+                                    <thead>
+                                        <tr>
+                                            <th>Cours</th>
+                                            <th>Date Originale</th>
+                                            <th>Nouvelle Date</th>
+                                            <th>Raison</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($recentCourseReschedules as $reschedule)
+                                        <tr>
+                                            <td><strong>{{ $reschedule->course->title ?? 'N/A' }}</strong></td>
+                                            <td><span class="badge bg-danger">{{ \Carbon\Carbon::parse($reschedule->original_date)->format('d/m/Y') }}</span></td>
+                                            <td><span class="badge bg-success">{{ \Carbon\Carbon::parse($reschedule->new_date)->format('d/m/Y') }}</span></td>
+                                            <td>{{ Str::limit($reschedule->reason, 40) }}</td>
+                                            <td>
+                                                <a href="{{ route('course_reschedules.show', $reschedule->id) }}" class="btn btn-info btn-sm" title="Voir les détails">
+                                                    <i class="fas fa-eye"></i>
                                                 </a>
-                                            @else
-                                                <span class="badge bg-secondary"><i class="fas fa-link-slash"></i> Indisponible</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="text-center mt-3">
-                            <a href="{{ route('courses.index') }}" class="btn btn-outline-primary">Voir tous mes cours</a>
-                        </div>
-                    @endif
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="{{ route('course_reschedules.index') }}" class="btn btn-outline-primary">Voir toutes les reprogrammations</a>
+                            </div>
+                        @endif
+                    </div>
                 </div>
-            </div>
 
-            <div class="col-lg-4 mb-4">
-                <div class="card-base chart-card">
-                    <h3 class="chart-title"><i class="fa-solid fa-chart-pie"></i> Statut des Paiements</h3>
-                    @if(array_sum($paymentChartData) > 0)
-                        <div class="chart-container">
-                            <canvas id="paymentStatusChart"></canvas>
-                        </div>
-                    @else
-                        <div class="empty-state">
-                            <div class="icon"><i class="fa-solid fa-coins"></i></div>
-                            <p>Aucune donnée de paiement disponible pour le graphique.</p>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-lg-8 mb-4">
-                <div class="card-base">
-                    <h3 class="chart-title"><i class="fa-solid fa-calendar-refresh"></i> Dernières Reprogrammations de mes Cours</h3>
-                    @if($recentCourseReschedules->isEmpty())
-                        <div class="empty-state">
-                            <div class="icon"><i class="fa-solid fa-check-circle"></i></div>
-                            <p>Aucune reprogrammation de cours récente vous concernant.</p>
-                            <a href="{{ route('course_reschedules.index') }}" class="btn btn-outline-primary">Voir toutes les reprogrammations</a>
-                        </div>
-                    @else
-                        <div class="table-responsive">
-                            {{-- Applying the "Clean Lines with Subtle Depth" style --}}
-                            <table class="table table-subtle-depth">
-                                <thead>
-                                    <tr>
-                                        <th>Cours</th>
-                                        <th>Date Originale</th>
-                                        <th>Nouvelle Date</th>
-                                        <th>Raison</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($recentCourseReschedules as $reschedule)
-                                    <tr>
-                                        <td><strong>{{ $reschedule->course->title ?? 'N/A' }}</strong></td>
-                                        <td><span class="badge bg-danger">{{ \Carbon\Carbon::parse($reschedule->original_date)->format('d/m/Y') }}</span></td>
-                                        <td><span class="badge bg-success">{{ \Carbon\Carbon::parse($reschedule->new_date)->format('d/m/Y') }}</span></td>
-                                        <td>{{ Str::limit($reschedule->reason, 40) }}</td>
-                                        <td>
-                                            <a href="{{ route('course_reschedules.show', $reschedule->id) }}" class="btn btn-info btn-sm" title="Voir les détails">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="text-center mt-3">
-                            <a href="{{ route('course_reschedules.index') }}" class="btn btn-outline-primary">Voir toutes les reprogrammations</a>
-                        </div>
-                    @endif
-                </div>
-            </div>
-
-            <div class="col-lg-4 mb-4">
-                <div class="card-base chart-card">
-                    <h3 class="chart-title"><i class="fa-solid fa-chart-line"></i> Statut des Inscriptions</h3>
-                    @if(array_sum($inscriptionChartData) > 0)
-                        <div class="chart-container">
-                            <canvas id="inscriptionStatusChart"></canvas>
-                        </div>
-                    @else
-                        <div class="empty-state">
-                            <div class="icon"><i class="fa-solid fa-address-card"></i></div>
-                            <p>Aucune donnée d'inscription disponible pour le graphique.</p>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-lg-6 mb-4">
-                <div class="card-base">
-                    <h3 class="chart-title"><i class="fa-solid fa-file-invoice"></i> Mes Inscriptions</h3>
-                    @if($inscriptions->isEmpty())
-                        <div class="empty-state">
-                            <div class="icon"><i class="fa-solid fa-file-circle-plus"></i></div>
-                            <p>Vous n'avez aucune inscription pour le moment.</p>
-                            <a href="{{ route('formations.index') }}" class="btn btn-primary">Découvrir nos formations</a>
-                        </div>
-                    @else
-                        <div class="table-responsive">
-                            {{-- Applying the "Table Glass" style for Mes Inscriptions --}}
-                            <table class="table table-glass">
-                                <thead>
-                                    <tr>
-                                        <th>Formation</th>
-                                        <th>Statut</th>
-                                        <th>Payé</th>
-                                        <th>Dû</th>                                        
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($inscriptions as $inscription)
-                                    <tr>
-                                        <td><strong>{{ $inscription->formation->title ?? 'N/A' }}</strong></td>
-                                        <td>
-                                            <span class="badge {{
-                                                $inscription->status == 'active' ? 'bg-success' :
-                                                ($inscription->status == 'pending' ? 'bg-warning' :
-                                                ($inscription->status == 'completed' ? 'bg-info' : 'bg-secondary'))
-                                            }}">
-                                                {{ ucfirst($inscription->status) }}
-                                            </span>
-                                        </td>
-                                        <td>{{ number_format($inscription->paid_amount, 2) }} MAD</td>
-                                        <td>{{ number_format($inscription->total_amount - $inscription->paid_amount, 2) }} MAD</td>
-                                        
-                                        <td>
-                                            <a href="{{ route('inscriptions.show', $inscription->id) }}" class="btn btn-info btn-sm" title="Voir les détails">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="text-center mt-3">
-                            <a href="{{ route('inscriptions.index') }}" class="btn btn-outline-primary">Voir toutes mes inscriptions</a>
-                        </div>
-                    @endif
-                </div>
-            </div>
-
-            <div class="col-lg-6 mb-4">
-                <div class="card-base">
-                    <h3 class="chart-title"><i class="fa-solid fa-money-check-dollar"></i> Mes Paiements</h3>
-                    <h5 class="mb-3" style="color: var(--text-medium); font-weight: 600;">Prochains paiements</h5>
-                    @if($upcomingPayments->isEmpty())
-                        <div class="empty-state empty-state-small">
-                            <div class="icon"><i class="fa-solid fa-calendar-check"></i></div>
-                            <p>Aucun paiement à venir.</p>
-                        </div>
-                    @else
-                        <div class="table-responsive mb-4">
-                            {{-- Applying the "Table Glass" style for Upcoming Payments --}}
-                            <table class="table table-glass">
-                                <thead>
-                                    <tr>
-                                        <th>Formation</th>
-                                        <th>Montant</th>
-                                        <th>Échéance</th>
-                                        <th>Statut</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($upcomingPayments as $payment)
-                                    <tr>
-                                        <td><strong>{{ $payment->inscription->formation->title ?? 'N/A' }}</strong></td>
-                                        <td>{{ number_format($payment->amount, 2) }} MAD</td>
-                                        <td><span class="badge bg-warning">{{ \Carbon\Carbon::parse($payment->due_date)->format('d/m/Y') }}</span></td>
-                                        <td><span class="badge bg-warning">{{ ucfirst($payment->status) }}</span></td>
-                                        <td>
-                                            <a href="{{ route('payments.show', $payment->id) }}" class="btn btn-info btn-sm" title="Voir le paiement">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
-
-                    <h5 class="mt-4 mb-3" style="color: var(--text-medium); font-weight: 600;">Paiements Récents</h5>
-                    @if($recentPayments->isEmpty())
-                        <div class="empty-state empty-state-small">
-                            <div class="icon"><i class="fa-solid fa-receipt"></i></div>
-                            <p>Aucun paiement récent.</p>
-                        </div>
-                    @else
-                        <div class="table-responsive">
-                            {{-- Applying the "Table Glass" style for Recent Payments --}}
-                            <table class="table table-glass">
-                                <thead>
-                                    <tr>
-                                        <th>Formation</th>
-                                        <th>Montant</th>
-                                        <th>Statut</th>
-                                        <th>Date</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($recentPayments as $payment)
-                                    <tr>
-                                        <td><strong>{{ $payment->inscription->formation->title ?? 'N/A' }}</strong></td>
-                                        <td>{{ number_format($payment->amount, 2) }} MAD</td>
-                                        <td>
-                                            <span class="badge {{
-                                                $payment->status == 'paid' ? 'bg-success' :
-                                                ($payment->status == 'pending' ? 'bg-warning' : 'bg-danger')
-                                            }}">
-                                                {{ ucfirst($payment->status) }}
-                                            </span>
-                                        </td>
-                                        <td>{{ \Carbon\Carbon::parse($payment->paid_date ?? $payment->created_at)->format('d/m/Y') }}</td>
-                                        <td>
-                                            <a href="{{ route('payments.show', $payment->id) }}" class="btn btn-info btn-sm" title="Voir les détails">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
-                    <div class="text-center mt-3">
-                        <a href="{{ route('payments.index') }}" class="btn btn-outline-primary">Voir tous mes paiements</a>
+                <div class="col-lg-4 mb-4">
+                    <div class="card-base chart-card">
+                        <h3 class="chart-title"><i class="fa-solid fa-chart-line"></i> Statut des Inscriptions</h3>
+                        @if(array_sum($inscriptionChartData) > 0)
+                            <div class="chart-container">
+                                <canvas id="inscriptionStatusChart"></canvas>
+                            </div>
+                        @else
+                            <div class="empty-state">
+                                <div class="icon"><i class="fa-solid fa-address-card"></i></div>
+                                <p>Aucune donnée d'inscription disponible pour le graphique.</p>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
-        </div>
 
-        
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card-base">
+                        <h3 class="chart-title"><i class="fa-solid fa-file-invoice"></i> Mes Inscriptions</h3>
+                        @if($inscriptions->isEmpty())
+                            <div class="empty-state">
+                                <div class="icon"><i class="fa-solid fa-file-circle-plus"></i></div>
+                                <p>Vous n'avez aucune inscription pour le moment.</p>
+                                <a href="{{ route('formations.index') }}" class="btn btn-primary">Découvrir nos formations</a>
+                            </div>
+                        @else
+                            <div class="table-responsive">
+                                {{-- Applying the "Table Glass" style for Mes Inscriptions --}}
+                                <table class="table table-glass">
+                                    <thead>
+                                        <tr>
+                                            <th>Formation</th>
+                                            <th>Statut</th>
+                                            <th>Payé</th>
+                                            <th>Dû</th>                                        
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($inscriptions as $inscription)
+                                        <tr>
+                                            <td><strong>{{ $inscription->formation->title ?? 'N/A' }}</strong></td>
+                                            <td>
+                                                <span class="badge {{
+                $inscription->status == 'active' ? 'bg-success' :
+                ($inscription->status == 'pending' ? 'bg-warning' :
+                    ($inscription->status == 'completed' ? 'bg-info' : 'bg-secondary'))
+                                                }}">
+                                                    {{ ucfirst($inscription->status) }}
+                                                </span>
+                                            </td>
+                                            <td>{{ number_format($inscription->paid_amount, 2) }} MAD</td>
+                                            <td>{{ number_format($inscription->total_amount - $inscription->paid_amount, 2) }} MAD</td>
 
-           
+                                            <td>
+                                                <a href="{{ route('inscriptions.show', $inscription->id) }}" class="btn btn-info btn-sm" title="Voir les détails">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="{{ route('inscriptions.index') }}" class="btn btn-outline-primary">Voir toutes mes inscriptions</a>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="col-lg-6 mb-4">
+                    <div class="card-base">
+                        <h3 class="chart-title"><i class="fa-solid fa-money-check-dollar"></i> Mes Paiements</h3>
+                        <h5 class="mb-3" style="color: var(--text-medium); font-weight: 600;">Prochains paiements</h5>
+                        @if($upcomingPayments->isEmpty())
+                            <div class="empty-state empty-state-small">
+                                <div class="icon"><i class="fa-solid fa-calendar-check"></i></div>
+                                <p>Aucun paiement à venir.</p>
+                            </div>
+                        @else
+                            <div class="table-responsive mb-4">
+                                {{-- Applying the "Table Glass" style for Upcoming Payments --}}
+                                <table class="table table-glass">
+                                    <thead>
+                                        <tr>
+                                            <th>Formation</th>
+                                            <th>Montant</th>
+                                            <th>Échéance</th>
+                                            <th>Statut</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($upcomingPayments as $payment)
+                                        <tr>
+                                            <td><strong>{{ $payment->inscription->formation->title ?? 'N/A' }}</strong></td>
+                                            <td>{{ number_format($payment->amount, 2) }} MAD</td>
+                                            <td><span class="badge bg-warning">{{ \Carbon\Carbon::parse($payment->due_date)->format('d/m/Y') }}</span></td>
+                                            <td><span class="badge bg-warning">{{ ucfirst($payment->status) }}</span></td>
+                                            <td>
+                                                <a href="{{ route('payments.show', $payment->id) }}" class="btn btn-info btn-sm" title="Voir le paiement">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+
+                        <h5 class="mt-4 mb-3" style="color: var(--text-medium); font-weight: 600;">Paiements Récents</h5>
+                        @if($recentPayments->isEmpty())
+                            <div class="empty-state empty-state-small">
+                                <div class="icon"><i class="fa-solid fa-receipt"></i></div>
+                                <p>Aucun paiement récent.</p>
+                            </div>
+                        @else
+                            <div class="table-responsive">
+                                {{-- Applying the "Table Glass" style for Recent Payments --}}
+                                <table class="table table-glass">
+                                    <thead>
+                                        <tr>
+                                            <th>Formation</th>
+                                            <th>Montant</th>
+                                            <th>Statut</th>
+                                            <th>Date</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($recentPayments as $payment)
+                                        <tr>
+                                            <td><strong>{{ $payment->inscription->formation->title ?? 'N/A' }}</strong></td>
+                                            <td>{{ number_format($payment->amount, 2) }} MAD</td>
+                                            <td>
+                                                <span class="badge {{
+                $payment->status == 'paid' ? 'bg-success' :
+                ($payment->status == 'pending' ? 'bg-warning' : 'bg-danger')
+                                                }}">
+                                                    {{ ucfirst($payment->status) }}
+                                                </span>
+                                            </td>
+                                            <td>{{ \Carbon\Carbon::parse($payment->paid_date ?? $payment->created_at)->format('d/m/Y') }}</td>
+                                            <td>
+                                                <a href="{{ route('payments.show', $payment->id) }}" class="btn btn-info btn-sm" title="Voir les détails">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                        <div class="text-center mt-3">
+                            <a href="{{ route('payments.index') }}" class="btn btn-outline-primary">Voir tous mes paiements</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+            </div>
         </div>
     </div>
-</div>
 @endsection
 
 @push('scripts')
