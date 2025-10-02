@@ -799,7 +799,7 @@
 
                                 <a href="{{ route('courses.show', $course) }}" class="btn-action btn-view">
                                     <i class="fas fa-eye"></i>
-                                    <span>Voir</span>
+                                   
                                 </a>
 
                                 @can('course-create')
@@ -825,7 +825,7 @@
                                         data-zoom-link="{{ $course->zoom_link }}"
                                         data-recording-url="{{ $course->recording_url }}"
                                         data-documents="{{ json_encode($course->documents) }}">
-                                        <i class="fas fa-edit"></i> Modifier
+                                        <i class="fas fa-edit"></i> 
                                     </button>
                                 @endcan
 
