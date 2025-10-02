@@ -516,6 +516,7 @@
           
         </div>
     </div>
+     @can('course-create')
     <div class="participation-section">
     <h2 class="section-title"><i class="fas fa-chart-bar"></i> Statistiques de participation</h2>
 
@@ -556,6 +557,7 @@
     </div>
 </div>
 {{-- END NEW SECTION --}}
+@endcan
 </div>
 
 
