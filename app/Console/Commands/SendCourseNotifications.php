@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Mail;
 class SendCourseNotifications extends Command
 {
     protected $signature = 'app:send-course-notifications';
-    protected $description = 'Sends email notifications for courses scheduled for today.';
+    protected $description = 'Sends email notifications for courses scheduled to start in 5 minutes.';
 
     public function handle()
     {
@@ -18,60 +18,74 @@ class SendCourseNotifications extends Command
         $today = $now->toDateString();
 
         // ----------------------------------------------------
-        // 1. تحديد الكورسات التي ستبدأ خلال الـ 30 دقيقة القادمة
+        // 1. تحديد الكورسات التي ستبدأ خلال الـ 5 دقائق القادمة (5-0 دقائق)
         // ----------------------------------------------------
 
-        // نحسب الوقت بعد 30 دقيقة من الآن
-        $thirtyMinutesFromNow = $now->copy()->addMinutes(30);
+        // نحسب الوقت بعد 5 دقائق من الآن
+        $fiveMinutesFromNow = $now->copy()->addMinutes(5);
 
+        // **ملحوظة:** يجب التأكد من أن حقل course_date في الموديل Course نوعه Date وأن start_time نوعه Time.
+        
         $courses = Course::whereDate('course_date', $today)
-                         // نختار الكورسات التي ستبدأ خلال 30 دقيقة القادمة
-                         ->whereRaw("TIME_TO_SEC(start_time) BETWEEN TIME_TO_SEC(?) AND TIME_TO_SEC(?)", [
-                             $now->toTimeString(),
-                             $thirtyMinutesFromNow->toTimeString()
-                         ])
-                         // شرط إضافي لتحسين الأداء: نختار فقط الكورسات التي لم ترسل لها الإشعارات بالكامل بعد
-                         ->where('notification_count', '<', 2)
-                         ->get();
+            // نختار الكورسات التي ستبدأ خلال 5 دقائق القادمة (بين الآن و 5 دقائق من الآن)
+            // هذا الشرط يساعد على جلب الكورسات في النطاق الصحيح
+            ->whereRaw("TIME_TO_SEC(start_time) BETWEEN TIME_TO_SEC(?) AND TIME_TO_SEC(?)", [
+                $now->toTimeString(),
+                $fiveMinutesFromNow->toTimeString()
+            ])
+            // شرط إضافي: نختار فقط الكورسات التي لم ترسل لها إشعارات بعد (نريد إرسال واحد فقط)
+            ->where('notification_count', 0)
+            ->get();
 
         if ($courses->isEmpty()) {
-            $this->info("Aucun cours à notifier dans les 30 prochaines minutes.");
+            $this->info("Aucun cours à notifier dans les 5 prochaines minutes ou déjà notifié.");
             return;
         }
 
         foreach ($courses as $course) {
-            // ✅ تم تصحيح المشكل هنا: نستخدم format('Y-m-d') و format('H:i:s') لتكوين سترينغ تاريخ صحيح.
-            $startTime = Carbon::parse($course->course_date->format('Y-m-d') . ' ' . $course->start_time->format('H:i:s'));
-            
-            $minutesToStart = $now->diffInMinutes($startTime, false); // فرق الوقت بالدقائق (سالب إذا فات)
-
-            // نحدد هل نحن في الفترة (15-30) أو (0-15)
-            $isSecondReminderPeriod = $minutesToStart > 0 && $minutesToStart <= 15;
-            $isFirstReminderPeriod  = $minutesToStart > 15 && $minutesToStart <= 30;
-            
-            // ----------------------------------------------------------------------------------
-            // المنطق النهائي للإرسال مرتين فقط بناءً على notification_count
-            // ----------------------------------------------------------------------------------
-            
-            $canSend = false;
-            
-            if ($course->notification_count < 2) { // أقصى عدد إشعارات هو 2
-                if ($course->notification_count == 0 && $isFirstReminderPeriod) {
-                    // الإرسال الأول: في فترة 15-30 دقيقة
-                    $canSend = true;
-                } elseif ($course->notification_count == 1 && $isSecondReminderPeriod) {
-                    // الإرسال الثاني: في فترة 0-15 دقيقة
-                    $canSend = true;
-                }
+            // ✅ دمج التاريخ والوقت لتكوين كائن Carbon لـ وقت البدء
+            // يجب التأكد من أن start_time و course_date هي حقول من الموديل Course
+            // إذا كانت course_date هي كائن Carbon، نستخدم format. إذا كانت string، نستخدمها مباشرة.
+            // هنا نفترض أنها كائنات Carbon (كما كان في الكود الأصلي)
+            // **تنقيح:** إذا كانت الأعمدة من نوع Carbon، فستحتاج إلى التأكد من أن الـ accessor تعمل بشكل صحيح.
+            // الطريقة الأكثر أمانًا هي ربما افتراض أن course_date هو string/date و start_time هو string/time من قاعدة البيانات.
+             try {
+                // محاولة استخدام القيمة كما هي، مع الافتراض أنها قد تكون كائن تاريخ أو يجب تحويلها لـ string
+                $courseDate = is_object($course->course_date) ? $course->course_date->toDateString() : $course->course_date;
+                $startTime = Carbon::parse($courseDate . ' ' . $course->start_time);
+            } catch (\Exception $e) {
+                // في حالة وجود مشكلة في التحويل، قم بتسجيل الخطأ أو تخطي الدورة التدريبية
+                $this->error("Erreur de parsing de l'heure pour le cours ID {$course->id}: {$e->getMessage()}");
+                continue;
             }
+
+            // فرق الوقت بالدقائق (سالب إذا فات)
+            $minutesToStart = $now->diffInMinutes($startTime, false); 
+
+            // ----------------------------------------------------------------------------------
+            // المنطق النهائي للإرسال مرة واحدة عندما يتبقى 5 دقائق
+            // ----------------------------------------------------------------------------------
+            
+            // نريد أن نرسل فقط إذا كان الوقت المتبقي هو 5 دقائق أو أقل (وليس سالبًا)
+            // ونريد أن نتأكد من أننا نرسل مرة واحدة فقط (notification_count == 0)
+            // يمكننا أن نختار نطاقًا ضيقًا جدًا، مثلاً (0 < minutesToStart <= 5)
+            // وبما أننا قمنا بالتصفية في قاعدة البيانات على النطاق [الآن, الآن + 5 دقائق]، فيكفي التحقق من notification_count
+            
+            // نتحقق من أن الوقت المتبقي هو 5 دقائق أو أقل، لكن أكثر من 0 (لم يبدأ بعد)
+            // ونتحقق أننا لم نرسل من قبل (notification_count == 0)
+            $canSend = $course->notification_count == 0 && $minutesToStart > 0 && $minutesToStart <= 5;
+            
 
             if ($canSend) {
                 $this->sendNotification($course);
                 $course->update([
-                    'notification_count' => $course->notification_count + 1,
+                    // زيادة العداد لتجنب الإرسال مرة أخرى
+                    'notification_count' => 1, 
                     'last_notification_time' => $now,
                 ]);
                 $this->info("Emails de notification envoyés pour le cours: {$course->title}. Reste {$minutesToStart} minutes.");
+            } else {
+                 $this->comment("Cours {$course->title} non éligible pour la notification (déjà envoyé ou en dehors du créneau de 5 min). Reste {$minutesToStart} minutes.");
             }
         }
         $this->info("Tâche de notification terminée.");

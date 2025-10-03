@@ -107,6 +107,7 @@ class CourseController extends Controller
     }
 
     $consultants = User::role('Consultant')->get();
+    
 
     return view('courses.index', compact(
         'courses', 

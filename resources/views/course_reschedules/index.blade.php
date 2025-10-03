@@ -500,10 +500,11 @@ a.btn.btn-outline-secondary.btn-modern {
                         </h2>
                         <p class="text-muted mb-0 fs-6">Gérez et suivez toutes les demandes de reprogrammation des cours avec style</p>
                     </div>
-                  
+               @if(isset($reschedule) && (Auth::user()->can('course-manage-all') || $reschedule->consultant_id == Auth::id()))
                     <a href="{{ route('course_reschedules.create') }}" class="btn btn-create btn-modern">
                         <i class="fas fa-plus me-2"></i>Nouvelle Reprogrammation
                     </a>
+                     @endif
                     
                 </div>
             </div>
