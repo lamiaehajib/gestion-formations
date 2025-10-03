@@ -718,6 +718,9 @@
     border-color: #e53e3e;
 }
 .btn-delete:hover { background-color: #c53030; }
+.course-count{
+    background-color: #c53030 !important;
+}
 </style>
 @endpush
 
@@ -872,6 +875,7 @@
         $groupedCourses = $courses->groupBy(function ($course) {
             return optional($course->module)->title ?? 'Module Non Classé';
         });
+        
     @endphp
 
     <div class="row">
@@ -942,6 +946,28 @@
 
                                 {{-- Action Buttons --}}
                                 <div class="d-flex align-items-center gap-2 course-actions-buttons">
+                                 @php
+                $courseDate = \Carbon\Carbon::parse($course->course_date)->startOfDay();
+                $today = \Carbon\Carbon::today();
+                $isCourseUpcomingOrToday = $courseDate->gte($today); // True ila kan mazal aw lyoma
+            @endphp
+
+ @if($course->zoom_link && $isCourseUpcomingOrToday)
+                                    <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline flex-grow-1">
+                                        @csrf
+                                        <button type="submit" class="btn-join-card">
+                                            <i class="fas fa-door-open"></i> Rejoindre
+                                        </button>
+                                    </form>
+                                @elseif($course->zoom_link && !$isCourseUpcomingOrToday)
+                                    <span class="badge bg-secondary p-2 flex-grow-1 text-center">
+                                        Terminé
+                                    </span>
+                                @else
+                                    <span class="badge bg-warning p-2 flex-grow-1 text-center">
+                                        Non lié
+                                    </span>
+                                @endif
 
                                     {{-- 1. View/Join Button --}}
                                     <a href="{{ route('courses.show', $course) }}" class="btn-action-mini btn-view" title="Voir les détails">
