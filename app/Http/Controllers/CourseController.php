@@ -328,8 +328,11 @@ class CourseController extends Controller
             return;
         }
 
-        // Kan7sab 3adad les courses li daru f had l'module
-        $coursesCount = Course::where('module_id', $moduleId)->count();
+        // Kan7sab 3adad les courses li daru f had l'module W LI FATAT LA DATE DEBUT DYALHOM
+        $coursesCount = Course::where('module_id', $moduleId)
+            // 👈 الشرط الجديد: لازم يكون تاريخ الكورس أصغر من تاريخ اليوم باش يتحسب
+            ->where('course_date', '<', now()->toDateString()) 
+            ->count();
 
         // Kan7sab l'progress: (3adad les courses / number_seance) * 100
         $progress = min(100, round(($coursesCount / $module->number_seance) * 100, 2));

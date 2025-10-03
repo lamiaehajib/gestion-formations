@@ -229,15 +229,18 @@ public function update(Request $request, Module $module)
     /**
      * 🔥 Had hiya l'method l'jdida: T-calculate automatically l'progress based 3la courses created
      */
-    public function updateModuleProgressAutomatically(Module $module)
+   public function updateModuleProgressAutomatically(Module $module)
     {
         // Ila ma kan 3andou number_seance, ma n9adrouch n-calculate progress
         if (!$module->number_seance || $module->number_seance <= 0) {
             return;
         }
 
-        // Kan7sab 3adad les courses li daru f had l'module
-        $coursesCount = Course::where('module_id', $module->id)->count();
+        // Kan7sab 3adad les courses li daru f had l'module W LI FATAT LA DATE DEBUT DYALHOM
+        $coursesCount = Course::where('module_id', $module->id)
+            // 👈 الشرط الجديد: لازم يكون تاريخ الكورس أصغر من تاريخ اليوم
+            ->where('course_date', '<', now()->toDateString()) 
+            ->count();
 
         // Kan7sab l'progress: (3adad les courses / number_seance) * 100
         $progress = min(100, round(($coursesCount / $module->number_seance) * 100, 2));
