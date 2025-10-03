@@ -488,299 +488,300 @@ a.btn.btn-outline-secondary.btn-modern {
 @endpush
 
 @section('content')
-<div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="page-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h2 class="fw-bold mb-1">
-                            <i class="fas fa-calendar-alt me-3"></i>
-                            Gestion des Reprogrammations des Cours
-                        </h2>
-                        <p class="text-muted mb-0 fs-6">Gérez et suivez toutes les demandes de reprogrammation des cours avec style</p>
-                    </div>
-               @if(isset($reschedule) && (Auth::user()->can('course-manage-all') || $reschedule->consultant_id == Auth::id()))
-                    <a href="{{ route('course_reschedules.create') }}" class="btn btn-create btn-modern">
-                        <i class="fas fa-plus me-2"></i>Nouvelle Reprogrammation
-                    </a>
-                     @endif
-                    
-                </div>
-            </div>
-        </div>
-    </div>
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="page-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="fw-bold mb-1">
+                                <i class="fas fa-calendar-alt me-3"></i>
+                                Gestion des Reprogrammations des Cours
+                            </h2>
+                            <p class="text-muted mb-0 fs-6">Gérez et suivez toutes les demandes de reprogrammation des cours avec style</p>
+                        </div>
+             @if (Auth::check() && !Auth::user()->hasRole('Etudiant'))
+    <a href="{{ route('course_reschedules.create') }}" class="btn btn-create btn-modern">
+        <i class="fas fa-plus me-2"></i>Nouvelle Reprogrammation
+    </a>
+@endif
 
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="stats-card">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-calendar-check fa-3x me-3"></i>
-                    <div>
-                        <h3 class="mb-0">{{ $reschedules->total() }}</h3>
-                        <small class="opacity-75">Total des Reprogrammations</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card variant-1">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-clock fa-3x me-3"></i>
-                    <div>
-                        <h3 class="mb-0">{{ $reschedules->where('created_at', '>=', now()->startOfWeek())->count() }}</h3>
-                        <small class="opacity-75">Cette Semaine</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card variant-2">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-user-tie fa-3x me-3"></i>
-                    <div>
-                        <h3 class="mb-0">{{ $consultants->count() }}</h3>
-                        <small class="opacity-75">Consultants Actifs</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card variant-3">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-chalkboard-teacher fa-3x me-3"></i>
-                    <div>
-                        <h3 class="mb-0">{{ $courses->count() }}</h3>
-                        <small class="opacity-75">Total des Cours</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="card filter-card mb-4">
-        <div class="card-body p-4">
-            <form method="GET" action="{{ route('course_reschedules.index') }}" id="filterForm">
-                <div class="row g-4">
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold text-dark">Cours</label>
-                        <select name="course_id" class="form-select">
-                            <option value="">Tous les Cours</option>
-                            @foreach($courses as $course)
-                                <option value="{{ $course->id }}" {{ request('course_id') == $course->id ? 'selected' : '' }}>
-                                    {{ $course->title }}
-                                </option>
-                            @endforeach
-                        </select>
                     </div>
-                    
-                    @can('course-manage-all')
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold text-dark">Consultant</label>
-                        <select name="consultant_id" class="form-select">
-                            <option value="">Tous les Consultants</option>
-                            @foreach($consultants as $consultant)
-                                <option value="{{ $consultant->id }}" {{ request('consultant_id') == $consultant->id ? 'selected' : '' }}>
-                                    {{ $consultant->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    @endcan
-                    
-                    <div class="col-md-2">
-                        <label class="form-label fw-bold text-dark">Date de Début</label>
-                        <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}">
-                    </div>
-                    
-                    <div class="col-md-2">
-                        <label class="form-label fw-bold text-dark">Date de Fin</label>
-                        <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}">
-                    </div>
-                    
-                    <div class="col-md-2 d-flex align-items-end">
-                        <div class="d-flex gap-3 w-100">
-                            <button type="submit" class="btn btn-create btn-modern flex-grow-1">
-                                <i class="fas fa-search me-2"></i>Filtrer
-                            </button>
-                            <a href="{{ route('course_reschedules.index') }}" class="btn btn-outline-secondary btn-modern">
-                                <i class="fas fa-undo"></i>
-                            </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-calendar-check fa-3x me-3"></i>
+                        <div>
+                            <h3 class="mb-0">{{ $reschedules->total() }}</h3>
+                            <small class="opacity-75">Total des Reprogrammations</small>
                         </div>
                     </div>
                 </div>
-            </form>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card variant-1">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-clock fa-3x me-3"></i>
+                        <div>
+                            <h3 class="mb-0">{{ $reschedules->where('created_at', '>=', now()->startOfWeek())->count() }}</h3>
+                            <small class="opacity-75">Cette Semaine</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card variant-2">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-user-tie fa-3x me-3"></i>
+                        <div>
+                            <h3 class="mb-0">{{ $consultants->count() }}</h3>
+                            <small class="opacity-75">Consultants Actifs</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card variant-3">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-chalkboard-teacher fa-3x me-3"></i>
+                        <div>
+                            <h3 class="mb-0">{{ $courses->count() }}</h3>
+                            <small class="opacity-75">Total des Cours</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div class="card card-modern">
-        <div class="card-header gradient-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold">
-                    <i class="fas fa-list me-3"></i>Historique des Reprogrammations
-                </h5>
-                <div class="d-flex align-items-center">
-                    <small class="me-3 opacity-75">
-                        Affichage de {{ $reschedules->firstItem() ?? 0 }} à {{ $reschedules->lastItem() ?? 0 }} 
-                        sur {{ $reschedules->total() }} résultats
-                    </small>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card-body p-0">
-            @if($reschedules->count() > 0)
-                <div class="table-responsive">
-                    <table class="table table-modern mb-0">
-                        <thead>
-                            <tr>
-                                <th>Cours</th>
-                                <th>Consultant</th>
-                                <th>Date Initiale</th>
-                                <th>Nouvelle Date</th>
-                                <th>Raison</th>
-                                <th>Reprogrammé le</th>
-                                <th class="text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($reschedules as $reschedule)
-                            <tr>
-                                <td>
-                                    <div>
-                                        <strong class="text-dark">{{ $reschedule->course->title }}</strong>
-                                        <br>
-                                        <small class="text-muted">ID: #{{ $reschedule->course->id }}</small>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="consultant-avatar">
-                                            <i class="fas fa-user text-white"></i>
-                                        </div>
-                                        <div>
-                                            <strong class="text-dark">{{ $reschedule->consultant->name }}</strong>
-                                            <br>
-                                            <small class="text-muted">{{ $reschedule->consultant->email }}</small>
-                                        </div>
-                                    </div>
-                                </td>
-                               <td>
-    <span class="badge bg-danger badge-modern">
-        <i class="fas fa-calendar-times me-1"></i>
-        {{ 
-            \Carbon\Carbon::parse($reschedule->course->course_date)
-                ->setTimeFromTimeString($reschedule->course->start_time)
-                ->format('d/m/Y H:i') 
-        }}
-    </span>
-</td>
-                                <td>
-                                    <span class="badge bg-success badge-modern">
-                                        <i class="fas fa-calendar-check me-1"></i>
-                                        {{ \Carbon\Carbon::parse($reschedule->new_date)->format('d/m/Y H:i') }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="text-truncate-custom" 
-                                            data-bs-toggle="tooltip" title="{{ $reschedule->reason }}">
-                                        {{ $reschedule->reason ? Str::limit($reschedule->reason, 50) : 'Aucune raison fournie' }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <small class="text-muted fw-500">
-                                        {{ $reschedule->created_at->format('d/m/Y H:i') }}
-                                        <br>
-                                        <span class="text-primary">{{ $reschedule->created_at->diffForHumans() }}</span>
-                                    </small>
-                                </td>
-                                <td>
-                                    <div class="action-buttons d-flex justify-content-center">
-                                        <a href="{{ route('course_reschedules.show', $reschedule) }}" 
-                                           class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" title="Voir les Détails">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        
-                                      
-                                            @if(Auth::user()->can('course-manage-all') || $reschedule->consultant_id == Auth::id())
-                                            <a href="{{ route('course_reschedules.edit', $reschedule) }}" 
-                                               class="btn btn-sm btn-outline-warning" data-bs-toggle="tooltip" title="Modifier">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            @endif
-                                    
-                                        
-                                      
-                                            @if(Auth::user()->can('course-manage-all') || $reschedule->consultant_id == Auth::id())
-                                            <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                    onclick="confirmDelete({{ $reschedule->id }})" 
-                                                    data-bs-toggle="tooltip" title="Supprimer">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                            @endif
-                                       
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @else
-                <div class="empty-state">
-                    <i class="fas fa-calendar-alt"></i>
-                    <h4 class="fw-bold">Aucune Reprogrammation Trouvée</h4>
-                    <p class="text-muted">Aucune reprogrammation de cours ne correspond à vos critères.</p>
-                    @can('course-edit')
-                    <a href="{{ route('course_reschedules.create') }}" class="btn btn-create btn-modern mt-3">
-                        <i class="fas fa-plus me-2"></i>Créer la Première Reprogrammation
-                    </a>
-                    @endcan
-                </div>
-            @endif
-        </div>
-        
-        @if($reschedules->hasPages())
-        <div class="card-footer" style="background: var(--gradient-light); border-radius: 0 0 20px 20px;">
-            <div class="d-flex justify-content-center py-3">
-                {{ $reschedules->appends(request()->query())->links('pagination::bootstrap-4', ['class' => 'pagination-modern']) }}
-            </div>
-        </div>
-        @endif
-    </div>
-</div>
+        <div class="card filter-card mb-4">
+            <div class="card-body p-4">
+                <form method="GET" action="{{ route('course_reschedules.index') }}" id="filterForm">
+                    <div class="row g-4">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold text-dark">Cours</label>
+                            <select name="course_id" class="form-select">
+                                <option value="">Tous les Cours</option>
+                                @foreach($courses as $course)
+                                    <option value="{{ $course->id }}" {{ request('course_id') == $course->id ? 'selected' : '' }}>
+                                        {{ $course->title }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
 
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">
-                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmer la Suppression
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4">
-                <p class="mb-3">Êtes-vous sûr de vouloir supprimer cet enregistrement de reprogrammation ?</p>
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Avertissement :</strong> Cette action est irréversible !
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary btn-modern" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-2"></i>Annuler
-                </button>
-                <form id="deleteForm" method="POST" style="display: inline;">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger btn-modern">
-                        <i class="fas fa-trash me-2"></i>Supprimer
-                    </button>
+                        @can('course-manage-all')
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold text-dark">Consultant</label>
+                            <select name="consultant_id" class="form-select">
+                                <option value="">Tous les Consultants</option>
+                                @foreach($consultants as $consultant)
+                                    <option value="{{ $consultant->id }}" {{ request('consultant_id') == $consultant->id ? 'selected' : '' }}>
+                                        {{ $consultant->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        @endcan
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold text-dark">Date de Début</label>
+                            <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold text-dark">Date de Fin</label>
+                            <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}">
+                        </div>
+
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="d-flex gap-3 w-100">
+                                <button type="submit" class="btn btn-create btn-modern flex-grow-1">
+                                    <i class="fas fa-search me-2"></i>Filtrer
+                                </button>
+                                <a href="{{ route('course_reschedules.index') }}" class="btn btn-outline-secondary btn-modern">
+                                    <i class="fas fa-undo"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>
+
+        <div class="card card-modern">
+            <div class="card-header gradient-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-list me-3"></i>Historique des Reprogrammations
+                    </h5>
+                    <div class="d-flex align-items-center">
+                        <small class="me-3 opacity-75">
+                            Affichage de {{ $reschedules->firstItem() ?? 0 }} à {{ $reschedules->lastItem() ?? 0 }} 
+                            sur {{ $reschedules->total() }} résultats
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                @if($reschedules->count() > 0)
+                    <div class="table-responsive">
+                        <table class="table table-modern mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Cours</th>
+                                    <th>Consultant</th>
+                                    <th>Date Initiale</th>
+                                    <th>Nouvelle Date</th>
+                                    <th>Raison</th>
+                                    <th>Reprogrammé le</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($reschedules as $reschedule)
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong class="text-dark">{{ $reschedule->course->title }}</strong>
+                                            <br>
+                                            <small class="text-muted">ID: #{{ $reschedule->course->id }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="consultant-avatar">
+                                                <i class="fas fa-user text-white"></i>
+                                            </div>
+                                            <div>
+                                                <strong class="text-dark">{{ $reschedule->consultant->name }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ $reschedule->consultant->email }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                   <td>
+        <span class="badge bg-danger badge-modern">
+            <i class="fas fa-calendar-times me-1"></i>
+            {{ 
+                \Carbon\Carbon::parse($reschedule->course->course_date)
+                    ->setTimeFromTimeString($reschedule->course->start_time)
+                    ->format('d/m/Y H:i') 
+            }}
+        </span>
+    </td>
+                                    <td>
+                                        <span class="badge bg-success badge-modern">
+                                            <i class="fas fa-calendar-check me-1"></i>
+                                            {{ \Carbon\Carbon::parse($reschedule->new_date)->format('d/m/Y H:i') }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="text-truncate-custom" 
+                                                data-bs-toggle="tooltip" title="{{ $reschedule->reason }}">
+                                            {{ $reschedule->reason ? Str::limit($reschedule->reason, 50) : 'Aucune raison fournie' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted fw-500">
+                                            {{ $reschedule->created_at->format('d/m/Y H:i') }}
+                                            <br>
+                                            <span class="text-primary">{{ $reschedule->created_at->diffForHumans() }}</span>
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons d-flex justify-content-center">
+                                            <a href="{{ route('course_reschedules.show', $reschedule) }}" 
+                                               class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" title="Voir les Détails">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+
+
+                                                @if(Auth::user()->can('course-manage-all') || $reschedule->consultant_id == Auth::id())
+                                                <a href="{{ route('course_reschedules.edit', $reschedule) }}" 
+                                                   class="btn btn-sm btn-outline-warning" data-bs-toggle="tooltip" title="Modifier">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                @endif
+
+
+
+                                                @if(Auth::user()->can('course-manage-all') || $reschedule->consultant_id == Auth::id())
+                                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                        onclick="confirmDelete({{ $reschedule->id }})" 
+                                                        data-bs-toggle="tooltip" title="Supprimer">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                                @endif
+
+                                        </div>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-alt"></i>
+                        <h4 class="fw-bold">Aucune Reprogrammation Trouvée</h4>
+                        <p class="text-muted">Aucune reprogrammation de cours ne correspond à vos critères.</p>
+                        @can('course-edit')
+                        <a href="{{ route('course_reschedules.create') }}" class="btn btn-create btn-modern mt-3">
+                            <i class="fas fa-plus me-2"></i>Créer la Première Reprogrammation
+                        </a>
+                        @endcan
+                    </div>
+                @endif
+            </div>
+
+            @if($reschedules->hasPages())
+            <div class="card-footer" style="background: var(--gradient-light); border-radius: 0 0 20px 20px;">
+                <div class="d-flex justify-content-center py-3">
+                    {{ $reschedules->appends(request()->query())->links('pagination::bootstrap-4', ['class' => 'pagination-modern']) }}
+                </div>
+            </div>
+            @endif
+        </div>
     </div>
-</div>
+
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Confirmer la Suppression
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="mb-3">Êtes-vous sûr de vouloir supprimer cet enregistrement de reprogrammation ?</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Avertissement :</strong> Cette action est irréversible !
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-modern" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Annuler
+                    </button>
+                    <form id="deleteForm" method="POST" style="display: inline;">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger btn-modern">
+                            <i class="fas fa-trash me-2"></i>Supprimer
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
