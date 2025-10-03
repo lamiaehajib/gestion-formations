@@ -364,9 +364,8 @@ class DashboardController extends Controller
 
     // 🔥 NEW: Prepare global modules chart data
     $globalModulesChart = [
-        'labels' => $consultantModules->map(function ($module) {
-            return ($module->formation ? $module->formation->title : 'Unknown Formation') . ' - ' . $module->title;
-        })->toArray(),
+        'labels' => $consultantModules->pluck('title')->toArray(),
+        
         'data' => $consultantModules->pluck('progress')->toArray(),
         'backgroundColor' => $consultantModules->map(function ($module) {
             if ($module->progress >= 80)
