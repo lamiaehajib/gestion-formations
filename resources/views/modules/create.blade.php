@@ -1,8 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
-    /* Your existing CSS styles go here, no changes needed */
+    /* Your existing CSS styles go here */
     .gradient-bg {
         background: linear-gradient(135deg, #C2185B 0%, #D32F2F 50%, #ef4444 100%);
     }
@@ -19,18 +20,6 @@
         background: linear-gradient(45deg, #A91749, #B71C1C);
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(194, 24, 91, 0.4);
-    }
-    .btn-secondary-custom {
-        background: linear-gradient(45deg, #D32F2F, #ef4444);
-        border: none;
-        color: white;
-        box-shadow: 0 4px 15px rgba(211, 47, 47, 0.3);
-    }
-    .btn-secondary-custom:hover {
-        background: linear-gradient(45deg, #B71C1C, #dc2626);
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(211, 47, 47, 0.4);
     }
     .module-card {
         background: linear-gradient(145deg, #ffffff 0%, #fdf2f8 100%);
@@ -72,8 +61,8 @@
                         <i class="fas fa-puzzle-piece fa-2x"></i>
                     </div>
                     <div>
-                        <h1 class="mb-2 fw-bold">Create New Modules</h1>
-                        <p class="mb-0 opacity-90"><i class="fas fa-magic me-2"></i>Build your formation modules with style</p>
+                        <h1 class="mb-2 fw-bold">Create New Module</h1>
+                        <p class="mb-0 opacity-90"><i class="fas fa-magic me-2"></i>Design a standalone, reusable module.</p>
                     </div>
                 </div>
             </div>
@@ -87,98 +76,119 @@
                         </div>
                     </div>
                 @endif
-
+                
                 <form action="{{ route('modules.store') }}" method="POST">
                     @csrf
 
-                    <div class="mb-4 p-4 rounded-4 shadow-sm" style="background: linear-gradient(145deg, #ffffff, #fdf2f8);">
-                        <label for="formation_id" class="form-label fw-bold text-dark mb-3">
-                            <i class="fas fa-graduation-cap me-2" style="color: #C2185B;"></i>Choose Formation:
-                        </label>
-                        <select name="formation_id" id="formation_id" class="form-select form-select-lg rounded-3 shadow-sm @error('formation_id') is-invalid @enderror">
-                            @foreach($formations as $formation)
-                                <option value="{{ $formation->id }}">{{ $formation->title }}</option>
-                            @endforeach
-                        </select>
-                        @error('formation_id')
-                            <div class="invalid-feedback d-flex align-items-center">
-                                <i class="fas fa-exclamation-triangle me-2"></i>{{ $message }}
+                    <div class="module-card rounded-4 p-4 mb-4 shadow-lg">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="me-3 p-2 rounded-3" style="background: linear-gradient(45deg, #C2185B, #D32F2F);">
+                                <i class="fas fa-cube text-white"></i>
                             </div>
-                        @enderror
-                    </div>
-
-                    <div id="modules-container">
-                        <div class="module-card rounded-4 p-4 mb-4 shadow-lg">
-                            <div class="d-flex align-items-center mb-4">
-                                <div class="me-3 p-2 rounded-3" style="background: linear-gradient(45deg, #C2185B, #D32F2F);">
-                                    <i class="fas fa-cube text-white"></i>
-                                </div>
-                                <h5 class="mb-0 fw-bold" style="color: #C2185B;">Module 1</h5>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="modules[0][title]" class="form-label fw-semibold">
-                                        <i class="fas fa-heading me-2" style="color: #D32F2F;"></i>Module Title:
-                                    </label>
-                                    <input type="text" name="modules[0][title]" class="form-control form-control-lg rounded-3 shadow-sm" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="modules[0][duration_hours]" class="form-label fw-semibold">
-                                        <i class="fas fa-clock me-2" style="color: #C2185B;"></i>Duration (in hours):
-                                    </label>
-                                    <input type="number" name="modules[0][duration_hours]" class="form-control form-control-lg rounded-3 shadow-sm" min="0">
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="modules[0][number_seance]" class="form-label fw-semibold">
-                                        <i class="fas fa-calendar-alt me-2" style="color: #C2185B;"></i>Number of Sessions:
-                                    </label>
-                                    <input type="number" name="modules[0][number_seance]" class="form-control form-control-lg rounded-3 shadow-sm" min="1">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="modules[0][status]" class="form-label fw-semibold">
-                                        <i class="fas fa-toggle-on me-2" style="color: #ef4444;"></i>Status:
-                                    </label>
-                                    <select name="modules[0][status]" class="form-select form-select-lg rounded-3 shadow-sm">
-                                        <option value="draft">Draft</option>
-                                        <option value="published">Published</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="modules[0][user_id]" class="form-label fw-semibold">
-                                    <i class="fas fa-user-tie me-2" style="color: #C2185B;"></i>Assign Consultant:
+                            <h5 class="mb-0 fw-bold" style="color: #C2185B;">Module Details</h5>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="title" class="form-label fw-semibold">
+                                    <i class="fas fa-heading me-2" style="color: #D32F2F;"></i>Module Title:
                                 </label>
-                                <select name="modules[0][user_id]" class="form-select form-select-lg rounded-3 shadow-sm" required>
-                                    @foreach($consultants as $consultant)
-                                        <option value="{{ $consultant->id }}">{{ $consultant->name }}</option>
-                                    @endforeach
+                                <input type="text" name="title" id="title" class="form-control form-control-lg rounded-3 shadow-sm @error('title') is-invalid @enderror" value="{{ old('title') }}" required>
+                                @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="duration_hours" class="form-label fw-semibold">
+                                    <i class="fas fa-clock me-2" style="color: #C2185B;"></i>Duration (in hours):
+                                </label>
+                                <input type="number" name="duration_hours" id="duration_hours" class="form-control form-control-lg rounded-3 shadow-sm @error('duration_hours') is-invalid @enderror" value="{{ old('duration_hours') }}" min="0">
+                                @error('duration_hours')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="number_seance" class="form-label fw-semibold">
+                                    <i class="fas fa-calendar-alt me-2" style="color: #C2185B;"></i>Number of Sessions:
+                                </label>
+                                <input type="number" name="number_seance" id="number_seance" class="form-control form-control-lg rounded-3 shadow-sm @error('number_seance') is-invalid @enderror" value="{{ old('number_seance') }}" min="1">
+                                @error('number_seance')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="status" class="form-label fw-semibold">
+                                    <i class="fas fa-toggle-on me-2" style="color: #ef4444;"></i>Status:
+                                </label>
+                                <select name="status" id="status" class="form-select form-select-lg rounded-3 shadow-sm @error('status') is-invalid @enderror">
+                                    <option value="draft" {{ old('status') == 'draft' ? 'selected' : '' }}>Draft</option>
+                                    <option value="published" {{ old('status') == 'published' ? 'selected' : '' }}>Published</option>
                                 </select>
+                                @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
-                            
-                            <div class="mb-3">
-                                <label for="modules[0][content]" class="form-label fw-semibold">
-                                    <i class="fas fa-file-alt me-2" style="color: #D32F2F;"></i>Content (Enter one item per line):
-                                </label>
-                                <textarea name="modules[0][content]" class="form-control rounded-3 shadow-sm" rows="4" 
-                                    placeholder="e.g.,
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="user_id" class="form-label fw-semibold">
+                                <i class="fas fa-user-tie me-2" style="color: #C2185B;"></i>Assign Consultant:
+                            </label>
+                            <select name="user_id" id="user_id" class="form-select form-select-lg rounded-3 shadow-sm @error('user_id') is-invalid @enderror" required>
+                                @foreach($consultants as $consultant)
+                                    <option value="{{ $consultant->id }}" {{ old('user_id') == $consultant->id ? 'selected' : '' }}>{{ $consultant->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('user_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+
+                        {{-- L'HAQL JDEED LLI BAGHI: Multi-Select dial les Formations --}}
+                       <div class="mb-4 p-3 bg-red-50 rounded-3" style="border: 1px dashed #D32F2F;">
+    <label class="form-label fw-bold fs-5 text-danger">
+        <i class="fas fa-graduation-cap me-2 text-danger"></i>Select Formations:
+    </label>
+    
+    <div class="row">
+        @foreach($formations as $formation)
+            <div class="col-md-6 mb-2">
+                <div class="form-check">
+                    <input 
+                        class="form-check-input @error('formation_ids') is-invalid @enderror" 
+                        type="checkbox" 
+                        name="formation_ids[]" 
+                        value="{{ $formation->id }}" 
+                        id="formation_{{ $formation->id }}"
+                        {{ in_array($formation->id, old('formation_ids', [])) ? 'checked' : '' }}
+                    >
+                    <label class="form-check-label" for="formation_{{ $formation->id }}">
+                        {{ $formation->title }}
+                    </label>
+                </div>
+            </div>
+        @endforeach
+    </div>
+    
+    @error('formation_ids')
+        <div class="invalid-feedback d-block">{{ $message }}</div>
+    @enderror
+    
+    <small class="text-muted mt-2 d-block">
+        <i class="fas fa-info-circle me-1"></i>You can select multiple formations.
+    </small>
+</div>
+                        {{-- END L'HAQL JDEED --}}
+
+                        <div class="mb-3">
+                            <label for="content" class="form-label fw-semibold">
+                                <i class="fas fa-file-alt me-2" style="color: #D32F2F;"></i>Content (Enter one item per line):
+                            </label>
+                            <textarea name="content" id="content" class="form-control rounded-3 shadow-sm @error('content') is-invalid @enderror" rows="4" 
+                                placeholder="e.g.,
 Introduction to PHP
 Working with Databases
-Advanced Concepts" required></textarea>
-                            </div>
+Advanced Concepts" required>{{ old('content') }}</textarea>
+                            @error('content')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                     </div>
                     
-                    <div class="d-flex justify-content-center gap-3 mt-5">
-                        <button type="button" id="add-module" class="btn btn-secondary-custom btn-lg px-5 py-3 rounded-3 fw-bold">
-                            <i class="fas fa-plus-circle me-2"></i>Add Another Module
-                        </button>
+                    <div class="d-flex justify-content-center mt-5">
                         <button type="submit" class="btn btn-primary-custom btn-lg px-5 py-3 rounded-3 fw-bold">
-                            <i class="fas fa-save me-2"></i>Save All Modules
+                            <i class="fas fa-save me-2"></i>Save Module
                         </button>
                     </div>
                 </form>
@@ -186,78 +196,4 @@ Advanced Concepts" required></textarea>
         </div>
     </div>
 </div>
-
-<script>
-    document.getElementById('add-module').addEventListener('click', function() {
-        const container = document.getElementById('modules-container');
-        const index = container.children.length;
-        
-        const newModule = `
-            <div class="module-card rounded-4 p-4 mb-4 shadow-lg">
-                <div class="d-flex align-items-center mb-4">
-                    <div class="me-3 p-2 rounded-3" style="background: linear-gradient(45deg, #C2185B, #D32F2F);">
-                        <i class="fas fa-cube text-white"></i>
-                    </div>
-                    <h5 class="mb-0 fw-bold" style="color: #C2185B;">Module ${index + 1}</h5>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="modules[${index}][title]" class="form-label fw-semibold">
-                            <i class="fas fa-heading me-2" style="color: #D32F2F;"></i>Module Title:
-                        </label>
-                        <input type="text" name="modules[${index}][title]" class="form-control form-control-lg rounded-3 shadow-sm" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="modules[${index}][duration_hours]" class="form-label fw-semibold">
-                            <i class="fas fa-clock me-2" style="color: #C2185B;"></i>Duration (in hours):
-                        </label>
-                        <input type="number" name="modules[${index}][duration_hours]" class="form-control form-control-lg rounded-3 shadow-sm" min="0">
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="modules[${index}][number_seance]" class="form-label fw-semibold">
-                            <i class="fas fa-calendar-alt me-2" style="color: #C2185B;"></i>Number of Sessions:
-                        </label>
-                        <input type="number" name="modules[${index}][number_seance]" class="form-control form-control-lg rounded-3 shadow-sm" min="1">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="modules[${index}][status]" class="form-label fw-semibold">
-                            <i class="fas fa-toggle-on me-2" style="color: #ef4444;"></i>Status:
-                        </label>
-                        <select name="modules[${index}][status]" class="form-select form-select-lg rounded-3 shadow-sm">
-                            <option value="draft">Draft</option>
-                            <option value="published">Published</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="modules[${index}][user_id]" class="form-label fw-semibold">
-                        <i class="fas fa-user-tie me-2" style="color: #C2185B;"></i>Assign Consultant:
-                    </label>
-                    <select name="modules[${index}][user_id]" class="form-select form-select-lg rounded-3 shadow-sm" required>
-                        @foreach($consultants as $consultant)
-                            <option value="{{ $consultant->id }}">{{ $consultant->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="modules[${index}][content]" class="form-label fw-semibold">
-                        <i class="fas fa-file-alt me-2" style="color: #D32F2F;"></i>Content (Enter one item per line):
-                    </label>
-                    <textarea name="modules[${index}][content]" class="form-control rounded-3 shadow-sm" rows="4" 
-                        placeholder="e.g.,
-Introduction to PHP
-Working with Databases
-Advanced Concepts" required></textarea>
-                </div>
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', newModule);
-    });
-</script>
 @endsection

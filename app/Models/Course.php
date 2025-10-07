@@ -26,13 +26,14 @@ class Course extends Model
         'notification_count',
     ];
 
-    protected $casts = [
+     protected $casts = [
         'course_date' => 'date',
-        'start_time' => 'datetime:H:i',
-        'end_time' => 'datetime:H:i',
+        // 🔥 CORRECTION: Ma khas-ch n-castéw TIME l DATETIME!
+        // Khassna nkhalliwha string bach n-akhdhowha kima hiya mn DB
+        // 'start_time' => 'datetime:H:i',  // ❌ Hadi kant l-mochkila
+        // 'end_time' => 'datetime:H:i',    // ❌ Hadi kant l-mochkila
         'documents' => 'array',
-         // ✅ زدنا هادا باش last_notification_time يتقرا كـ Carbon instance
-        'last_notification_time' => 'datetime', 
+        'last_notification_time' => 'datetime',
     ];
 
 

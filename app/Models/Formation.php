@@ -66,10 +66,11 @@ class Formation extends Model
 
 
 
-    public function modules()
-{
-    return $this->hasMany(Module::class);
-}
+   public function modules()
+    {
+        // Kansta3mlo withPivot('order') bach njibo l'order dyal Module f had Formation
+        return $this->belongsToMany(Module::class)->withPivot('order')->orderBy('pivot_order');
+    }
     public function consultant()
     {
         return $this->belongsTo(User::class, 'consultant_id');

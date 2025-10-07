@@ -25,7 +25,7 @@ class CourseController extends Controller
     }
 
 
-    public function index(Request $request)
+public function index(Request $request)
 {
     $user = Auth::user();
 
@@ -40,6 +40,7 @@ class CourseController extends Controller
     if ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance')) {
         // Admins see all courses
     } elseif ($user->hasRole('Consultant')) {
+        // 🔥 Consultant ichof courses dyalo
         $query->where('consultant_id', $user->id);
     } elseif ($user->hasRole('Etudiant')) {
         $enrolledFormationIds = $user->inscriptions()
@@ -57,7 +58,7 @@ class CourseController extends Controller
     }
 
     // 🔥 NOUVEAU: Filtrage par semaine (si view_mode = 'planning')
-    $viewMode = $request->get('view_mode', 'list'); // 'list' ou 'planning'
+    $viewMode = $request->get('view_mode', 'list');
     
     if ($viewMode === 'planning') {
         $query->whereBetween('course_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')]);
@@ -82,12 +83,51 @@ class CourseController extends Controller
     // 🔥 Selon le mode d'affichage
     if ($viewMode === 'planning') {
         $courses = $query->get();
-        // Grouper par jour
+        
+        // 🚨 MODIFICATION ICI: Filtration des doublons pour le mode 'planning' du Consultant
+        if ($user->hasRole('Consultant')) {
+            $courses = $courses->unique(function($course) {
+                // Grouper par: Module + Date + Heure + Titre
+                return $course->module_id . '-' .
+                       $course->course_date . '-' .
+                       $course->start_time . '-' .
+                       $course->title;
+            });
+        }
+        
         $coursesByDay = $courses->groupBy(function($course) {
             return Carbon::parse($course->course_date)->format('Y-m-d');
         });
+        
     } else {
-        $courses = $query->paginate(15);
+        // 🔥 Pour Consultant: Filtrer les duplicates (pour le mode liste/pagination)
+        if ($user->hasRole('Consultant')) {
+            $allCourses = $query->get();
+            
+            // Remove duplicate courses (même module + date + time + title)
+            $uniqueCourses = $allCourses->unique(function($course) {
+                return $course->module_id . '-' . 
+                       $course->course_date . '-' . 
+                       $course->start_time . '-' . 
+                       $course->title;
+            });
+            
+            // Manual pagination
+            $perPage = 15;
+            $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage();
+            $currentPageItems = $uniqueCourses->slice(($currentPage - 1) * $perPage, $perPage)->values();
+            
+            $courses = new \Illuminate\Pagination\LengthAwarePaginator(
+                $currentPageItems,
+                $uniqueCourses->count(),
+                $perPage,
+                $currentPage,
+                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+            );
+        } else {
+            $courses = $query->paginate(15);
+        }
+        
         $coursesByDay = null;
     }
 
@@ -107,7 +147,7 @@ class CourseController extends Controller
     }
 
     $consultants = User::role('Consultant')->get();
-    
+    $modules = Module::where('status', 'published')->get();
 
     return view('courses.index', compact(
         'courses', 
@@ -118,7 +158,8 @@ class CourseController extends Controller
         'weekOffset',
         'formationsForModals', 
         'formationsForFilter', 
-        'consultants'
+        'consultants',
+        'modules'
     ));
 }
     /**
@@ -126,67 +167,87 @@ class CourseController extends Controller
      */
     public function create()
     {
-        $formationsForModals = Formation::where('status', 'published')->get();
+        // 🔥 Jdida: Kanjibu Modules bach l'user i9ad ichd men 3andhom
+        $modules = Module::where('status', 'published')->get();
         $consultants = User::role('Consultant')->get();
-        return view('courses.create', compact('formationsForModals', 'consultants'));
+        
+        return view('courses.create', compact('modules', 'consultants'));
     }
 
- 
+    // 🔥 NEW: AJAX Method bach njibo Formations men Module
+    public function getFormationsByModule(Module $module)
+    {
+        // Kanjibo ga3 les Formations li fihom had l-Module
+        $formations = $module->formations()->where('status', 'published')->get();
+        
+        return response()->json([
+            'success' => true,
+            'formations' => $formations
+        ]);
+    }
+
     public function store(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'formation_id' => 'required|exists:formations,id', // Modifié pour être un seul ID, non un array
-        'module_id' => 'required|exists:modules,id', // Ajouté le champ module_id
-        'consultant_id' => 'nullable|exists:users,id',
-        'title' => 'required|string|max:255',
-        'description' => 'required|string',
-        'course_date' => 'required|date|after_or_equal:today',
-        'start_time' => 'required|date_format:H:i',
-        'end_time' => 'required|date_format:H:i|after:start_time',
-        'zoom_link' => 'nullable|url',
-        'documents.*' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:10240'
-    ]);
-    
-    if ($validator->fails()) {
-        return redirect()->back()->withErrors($validator)->withInput();
-    }
-    
-    $documentPaths = [];
-    
-    if ($request->hasFile('documents')) {
-        foreach ($request->file('documents') as $file) {
-            $path = $file->store('courses/documents', 'public');
-            $documentPaths[] = [
-                'name' => $file->getClientOriginalName(),
-                'path' => $path,
-                'size' => $file->getSize(),
-                'type' => $file->getMimeType()
-            ];
+    {
+        $validator = Validator::make($request->all(), [
+            'module_id' => 'required|exists:modules,id',
+            'consultant_id' => 'nullable|exists:users,id',
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'course_date' => 'required|date|after_or_equal:today',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+            'zoom_link' => 'nullable|url',
+            'documents.*' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:10240'
+        ]);
+        
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
         }
+        
+        $documentPaths = [];
+        
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $file) {
+                $path = $file->store('courses/documents', 'public');
+                $documentPaths[] = [
+                    'name' => $file->getClientOriginalName(),
+                    'path' => $path,
+                    'size' => $file->getSize(),
+                    'type' => $file->getMimeType()
+                ];
+            }
+        }
+        
+        // 🔥 Jdida: Kanjibo ga3 les Formations li fihom had l-Module
+        $module = Module::findOrFail($request->module_id);
+        $formations = $module->formations()->where('status', 'published')->get();
+        
+        // 🔥 Kancréew Course f kol Formation
+        $createdCoursesCount = 0;
+        foreach ($formations as $formation) {
+            Course::create([
+                'module_id' => $request->module_id,
+                'formation_id' => $formation->id, // Kol formation 3andha l-course dyalha
+                'consultant_id' => $request->consultant_id,
+                'title' => $request->title,
+                'description' => $request->description,
+                'course_date' => $request->course_date,
+                'start_time' => $request->start_time,
+                'end_time' => $request->end_time,
+                'zoom_link' => $request->zoom_link,
+                'documents' => $documentPaths
+            ]);
+            $createdCoursesCount++;
+        }
+
+        // Update module progress
+        $this->updateModuleProgress($request->module_id);
+        
+        return redirect()->route('courses.index')
+            ->with('success', "Course created successfully in {$createdCoursesCount} formation(s).");
     }
-    
-    $course = Course::create([
-        'formation_id' => $request->formation_id, // Utilise le champ formation_id du formulaire
-        'module_id' => $request->module_id, // Utilise le champ module_id du formulaire
-        'consultant_id' => $request->consultant_id,
-        'title' => $request->title,
-        'description' => $request->description,
-        'course_date' => $request->course_date,
-        'start_time' => $request->start_time,
-        'end_time' => $request->end_time,
-        'zoom_link' => $request->zoom_link,
-        'documents' => $documentPaths
-    ]);
 
-    // 🔥 Had hiya l'partie l'jdida: N-update automatically l'progress dyal l'module
-    $this->updateModuleProgress($course->module_id);
-
-    // La ligne suivante a été supprimée car la relation belongsToMany n'existe plus
-    // $course->formations()->sync($request->formation_ids);
-    
-    return redirect()->route('courses.index')
-        ->with('success', 'Course created successfully.');
-}
+   
 
     /**
      * Display the specified resource.
@@ -273,14 +334,12 @@ class CourseController extends Controller
 
     // 🔥 Had hiya l'partie l'jdida: N-update progress for both old and new modules
     if ($oldModuleId != $request->module_id) {
-        // Ila baddal l'module, kan-update l'progress dyal both modules
-        $this->updateModuleProgress($oldModuleId); // L'module l'9dim
-        $this->updateModuleProgress($request->module_id); // L'module l'jdid
+        $this->updateModuleProgress($oldModuleId); 
+        $this->updateModuleProgress($request->module_id);
     } else {
-        // Ila bqa f nafs l'module, kan-update ghir hadak
         $this->updateModuleProgress($request->module_id);
     }
-
+    
     // 3. Kan7aydou sync() : Had l'ligne ma bqatsh 3andha m3na 7itach db l'course belongsTo formation wahda.
     // $course->formations()->sync($request->formation_ids);
     
@@ -318,28 +377,49 @@ class CourseController extends Controller
     /**
      * 🔥 Had hiya l'method l'jdida: T-update automatically l'progress dyal l'module
      */
-    private function updateModuleProgress($moduleId)
-    {
-        // Kanjib l'module men database
-        $module = Module::find($moduleId);
-        
-        // Ila ma l9inach l'module aw ma kandiroch number_seance, ma ndirou walou
-        if (!$module || !$module->number_seance || $module->number_seance <= 0) {
-            return;
+private function updateModuleProgress($moduleId)
+{
+    $module = Module::find($moduleId);
+    
+    if (!$module || !$module->number_seance || $module->number_seance <= 0) {
+        if ($module && $module->progress !== 0) {
+            $module->update(['progress' => 0]);
         }
-
-        // Kan7sab 3adad les courses li daru f had l'module W LI FATAT LA DATE DEBUT DYALHOM
-        $coursesCount = Course::where('module_id', $moduleId)
-            // 👈 الشرط الجديد: لازم يكون تاريخ الكورس أصغر من تاريخ اليوم باش يتحسب
-            ->where('course_date', '<', now()->toDateString()) 
-            ->count();
-
-        // Kan7sab l'progress: (3adad les courses / number_seance) * 100
-        $progress = min(100, round(($coursesCount / $module->number_seance) * 100, 2));
-
-        // Kan-update l'progress f l'database
-        $module->update(['progress' => $progress]);
+        return;
     }
+
+    // Load courses
+    $module->load('courses');
+    
+    // Get unique courses
+    $uniqueCourses = $module->courses->unique(function($course) {
+        return $course->module_id . '-' . 
+               $course->course_date . '-' . 
+               $course->start_time . '-' . 
+               $course->title;
+    });
+
+    // Count completed courses (where end_time has passed)
+    $completedCount = $uniqueCourses->filter(function ($course) {
+        $courseDate = $course->course_date->format('Y-m-d');
+        $endTime = $course->end_time;
+        
+        // Add seconds if missing (HH:MM -> HH:MM:SS)
+        if (strlen($endTime) == 5) {
+            $endTime .= ':00';
+        }
+        
+        $courseEndDateTime = Carbon::parse($courseDate . ' ' . $endTime);
+        
+        return $courseEndDateTime->isPast();
+    })->count();
+    
+    // Calculate progress
+    $progress = min(100, round(($completedCount / $module->number_seance) * 100, 2));
+
+    // Update database
+    $module->update(['progress' => $progress]);
+}
     
     /**
      * Get courses for a specific formation (AJAX) - Removed, as a course can now have many formations.

@@ -2,7 +2,6 @@
 
 @section('content')
 <style>
-    /* Your CSS styles, no changes needed */
     :root {
         --primary-color: #C2185B;
         --secondary-color: #D32F2F;
@@ -420,12 +419,14 @@
                         Modules for this Formation ({{ $formation->modules->count() }})
                     </h4>
                     @can('module-create')
-                    <button type="button" class="add-module-btn" data-bs-toggle="modal" data-bs-target="#createModuleModal">
-                        <i class="fas fa-plus-circle"></i> Add New Module
-                    </button>
-                    <a href="{{ route('modules.corbeille') }}" class="btn btn-danger">
-    <i class="fa fa-trash"></i> Corbeille
-</a>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="add-module-btn" data-bs-toggle="modal" data-bs-target="#createModuleModal">
+                            <i class="fas fa-plus-circle"></i> Add New Module
+                        </button>
+                        <a href="{{ route('modules.corbeille') }}" class="btn btn-danger" style="border-radius: 15px;">
+                            <i class="fa fa-trash"></i> Corbeille
+                        </a>
+                    </div>
                     @endcan
                 </div>
 
@@ -439,18 +440,20 @@
                     </div>
                 @else
                     <div class="row row-cols-1 g-4" id="modules-list">
-                        @foreach($formation->modules->sortBy('order') as $module)
+                        @foreach($formation->modules->sortBy('pivot.order') as $module)
                         <div class="col" id="module-card-{{ $module->id }}">
                             <div class="module-card h-100">
                                 <div class="module-header">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <h5 class="module-title">
                                             <i class="fas fa-cube"></i>
-                                            Module {{ $module->order }}: {{ $module->title }}
+                                            Module {{ $module->pivot->order }}: {{ $module->title }}
                                         </h5>
                                         <div class="module-actions">
                                             @can('module-edit')
-                                            <button class="btn-edit edit-btn" data-id="{{ $module->id }}">
+                                            <button class="btn-edit edit-btn" 
+                                                    data-id="{{ $module->id }}" 
+                                                    data-order="{{ $module->pivot->order }}">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             @endcan
@@ -572,18 +575,12 @@
             <div class="modal-body" style="padding: 2rem;">
                 <form id="createModuleForm">
                     @csrf
-                    <input type="hidden" name="formation_id" value="{{ $formation->id }}">
+                    <input type="hidden" name="formation_ids[]" value="{{ $formation->id }}">
                     <div class="mb-3">
                         <label for="create-title" class="form-label" style="color: var(--primary-color); font-weight: 600;">
                             <i class="fas fa-heading"></i> Module Title
                         </label>
                         <input type="text" class="form-control" id="create-title" name="title" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
-                    </div>
-                    <div class="mb-3">
-                        <label for="create-order" class="form-label" style="color: var(--primary-color); font-weight: 600;">
-                            <i class="fas fa-sort-numeric-up"></i> Order
-                        </label>
-                        <input type="number" class="form-control" id="create-order" name="order" required min="1" value="{{ $formation->modules->max('order') + 1 ?? 1 }}" style="border-radius: 10px; border: 2px solid #e2e8f0;">
                     </div>
                     <div class="mb-3">
                         <label for="create-duration_hours" class="form-label" style="color: var(--primary-color); font-weight: 600;">
@@ -610,7 +607,9 @@
                         <label for="create-user" class="form-label" style="color: var(--primary-color); font-weight: 600;">
                             <i class="fas fa-user-tie"></i> Assigned Consultant
                         </label>
-                        <select class="form-control" id="create-user" name="user_id" required style="border-radius: 10px; border: 2px solid #e2e8f0;"></select>
+                        <select class="form-control" id="create-user" name="user_id" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
+                            <option value="">Loading consultants...</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="create-content" class="form-label" style="color: var(--primary-color); font-weight: 600;">
@@ -647,6 +646,7 @@
                     @csrf
                     @method('PUT')
                     <input type="hidden" id="edit-module-id" name="id">
+                    <input type="hidden" id="edit-formation-id" name="formation_id" value="{{ $formation->id }}">
                     <div class="mb-3">
                         <label for="edit-title" class="form-label" style="color: var(--primary-color); font-weight: 600;">
                             <i class="fas fa-heading"></i> Module Title
@@ -654,10 +654,10 @@
                         <input type="text" class="form-control" id="edit-title" name="title" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
                     </div>
                     <div class="mb-3">
-                        <label for="edit-order" class="form-label" style="color: var(--primary-color); font-weight: 600;">
+                        <label for="edit-new_order" class="form-label" style="color: var(--primary-color); font-weight: 600;">
                             <i class="fas fa-sort-numeric-up"></i> Order
                         </label>
-                        <input type="number" class="form-control" id="edit-order" name="order" required min="1" style="border-radius: 10px; border: 2px solid #e2e8f0;">
+                        <input type="number" class="form-control" id="edit-new_order" name="new_order" required min="1" style="border-radius: 10px; border: 2px solid #e2e8f0;">
                     </div>
                     <div class="mb-3">
                         <label for="edit-duration_hours" class="form-label" style="color: var(--primary-color); font-weight: 600;">
@@ -684,7 +684,9 @@
                         <label for="edit-user" class="form-label" style="color: var(--primary-color); font-weight: 600;">
                             <i class="fas fa-user-tie"></i> Assigned Consultant
                         </label>
-                        <select class="form-control" id="edit-user" name="user_id" required style="border-radius: 10px; border: 2px solid #e2e8f0;"></select>
+                        <select class="form-control" id="edit-user" name="user_id" required style="border-radius: 10px; border: 2px solid #e2e8f0;">
+                            <option value="">Loading consultants...</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="edit-content" class="form-label" style="color: var(--primary-color); font-weight: 600;">
@@ -719,6 +721,7 @@
         const createModuleModal = new bootstrap.Modal(createModalElement);
         
         const consultants = @json($consultants);
+        const formationId = {{ $formation->id }};
 
         // Populate consultants dropdown
         function populateConsultantsSelect(selectElement, selectedUserId = null) {
@@ -738,8 +741,6 @@
         document.querySelector('[data-bs-target="#createModuleModal"]').addEventListener('click', function () {
             populateConsultantsSelect(document.getElementById('create-user'));
             document.getElementById('createModuleForm').reset();
-            // Set default order value
-            document.getElementById('create-order').value = {{ $formation->modules->max('order') + 1 ?? 1 }};
         });
 
         // Handle module actions (edit/delete)
@@ -754,14 +755,16 @@
                 }
 
                 if (e.target.closest('.edit-btn')) {
-                    const moduleId = e.target.closest('.edit-btn').dataset.id;
-                    fetchModuleData(moduleId);
+                    const button = e.target.closest('.edit-btn');
+                    const moduleId = button.dataset.id;
+                    const currentOrder = button.dataset.order;
+                    fetchModuleData(moduleId, currentOrder);
                 }
             });
         }
 
         // Fetch module data for editing
-        function fetchModuleData(moduleId) {
+        function fetchModuleData(moduleId, currentOrder) {
             const url = `/modules/${moduleId}/get-data`;
             axios.get(url)
                 .then(response => {
@@ -770,7 +773,7 @@
                     document.getElementById('edit-title').value = module.title;
                     document.getElementById('edit-duration_hours').value = module.duration_hours || '';
                     document.getElementById('edit-number_seance').value = module.number_seance || '';
-                    document.getElementById('edit-order').value = module.order;
+                    document.getElementById('edit-new_order').value = currentOrder; // Use pivot order
                     document.getElementById('edit-status').value = module.status;
                     document.getElementById('edit-content').value = Array.isArray(module.content) ? module.content.join('\n') : '';
                     
@@ -787,26 +790,21 @@
         document.getElementById('createModuleBtn').addEventListener('click', function (e) {
             e.preventDefault();
             const contentValue = document.getElementById('create-content').value.trim();
-            const formData = {
-                formation_id: {{ $formation->id }},
-                modules: [
-                    {
-                        title: document.getElementById('create-title').value,
-                        duration_hours: document.getElementById('create-duration_hours').value || null,
-                        number_seance: document.getElementById('create-number_seance').value || null,
-                        order: document.getElementById('create-order').value,
-                        status: document.getElementById('create-status').value,
-                        content: contentValue || 'No content specified', // Provide default if empty
-                        user_id: document.getElementById('create-user').value
-                    }
-                ]
-            };
+            
+            const formData = new FormData();
+            formData.append('title', document.getElementById('create-title').value);
+            formData.append('duration_hours', document.getElementById('create-duration_hours').value || '');
+            formData.append('number_seance', document.getElementById('create-number_seance').value || '');
+            formData.append('status', document.getElementById('create-status').value);
+            formData.append('content', contentValue || 'No content specified');
+            formData.append('user_id', document.getElementById('create-user').value);
+            formData.append('formation_ids[]', formationId);
             
             axios.post('{{ route('modules.store') }}', formData)
                 .then(response => {
                     createModuleModal.hide();
-                    location.reload(); // Simple reload to show the new module
                     showAlert('Module created successfully!', 'success');
+                    setTimeout(() => location.reload(), 1000);
                 })
                 .catch(error => {
                     handleFormError(error);
@@ -818,11 +816,13 @@
             e.preventDefault();
             const moduleId = document.getElementById('edit-module-id').value;
             const url = `/modules/${moduleId}`;
+            
             const formData = {
                 title: document.getElementById('edit-title').value,
                 duration_hours: document.getElementById('edit-duration_hours').value || null,
                 number_seance: document.getElementById('edit-number_seance').value || null,
-                order: document.getElementById('edit-order').value,
+                new_order: document.getElementById('edit-new_order').value,
+                formation_id: formationId,
                 status: document.getElementById('edit-status').value,
                 content: document.getElementById('edit-content').value,
                 user_id: document.getElementById('edit-user').value,
@@ -831,13 +831,109 @@
             axios.put(url, formData)
                 .then(response => {
                     editModuleModal.hide();
-                    location.reload(); // Simple reload to show updated data
                     showAlert('Module updated successfully!', 'success');
+                    
+                    // Update the module card dynamically
+                    if (response.data.modules) {
+                        updateModulesList(response.data.modules);
+                    } else {
+                        setTimeout(() => location.reload(), 1000);
+                    }
                 })
                 .catch(error => {
                     handleFormError(error);
                 });
         });
+
+        // Update modules list after edit
+        function updateModulesList(modules) {
+            const sortedModules = modules.sort((a, b) => {
+                const orderA = a.pivot ? a.pivot.order : a.order;
+                const orderB = b.pivot ? b.pivot.order : b.order;
+                return orderA - orderB;
+            });
+
+            modulesList.innerHTML = '';
+            
+            sortedModules.forEach((module, index) => {
+                const moduleOrder = module.pivot ? module.pivot.order : module.order;
+                const moduleCard = createModuleCard(module, moduleOrder);
+                modulesList.innerHTML += moduleCard;
+            });
+        }
+
+        // Create module card HTML
+        function createModuleCard(module, order) {
+            const statusClass = module.status === 'published' ? 'status-published' : 'status-draft';
+            const statusIcon = module.status === 'published' ? 'fa-check-circle' : 'fa-edit';
+            
+            let contentHTML = '';
+            if (Array.isArray(module.content) && module.content.length > 0) {
+                module.content.forEach(item => {
+                    contentHTML += `<li class="content-item"><i class="fas fa-chevron-right text-primary"></i>${item}</li>`;
+                });
+            } else {
+                contentHTML = '<li class="content-item text-muted"><i class="fas fa-info-circle"></i>No content available.</li>';
+            }
+
+            return `
+            <div class="col" id="module-card-${module.id}">
+                <div class="module-card h-100">
+                    <div class="module-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="module-title">
+                                <i class="fas fa-cube"></i>
+                                Module ${order}: ${module.title}
+                            </h5>
+                            <div class="module-actions">
+                                @can('module-edit')
+                                <button class="btn-edit edit-btn" data-id="${module.id}" data-order="${order}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                @endcan
+                                @can('module-delete')
+                                <button class="btn-delete delete-btn" data-id="${module.id}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                                @endcan
+                            </div>
+                        </div>
+                    </div>
+                    <div class="module-body">
+                        <div class="info-item">
+                            <div class="info-label"><i class="fas fa-user-tie"></i>Assigned Consultant:</div>
+                            <span class="module-consultant">${module.user ? module.user.name : 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label"><i class="fas fa-flag"></i>Status:</div>
+                            <span class="status-badge module-status ${statusClass}">
+                                <i class="fas ${statusIcon}"></i>${module.status}
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label"><i class="fas fa-clock"></i>Duration:</div>
+                            <span class="module-duration">${module.duration_hours || 'N/A'} hours</span>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label"><i class="fas fa-calendar-alt"></i>Sessions:</div>
+                            <span class="module-sessions">${module.number_seance || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label"><i class="fas fa-list-ul"></i>Content:</div>
+                            <ul class="content-list module-content">${contentHTML}</ul>
+                        </div>
+                        <div class="progress-section">
+                            <div class="info-label"><i class="fas fa-chart-line"></i>Module Progress:</div>
+                            <div class="custom-progress">
+                                <div class="custom-progress-bar" style="width: ${module.progress}%;">
+                                    <div class="progress-text">${module.progress}%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }
 
         // Delete module
         function deleteModule(moduleId) {
@@ -850,9 +946,10 @@
                         setTimeout(() => {
                             moduleCard.remove();
                             showAlert('Module deleted successfully!', 'success');
-                            // Check if no modules left
+                            
                             if (document.querySelectorAll('.module-card').length === 0) {
-                                document.getElementById('modules-list').innerHTML = `<div class="no-modules">
+                                document.getElementById('modules-list').innerHTML = `
+                                <div class="no-modules">
                                     <i class="fas fa-inbox"></i>
                                     <h5>No modules have been added to this formation yet.</h5>
                                     <p class="text-muted">Start building your formation by adding the first module!</p>
@@ -892,19 +989,16 @@
             const alertHtml = `
             <div class="alert alert-${type} alert-custom alert-dismissible fade show" role="alert" style="animation: fadeInDown 0.5s ease">
                 ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
             `;
             alertContainer.innerHTML = alertHtml;
             
-            // Auto-hide after 5 seconds
             setTimeout(() => {
                 const alert = alertContainer.querySelector('.alert');
                 if (alert) {
                     alert.style.animation = 'fadeOutUp 0.5s ease';
-                    setTimeout(() => {
-                        alert.remove();
-                    }, 500);
+                    setTimeout(() => alert.remove(), 500);
                 }
             }, 5000);
         }
@@ -919,4 +1013,4 @@
         });
     });
 </script>
-@endsection
+@endsection>

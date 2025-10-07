@@ -179,7 +179,8 @@ Route::delete('/payments/{id}/forceDelete', [PaymentController::class, 'forceDel
       
     Route::resource('payments', PaymentController::class);
 
-    
+    Route::get('/courses/modules/{module}/formations', [CourseController::class, 'getFormationsByModule'])
+    ->name('courses.getFormationsByModule');
    
      Route::resource('courses', CourseController::class);
      Route::post('courses/{course}/duplicate', [CourseController::class, 'duplicate'])->name('courses.duplicate');
@@ -333,7 +334,7 @@ Route::get('/modules', [ModuleController::class, 'index'])->name('modules.index'
 Route::post('/modules/{module}/update-ajax', [ModuleController::class, 'updateAjax'])->name('modules.updateAjax');
 Route::delete('/modules/{module}/destroy-ajax', [ModuleController::class, 'destroyAjax'])->name('modules.destroyAjax');
 Route::get('/modules/{module}/get-data', [ModuleController::class, 'getModuleData'])->name('modules.getData');
-
+Route::get('/modules/details/{module}', [ModuleController::class, 'details'])->name('modules.details');
 
 Route::get('/get-modules/{formationId}', [AjaxController::class, 'getModules']);
 

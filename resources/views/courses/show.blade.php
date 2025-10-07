@@ -403,29 +403,31 @@
 @endpush
 
 @section('content')
-        <div class="course-detail-container">
+            <div class="course-detail-container">
 
-            @if (session('success'))
-                <div class="alert alert-success alert-message">
-                    <i class="fas fa-check-circle"></i> {{ session('success') }}
-                </div>
-            @endif
-            @if (session('error'))
-                <div class="alert alert-danger alert-message">
-                    <i class="fas fa-times-circle"></i> {{ session('error') }}
-                </div>
-            @endif
+                @if (session('success'))
+                    <div class="alert alert-success alert-message">
+                        <i class="fas fa-check-circle"></i> {{ session('success') }}
+                    </div>
+                @endif
+                @if (session('error'))
+                    <div class="alert alert-danger alert-message">
+                        <i class="fas fa-times-circle"></i> {{ session('error') }}
+                    </div>
+                @endif
 
-            {{-- Course Header --}}
-            <div class="course-header-section">
-                <div>
-                    <h1>{{ $course->title }}</h1>
+                {{-- Course Header --}}
+                <div class="course-header-section">
+                    <div>
+                        <h1>{{ $course->title }}</h1>
                     @if($course->formation)
                         <p class="course-formation">
-                            {{-- Afficher seulement la formation liée --}}
-                            <span class="badge bg-secondary">{{ $course->formation->title }}</span>
+                            {{-- Afficher la Formation UNIQUEMENT si l'utilisateur n'est PAS un Consultant --}}
+                            @if (!auth()->user()->hasRole('Consultant'))
+                                <span class="badge bg-secondary">{{ $course->formation->title }}</span>
+                            @endif
 
-                            {{-- Ajouter le Module si nécessaire --}}
+                            {{-- Le Module reste affiché pour tout le monde (Consultant inclus) --}}
                             @if($course->module)
                                 <span class="badge bg-info ms-2">{{ $course->module->title }}</span>
                             @endif
@@ -433,199 +435,199 @@
                     @else
                         <p class="course-formation">Aucune formation associée</p>
                     @endif
-                    <div class="consultant-info">
+                        <div class="consultant-info">
 
-                        {{-- Changed to display $course->consultant->name directly --}}
-                        <span>Par: {{ $course->consultant->name ?? 'N/A' }}</span>
+                            {{-- Changed to display $course->consultant->name directly --}}
+                            <span>Par: {{ $course->consultant->name ?? 'N/A' }}</span>
+                        </div>
                     </div>
+                    <span class="formation-tag">
+                        <i class="fas fa-calendar-alt me-2"></i> {{ \Carbon\Carbon::parse($course->course_date)->format('d F Y') }}
+                    </span>
                 </div>
-                <span class="formation-tag">
-                    <i class="fas fa-calendar-alt me-2"></i> {{ \Carbon\Carbon::parse($course->course_date)->format('d F Y') }}
-                </span>
-            </div>
 
-            {{-- Course Details --}}
-            <h2 class="section-title"><i class="fas fa-info-circle"></i> Détails du Cours</h2>
-            <div class="card-info">
-                <ul>
-                    <li><i class="fas fa-clock"></i> Heure: <strong>{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}</strong></li>
-                    <li><i class="fas fa-calendar-day"></i> Date: <strong>{{ \Carbon\Carbon::parse($course->course_date)->format('d/m/Y') }}</strong></li>
-                    {{-- L'partie li khassha tji 9bel had l'block bach tchouf l'date dyal lyoma --}}
-                    @php
+                {{-- Course Details --}}
+                <h2 class="section-title"><i class="fas fa-info-circle"></i> Détails du Cours</h2>
+                <div class="card-info">
+                    <ul>
+                        <li><i class="fas fa-clock"></i> Heure: <strong>{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}</strong></li>
+                        <li><i class="fas fa-calendar-day"></i> Date: <strong>{{ \Carbon\Carbon::parse($course->course_date)->format('d/m/Y') }}</strong></li>
+                        {{-- L'partie li khassha tji 9bel had l'block bach tchouf l'date dyal lyoma --}}
+                        @php
     // ... (Your existing date comparison logic)
     $courseDate = \Carbon\Carbon::parse($course->course_date)->startOfDay();
     $today = \Carbon\Carbon::today();
     $isCourseUpcomingOrToday = $courseDate->gte($today); 
-@endphp
-        
-{{-- Lien Zoom: N'affichew l'action dyal "Rejoindre" ghir ila kan mazal --}}
-@if ($course->zoom_link && $isCourseUpcomingOrToday)
-    <li>
-        <i class="fas fa-video"></i> Lien Zoom/Teams: 
-        
-        {{-- Hna khassna nst3mlo un Form bach n9dro nsjlo l'click --}}
-        <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline">
-            @csrf
-            <button type="submit" class="btn btn-link p-0 m-0 align-baseline text-primary-emphasis" style="text-decoration: underline;">
-                Rejoindre la réunion
-            </button>
-        </form>
-    </li>
-@elseif ($course->zoom_link && !$isCourseUpcomingOrToday)
-    {{-- Ila kan daz: Kan'affichew 'Disponible' bghir Lien ghir maktoub --}}
-    <li><i class="fas fa-video"></i> Lien Zoom: <span class="text-success">Disponible (Cours passé)</span></li>
-@else
-    {{-- Ila ma kan la zoom link la walo --}}
-    <li><i class="fas fa-video-slash"></i> Lien Zoom: <span class="text-muted">Non disponible</span></li>
-@endif
+    @endphp
+
+    {{-- Lien Zoom: N'affichew l'action dyal "Rejoindre" ghir ila kan mazal --}}
+    @if ($course->zoom_link && $isCourseUpcomingOrToday)
+        <li>
+            <i class="fas fa-video"></i> Lien Zoom/Teams: 
+
+            {{-- Hna khassna nst3mlo un Form bach n9dro nsjlo l'click --}}
+            <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline">
+                @csrf
+                <button type="submit" class="btn btn-link p-0 m-0 align-baseline text-primary-emphasis" style="text-decoration: underline;">
+                    Rejoindre la réunion
+                </button>
+            </form>
+        </li>
+    @elseif ($course->zoom_link && !$isCourseUpcomingOrToday)
+        {{-- Ila kan daz: Kan'affichew 'Disponible' bghir Lien ghir maktoub --}}
+        <li><i class="fas fa-video"></i> Lien Zoom: <span class="text-success">Disponible (Cours passé)</span></li>
+    @else
+        {{-- Ila ma kan la zoom link la walo --}}
+        <li><i class="fas fa-video-slash"></i> Lien Zoom: <span class="text-muted">Non disponible</span></li>
+    @endif
 
 
-                    @if ($course->recording_url)
-                        <li><i class="fas fa-record-vinyl"></i> Enregistrement: <a href="{{ $course->recording_url }}" target="_blank" class="text-primary-emphasis">Voir l'enregistrement</a></li>
-                    @else
-                        <li><i class="fas fa-compact-disc"></i> Enregistrement: <span class="text-muted">Non disponible</span></li>
-                    @endif
-                </ul>
-            </div>
-
-            {{-- Course Description --}}
-            <h2 class="section-title"><i class="fas fa-align-left"></i> Description du Cours</h2>
-            <div class="description-content">
-                <p> {!! nl2br(e($course->description)) !!}</p>
-
-            </div>
-
-            {{-- Documents Section --}}
-            <h2 class="section-title"><i class="fas fa-file-alt"></i> Documents du Cours</h2>
-            @if ($course->documents && count($course->documents) > 0)
-                <ul class="documents-list">
-                    @foreach ($course->documents as $index => $document)
-                        <li>
-                            <div class="doc-info">
-                                <i class="doc-icon fas fa-file-pdf"></i> {{-- Default icon, you can change based on type --}}
-                                <span class="doc-name">{{ $document['name'] }}</span>
-                                <span class="doc-size">({{ round($document['size'] / 1024 / 1024, 2) }} MB)</span>
-                            </div>
-                            <a href="{{ route('courses.download-document', ['course' => $course->id, 'document_index' => $index]) }}" class="btn-download" download>
-                                <i class="fas fa-download me-2"></i> Télécharger
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
-            @else
-                <div class="alert alert-info alert-message text-center">
-                    <i class="fas fa-info-circle"></i> Aucun document n'est disponible pour ce cours pour le moment.
-                </div>
-            @endif
-
-            {{-- Evaluations Section (if you have evaluations relation setup) --}}
-
-
-            {{-- Actions --}}
-            <div class="d-flex justify-content-between align-items-center mt-5 flex-wrap btn-group-actions">
-                <a href="{{ route('courses.index') }}" class="btn-custom btn-back">
-                    <i class="fas fa-arrow-left"></i> Retour aux Cours
-                </a>
-
-                <div class="d-flex gap-3 mt-3 mt-md-0">
-                                {{-- Test de la date : N'affichiw "Rejoindre" ghir ila kan l'cours mazal ma dazch --}}
-                    @php
-    use Carbon\Carbon;
-    // Kan-comparéw ghir la date (sans heure)
-    $courseDate = Carbon::parse($course->course_date)->startOfDay();
-    $today = Carbon::today();
-                    @endphp
-
-                      @if ($course->zoom_link && $courseDate->gte($today))
-                        <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline">
-                            @csrf
-                            <button type="submit" class="btn-custom btn-join-zoom">
-                                <i class="fas fa-door-open"></i> Rejoindre le Cours
-                            </button>
-                        </form>
-                    @elseif ($course->zoom_link && $courseDate->lt($today))
-                        {{-- Message ila kan l'course daz --}}
-                        <span class="alert alert-warning alert-message mb-0 py-2 px-3">
-                            <i class="fas fa-calendar-check"></i> Ce cours a déjà eu lieu.
-                             </span>
-                    @endif
-
-         
-       
-                </div>
-            </div>
-             @can('course-create')
-            <div class="participation-section">
-            <h2 class="section-title"><i class="fas fa-chart-bar"></i> Statistiques de participation</h2>
-
-            {{-- Stat Card for Count --}}
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="stat-card">
-                        <div class="icon-circle">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div>
-                            <div class="stat-value">{{ $joinCount }}</div>
-                            <div class="stat-label">Personnes ayant cliqué sur "Rejoindre"</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- List of Participants --}}
-            <div class="participants-list-container">
-                <div class="list-title">
-                    <i class="fas fa-list-ul me-2"></i> Liste des Participants ({{ $joinCount }} Utilisateurs)
+                        @if ($course->recording_url)
+                            <li><i class="fas fa-record-vinyl"></i> Enregistrement: <a href="{{ $course->recording_url }}" target="_blank" class="text-primary-emphasis">Voir l'enregistrement</a></li>
+                        @else
+                            <li><i class="fas fa-compact-disc"></i> Enregistrement: <span class="text-muted">Non disponible</span></li>
+                        @endif
+                    </ul>
                 </div>
 
-                @if(!empty($joinedUsers))
-                    <ul class="participants-list">
-                        @foreach($joinedUsers as $userName)
+                {{-- Course Description --}}
+                <h2 class="section-title"><i class="fas fa-align-left"></i> Description du Cours</h2>
+                <div class="description-content">
+                    <p> {!! nl2br(e($course->description)) !!}</p>
+
+                </div>
+
+                {{-- Documents Section --}}
+                <h2 class="section-title"><i class="fas fa-file-alt"></i> Documents du Cours</h2>
+                @if ($course->documents && count($course->documents) > 0)
+                    <ul class="documents-list">
+                        @foreach ($course->documents as $index => $document)
                             <li>
-                                <i class="fas fa-circle"></i> {{ $userName }}
+                                <div class="doc-info">
+                                    <i class="doc-icon fas fa-file-pdf"></i> {{-- Default icon, you can change based on type --}}
+                                    <span class="doc-name">{{ $document['name'] }}</span>
+                                    <span class="doc-size">({{ round($document['size'] / 1024 / 1024, 2) }} MB)</span>
+                                </div>
+                                <a href="{{ route('courses.download-document', ['course' => $course->id, 'document_index' => $index]) }}" class="btn-download" download>
+                                    <i class="fas fa-download me-2"></i> Télécharger
+                                </a>
                             </li>
                         @endforeach
                     </ul>
                 @else
-                    <div class="alert alert-warning alert-message text-center mb-0">
-                        <i class="fas fa-exclamation-circle"></i> Aucun utilisateur n'a encore cliqué sur "Rejoindre".
+                    <div class="alert alert-info alert-message text-center">
+                        <i class="fas fa-info-circle"></i> Aucun document n'est disponible pour ce cours pour le moment.
                     </div>
                 @endif
+
+                {{-- Evaluations Section (if you have evaluations relation setup) --}}
+
+
+                {{-- Actions --}}
+                <div class="d-flex justify-content-between align-items-center mt-5 flex-wrap btn-group-actions">
+                    <a href="{{ route('courses.index') }}" class="btn-custom btn-back">
+                        <i class="fas fa-arrow-left"></i> Retour aux Cours
+                    </a>
+
+                    <div class="d-flex gap-3 mt-3 mt-md-0">
+                                    {{-- Test de la date : N'affichiw "Rejoindre" ghir ila kan l'cours mazal ma dazch --}}
+                        @php
+    use Carbon\Carbon;
+    // Kan-comparéw ghir la date (sans heure)
+    $courseDate = Carbon::parse($course->course_date)->startOfDay();
+    $today = Carbon::today();
+                        @endphp
+
+                          @if ($course->zoom_link && $courseDate->gte($today))
+                            <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn-custom btn-join-zoom">
+                                    <i class="fas fa-door-open"></i> Rejoindre le Cours
+                                </button>
+                            </form>
+                        @elseif ($course->zoom_link && $courseDate->lt($today))
+                            {{-- Message ila kan l'course daz --}}
+                            <span class="alert alert-warning alert-message mb-0 py-2 px-3">
+                                <i class="fas fa-calendar-check"></i> Ce cours a déjà eu lieu.
+                                 </span>
+                        @endif
+
+         
+       
+                    </div>
+                </div>
+                 @can('course-create')
+                <div class="participation-section">
+                <h2 class="section-title"><i class="fas fa-chart-bar"></i> Statistiques de participation</h2>
+
+                {{-- Stat Card for Count --}}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="stat-card">
+                            <div class="icon-circle">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div>
+                                <div class="stat-value">{{ $joinCount }}</div>
+                                <div class="stat-label">Personnes ayant cliqué sur "Rejoindre"</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- List of Participants --}}
+                <div class="participants-list-container">
+                    <div class="list-title">
+                        <i class="fas fa-list-ul me-2"></i> Liste des Participants ({{ $joinCount }} Utilisateurs)
+                    </div>
+
+                    @if(!empty($joinedUsers))
+                        <ul class="participants-list">
+                            @foreach($joinedUsers as $userName)
+                                <li>
+                                    <i class="fas fa-circle"></i> {{ $userName }}
+                                </li>
+                            @endforeach
+                        </ul>
+                    @else
+                        <div class="alert alert-warning alert-message text-center mb-0">
+                            <i class="fas fa-exclamation-circle"></i> Aucun utilisateur n'a encore cliqué sur "Rejoindre".
+                        </div>
+                    @endif
+                </div>
             </div>
-        </div>
-        {{-- END NEW SECTION --}}
-        @endcan
-        </div>
+            {{-- END NEW SECTION --}}
+            @endcan
+            </div>
 
 
 
-        <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="deleteModalLabel">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Confirmer la suppression
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p class="mb-0">Êtes-vous sûr de vouloir supprimer ce cours ? Cette action est irréversible.</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <form id="deleteForm" method="POST" class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger">
-                                <i class="fas fa-trash me-2"></i>Supprimer
-                            </button>
-                        </form>
+            <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteModalLabel">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Confirmer la suppression
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-0">Êtes-vous sûr de vouloir supprimer ce cours ? Cette action est irréversible.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                            <form id="deleteForm" method="POST" class="d-inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash me-2"></i>Supprimer
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 @endsection
 
 @push('scripts')

@@ -19,11 +19,11 @@ class Module extends Model
         'description',
         'duration_hours',
         'number_seance',
-        'order',
+      
         'status',
         'content',
         'progress', // New: for the consultant's progress
-        'formation_id',
+       
         'user_id',
     ];
 
@@ -39,9 +39,10 @@ class Module extends Model
     /**
      * Get the formation that owns the module.
      */
-    public function formation()
+    public function formations() 
     {
-        return $this->belongsTo(Formation::class);
+        // Had l-methode sse77i7a: belongsToMany w withPivot('order') bach njibo tartib.
+        return $this->belongsToMany(Formation::class)->withPivot('order'); 
     }
 
     public function courses()

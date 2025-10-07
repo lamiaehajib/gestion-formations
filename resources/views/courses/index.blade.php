@@ -842,7 +842,7 @@
                             <div class="day-date">{{ $currentDate->format('d/m/Y') }}</div>
                         </div>
 
-                        <div class="day-content">
+                         <div class="day-content">
                             @forelse($dayCourses as $course)
                                 <div class="course-item-mini" onclick="window.location='{{ route('courses.show', $course) }}'">
                                     <div class="course-time">
@@ -851,7 +851,9 @@
                                         {{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}
                                     </div>
                                     <div class="course-title-mini">{{ Str::limit($course->title, 40) }}</div>
-                                    @if($course->formation)
+                                    
+                                    {{-- 🚨 MODIFICATION ICI: On n'affiche le nom de la formation que si l'utilisateur n'est PAS un Consultant --}}
+                                    @if($course->formation && !auth()->user()->hasRole('Consultant'))
                                         <small class="text-muted">
                                             <i class="fas fa-graduation-cap me-1"></i>
                                             {{ Str::limit($course->formation->title, 30) }}
@@ -896,12 +898,7 @@
                             <div>
                                 <h5 class="course-title" style="margin-bottom: 0;">{{ $moduleTitle }}</h5>
                                 {{-- Display Formation Title if available --}}
-                                @if(isset($moduleCourses[0]->formation->title))
-                                    <p class="course-formation text-muted" style="margin-bottom: 0; font-size: 0.85rem;">
-                                        <i class="fas fa-graduation-cap me-1"></i>
-                                        {{ $moduleCourses[0]->formation->title }}
-                                    </p>
-                                @endif
+                                
                             </div>
                         </div>
 
@@ -975,25 +972,25 @@
                                     </a>
 
                                     {{-- 2. Edit Button (Opens Modal) --}}
-                                    @can('course-edit')
-                                        <button type="button" class="btn-action-mini btn-edit"
-                                            data-bs-toggle="modal" data-bs-target="#editCourseModal"
-                                            data-course-id="{{ $course->id }}"
-                                            data-formation-id="{{ $course->formation->id ?? '' }}"
-                                            data-module-id="{{ $course->module->id ?? '' }}"
-                                            data-consultant-id="{{ $course->consultant_id }}"
-                                            data-title="{{ $course->title }}"
-                                            data-description="{{ $course->description }}"
-                                            data-course-date="{{ \Carbon\Carbon::parse($course->course_date)->format('Y-m-d') }}"
-                                            data-start-time="{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }}"
-                                            data-end-time="{{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}"
-                                            data-zoom-link="{{ $course->zoom_link }}"
-                                            data-recording-url="{{ $course->recording_url }}"
-                                            data-documents="{{ json_encode($course->documents ?? []) }}"
-                                            title="Modifier">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                    @endcan
+                                   @can('course-edit')
+    <button type="button" class="btn-action-mini btn-edit"
+        data-bs-toggle="modal" data-bs-target="#editCourseModal"
+        data-course-id="{{ $course->id }}"
+        data-formation-id="{{ $course->formation->id ?? '' }}" {{-- Ignoré par le JS, mais gardé en cas de besoin backend --}}
+        data-module-id="{{ $course->module->id ?? '' }}"
+        data-consultant-id="{{ $course->consultant_id ?? '' }}"
+        data-title="{{ $course->title }}"
+        data-description="{{ $course->description }}"
+        data-course-date="{{ \Carbon\Carbon::parse($course->course_date)->format('Y-m-d') }}"
+        data-start-time="{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }}"
+        data-end-time="{{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}"
+        data-zoom-link="{{ $course->zoom_link ?? '' }}"
+        data-recording-url="{{ $course->recording_url ?? '' }}"
+        data-documents="{{ json_encode($course->documents ?? []) }}"
+        title="Modifier">
+        <i class="fas fa-edit"></i>
+    </button>
+@endcan
 
                                     {{-- 3. Duplicate Button --}}
                                     @can('course-create')
@@ -1065,294 +1062,319 @@
             </div>
         </div>
 
-        {{-- Modal Create --}}
-        @can('course-create')
-        <div class="modal fade" id="createCourseModal" tabindex="-1" aria-labelledby="createCourseModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="createCourseModalLabel">
-                            <i class="fas fa-plus-circle me-2"></i>
-                            Créer un Nouveau Cours
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <form action="{{ route('courses.store') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <div class="modal-body">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="create_formation_id" class="form-label modal-form-label">Formation</label>
-                                    <select name="formation_id" id="create_formation_id"
-                                        class="form-control @error('formation_id') is-invalid @enderror">
-                                        <option value="">Sélectionnez une formation</option>
-                                        @foreach($formationsForModals as $formation)
-                                        <option value="{{ $formation->id }}" {{ old('formation_id') == $formation->id ? 'selected' : '' }}>
-                                            {{ $formation->title }}
-                                        </option>
-                                        @endforeach
-                                    </select>
-                                    @error('formation_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <div class="col-md-6 mb-3" id="module-select-container" style="display:none;">
-                                    <label for="create_module_id" class="form-label modal-form-label">Module</label>
-                                    <select name="module_id" id="create_module_id"
-                                        class="form-control @error('module_id') is-invalid @enderror">
-                                        <option value="">Sélectionnez un module</option>
-                                    </select>
-                                    @error('module_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="create_consultant_id" class="form-label modal-form-label">Consultant</label>
-                                <select name="consultant_id" id="create_consultant_id"
-                                    class="form-control @error('consultant_id') is-invalid @enderror">
-                                    <option value="">Sélectionnez un consultant (Optionnel)</option>
-                                    @foreach($consultants as $consultant)
-                                    <option value="{{ $consultant->id }}" {{ old('consultant_id') == $consultant->id ? 'selected' : '' }}>
-                                        {{ $consultant->name }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @error('consultant_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="create_course_title" class="form-label modal-form-label">Titre du Cours</label>
-                                <input type="text" name="title" id="create_course_title" class="form-control @error('title') is-invalid @enderror" value="{{ old('title') }}" required>
-                                @error('title')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="create_course_description" class="form-label modal-form-label">Description</label>
-                                <textarea name="description" id="create_course_description" class="form-control @error('description') is-invalid @enderror" rows="4" required>{{ old('description') }}</textarea>
-                                @error('description')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-4 mb-3">
-                                    <label for="create_course_date" class="form-label modal-form-label">Date du Cours</label>
-                                    <input type="date" name="course_date" id="create_course_date" class="form-control @error('course_date') is-invalid @enderror" value="{{ old('course_date') }}" required>
-                                    @error('course_date')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label for="create_start_time" class="form-label modal-form-label">Heure de Début</label>
-                                    <input type="time" name="start_time" id="create_start_time" class="form-control @error('start_time') is-invalid @enderror" value="{{ old('start_time') }}" required>
-                                    @error('start_time')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label for="create_end_time" class="form-label modal-form-label">Heure de Fin</label>
-                                    <input type="time" name="end_time" id="create_end_time" class="form-control @error('end_time') is-invalid @enderror" value="{{ old('end_time') }}" required>
-                                    @error('end_time')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="create_zoom_link" class="form-label modal-form-label">Lien Zoom /Teams (Optionnel)</label>
-                                <input type="url" name="zoom_link" id="create_zoom_link" class="form-control @error('zoom_link') is-invalid @enderror" value="{{ old('zoom_link') }}" placeholder="https://zoom.us/j/123456789">
-                                @error('zoom_link')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="create_documents" class="form-label modal-form-label">Documents (PDF, DOCX, PPTX - Max 10MB par fichier)</label>
-                                <input type="file" name="documents[]" id="create_documents" class="form-control @error('documents.*') is-invalid @enderror" multiple>
-                                @error('documents.*')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn btn-new-course">
-                                <i class="fas fa-save"></i> Créer le Cours
-                            </button>
-                        </div>
-                    </form>
-                </div>
+       {{-- Modal Create --}}
+@can('course-create')
+<div class="modal fade" id="createCourseModal" tabindex="-1" aria-labelledby="createCourseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createCourseModalLabel">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    Créer un Nouveau Cours
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <form action="{{ route('courses.store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="row">
+                        {{-- 🔥 1. MODULE FIRST (avec search) --}}
+                        <div class="col-md-12 mb-3">
+                            <label for="create_module_search" class="form-label modal-form-label">
+                                <i class="fas fa-search me-1"></i> Rechercher Module
+                            </label>
+                            <input 
+                                type="text" 
+                                id="create_module_search" 
+                                class="form-control" 
+                                placeholder="Tapez pour rechercher un module..."
+                            >
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label for="create_module_id" class="form-label modal-form-label">Module *</label>
+                            <select 
+                                name="module_id" 
+                                id="create_module_id"
+                                class="form-control @error('module_id') is-invalid @enderror"
+                                required
+                            >
+                                <option value="">Sélectionnez un module</option>
+                                @foreach($modules as $module)
+                                    <option value="{{ $module->id }}" {{ old('module_id') == $module->id ? 'selected' : '' }}>
+                                        {{ $module->title }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('module_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Le cours sera créé dans toutes les formations contenant ce module
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="create_consultant_id" class="form-label modal-form-label">Consultant</label>
+                        <select name="consultant_id" id="create_consultant_id"
+                            class="form-control @error('consultant_id') is-invalid @enderror">
+                            <option value="">Sélectionnez un consultant (Optionnel)</option>
+                            @foreach($consultants as $consultant)
+                            <option value="{{ $consultant->id }}" {{ old('consultant_id') == $consultant->id ? 'selected' : '' }}>
+                                {{ $consultant->name }}
+                            </option>
+                            @endforeach
+                        </select>
+                        @error('consultant_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="create_course_title" class="form-label modal-form-label">Titre du Cours</label>
+                        <input type="text" name="title" id="create_course_title" class="form-control @error('title') is-invalid @enderror" value="{{ old('title') }}" required>
+                        @error('title')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="create_course_description" class="form-label modal-form-label">Description</label>
+                        <textarea name="description" id="create_course_description" class="form-control @error('description') is-invalid @enderror" rows="4" required>{{ old('description') }}</textarea>
+                        @error('description')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="create_course_date" class="form-label modal-form-label">Date du Cours</label>
+                            <input type="date" name="course_date" id="create_course_date" class="form-control @error('course_date') is-invalid @enderror" value="{{ old('course_date') }}" required>
+                            @error('course_date')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="create_start_time" class="form-label modal-form-label">Heure de Début</label>
+                            <input type="time" name="start_time" id="create_start_time" class="form-control @error('start_time') is-invalid @enderror" value="{{ old('start_time') }}" required>
+                            @error('start_time')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="create_end_time" class="form-label modal-form-label">Heure de Fin</label>
+                            <input type="time" name="end_time" id="create_end_time" class="form-control @error('end_time') is-invalid @enderror" value="{{ old('end_time') }}" required>
+                            @error('end_time')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="create_zoom_link" class="form-label modal-form-label">Lien Zoom /Teams (Optionnel)</label>
+                        <input type="url" name="zoom_link" id="create_zoom_link" class="form-control @error('zoom_link') is-invalid @enderror" value="{{ old('zoom_link') }}" placeholder="https://zoom.us/j/123456789">
+                        @error('zoom_link')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="create_documents" class="form-label modal-form-label">Documents (PDF, DOCX, PPTX - Max 10MB par fichier)</label>
+                        <input type="file" name="documents[]" id="create_documents" class="form-control @error('documents.*') is-invalid @enderror" multiple>
+                        @error('documents.*')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-new-course">
+                        <i class="fas fa-save"></i> Créer le Cours
+                    </button>
+                </div>
+            </form>
         </div>
-        @endcan
+    </div>
+</div>
+@endcan
 
         {{-- Modal Edit --}}
-        @can('course-edit')
-        <div class="modal fade" id="editCourseModal" tabindex="-1" aria-labelledby="editCourseModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="editCourseModalLabel">
-                            <i class="fas fa-edit me-2"></i>
-                            Modifier le Cours
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <form id="editCourseForm" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        @method('PUT')
-                        <div class="modal-body">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="edit_formation_id" class="form-label modal-form-label">Formation</label>
-                                    <select name="formation_id" id="edit_formation_id"
-                                        class="form-control @error('formation_id') is-invalid @enderror" required>
-                                        <option value="">Sélectionnez une formation</option>
-                                        @foreach($formationsForModals as $formation)
-                                            <option value="{{ $formation->id }}">{{ $formation->title }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('formation_id')
-                                        <div class="invalid-feedback d-block">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <div class="col-md-6 mb-3" id="edit-module-select-container">
-                                    <label for="edit_module_id" class="form-label modal-form-label">Module</label>
-                                    <select name="module_id" id="edit_module_id"
-                                        class="form-control @error('module_id') is-invalid @enderror" required>
-                                        <option value="">Sélectionnez un module</option>
-                                    </select>
-                                    @error('module_id')
-                                        <div class="invalid-feedback d-block">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="edit_title" class="form-label modal-form-label">Titre du Cours</label>
-                                <input type="text" name="title" id="edit_title"
-                                    class="form-control @error('title') is-invalid @enderror" required>
-                                @error('title')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="edit_consultant_id" class="form-label modal-form-label">Consultant</label>
-                                <select name="consultant_id" id="edit_consultant_id"
-                                    class="form-control @error('consultant_id') is-invalid @enderror">
-                                    <option value="">Sélectionnez un consultant (Optionnel)</option>
-                                    @foreach($consultants as $consultant)
-                                        <option value="{{ $consultant->id }}">{{ $consultant->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('consultant_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="edit_description" class="form-label modal-form-label">Description</label>
-                                <textarea name="description" id="edit_description"
-                                    class="form-control @error('description') is-invalid @enderror" rows="4" required></textarea>
-                                @error('description')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-4 mb-3">
-                                    <label for="edit_course_date" class="form-label modal-form-label">Date du Cours</label>
-                                    <input type="date" name="course_date" id="edit_course_date"
-                                        class="form-control @error('course_date') is-invalid @enderror" required>
-                                    @error('course_date')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label for="edit_start_time" class="form-label modal-form-label">Heure de Début</label>
-                                    <input type="time" name="start_time" id="edit_start_time"
-                                        class="form-control @error('start_time') is-invalid @enderror" required>
-                                    @error('start_time')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label for="edit_end_time" class="form-label modal-form-label">Heure de Fin</label>
-                                    <input type="time" name="end_time" id="edit_end_time"
-                                        class="form-control @error('end_time') is-invalid @enderror" required>
-                                    @error('end_time')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="edit_zoom_link" class="form-label modal-form-label">Lien Zoom/Teams (Optionnel)</label>
-                                <input type="url" name="zoom_link" id="edit_zoom_link"
-                                    class="form-control @error('zoom_link') is-invalid @enderror"
-                                    placeholder="https://zoom.us/j/123456789">
-                                @error('zoom_link')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="edit_recording_url" class="form-label modal-form-label">Lien d'enregistrement (Optionnel)</label>
-                                <input type="url" name="recording_url" id="edit_recording_url"
-                                    class="form-control @error('recording_url') is-invalid @enderror"
-                                    placeholder="https://youtube.com/watch?v=...">
-                                @error('recording_url')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="edit_documents" class="form-label modal-form-label">Documents (PDF, DOCX, PPTX - Max 10MB par fichier)</label>
-                                <input type="file" name="documents[]" id="edit_documents"
-                                    class="form-control @error('documents.*') is-invalid @enderror" multiple>
-                                @error('documents.*')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <div id="existing_documents" class="mt-2"></div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn btn-edit">
-                                <i class="fas fa-save"></i> Mettre à jour
-                            </button>
-                        </div>
-                    </form>
-                </div>
+       @can('course-edit')
+<div class="modal fade" id="editCourseModal" tabindex="-1" aria-labelledby="editCourseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editCourseModalLabel">
+                    <i class="fas fa-edit me-2"></i>
+                    Modifier le Cours
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <form id="editCourseForm" method="POST" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
+                <div class="modal-body">
+                    <div class="row">
+                        
+                        {{-- 🔥 1. MODULE SEARCH --}}
+                        <div class="col-md-12 mb-3">
+                            <label for="edit_module_search" class="form-label modal-form-label">
+                                <i class="fas fa-search me-1"></i> Rechercher Module
+                            </label>
+                            <input 
+                                type="text" 
+                                id="edit_module_search" 
+                                class="form-control" 
+                                placeholder="Tapez pour rechercher un module..."
+                            >
+                        </div>
+
+                        {{-- 🔥 2. MODULE SELECT (Col-md-12 comme dans la création) --}}
+                        <div class="col-md-12 mb-3">
+                            <label for="edit_module_id" class="form-label modal-form-label">Module *</label>
+                            <select name="module_id" id="edit_module_id"
+                                class="form-control @error('module_id') is-invalid @enderror" required>
+                                <option value="">Sélectionnez un module</option>
+                                {{-- Assurez-vous que la variable $modules est disponible ici --}}
+                                @foreach($modules as $module)
+                                    <option value="{{ $module->id }}">{{ $module->title }}</option>
+                                @endforeach
+                            </select>
+                            @error('module_id')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                La modification du module mettra à jour le cours dans toutes les formations associées.
+                            </small>
+                        </div>
+
+                        {{-- Le champ 'formation_id' a été retiré pour correspondre à la logique de création --}}
+                        <input type="hidden" name="formation_id" id="edit_formation_id" value=""> 
+                        {{-- NOTE: J'ai laissé un champ caché pour `formation_id` car le contrôleur Laravel 
+                             pourrait toujours en avoir besoin, même si la valeur sera peut-être ignorée ou 
+                             déduite par votre logique backend. Dans le JS, vous devrez définir sa valeur 
+                             à partir de l'attribut data du bouton, même s'il n'est pas utilisé pour la sélection. --}}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_title" class="form-label modal-form-label">Titre du Cours</label>
+                        <input type="text" name="title" id="edit_title"
+                            class="form-control @error('title') is-invalid @enderror" required>
+                        @error('title')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_consultant_id" class="form-label modal-form-label">Consultant</label>
+                        <select name="consultant_id" id="edit_consultant_id"
+                            class="form-control @error('consultant_id') is-invalid @enderror">
+                            <option value="">Sélectionnez un consultant (Optionnel)</option>
+                            @foreach($consultants as $consultant)
+                                <option value="{{ $consultant->id }}">{{ $consultant->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('consultant_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label modal-form-label">Description</label>
+                        <textarea name="description" id="edit_description"
+                            class="form-control @error('description') is-invalid @enderror" rows="4" required></textarea>
+                        @error('description')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="edit_course_date" class="form-label modal-form-label">Date du Cours</label>
+                            <input type="date" name="course_date" id="edit_course_date"
+                                class="form-control @error('course_date') is-invalid @enderror" required>
+                            @error('course_date')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="edit_start_time" class="form-label modal-form-label">Heure de Début</label>
+                            <input type="time" name="start_time" id="edit_start_time"
+                                class="form-control @error('start_time') is-invalid @enderror" required>
+                            @error('start_time')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="edit_end_time" class="form-label modal-form-label">Heure de Fin</label>
+                            <input type="time" name="end_time" id="edit_end_time"
+                                class="form-control @error('end_time') is-invalid @enderror" required>
+                            @error('end_time')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_zoom_link" class="form-label modal-form-label">Lien Zoom/Teams (Optionnel)</label>
+                        <input type="url" name="zoom_link" id="edit_zoom_link"
+                            class="form-control @error('zoom_link') is-invalid @enderror"
+                            placeholder="https://zoom.us/j/123456789">
+                        @error('zoom_link')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_recording_url" class="form-label modal-form-label">Lien d'enregistrement (Optionnel)</label>
+                        <input type="url" name="recording_url" id="edit_recording_url"
+                            class="form-control @error('recording_url') is-invalid @enderror"
+                            placeholder="https://youtube.com/watch?v=...">
+                        @error('recording_url')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_documents" class="form-label modal-form-label">Documents (PDF, DOCX, PPTX - Max 10MB par fichier)</label>
+                        <input type="file" name="documents[]" id="edit_documents"
+                            class="form-control @error('documents.*') is-invalid @enderror" multiple>
+                        @error('documents.*')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <div id="existing_documents" class="mt-2"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-edit">
+                        <i class="fas fa-save"></i> Mettre à jour
+                    </button>
+                </div>
+            </form>
         </div>
-        @endcan
+    </div>
+</div>
+@endcan
     </div>
 
 @endsection
 
 @push('scripts')
 <script>
-    // ... (Your existing confirmDelete and loadModules functions remain unchanged) ...
     function confirmDelete(courseId) {
         document.getElementById('deleteForm').action = `/courses/${courseId}`;
         new bootstrap.Modal(document.getElementById('deleteModal')).show();
     }
 
-    // --- Fonctions AJAX communes (Load Modules) ---
-    const loadModules = (formationId, moduleSelect, consultantSelect, selectedModuleId = null) => {
-        moduleSelect.innerHTML = '<option value="">Chargement...</option>';
+    // 🔥 NEW FUNCTION: Load Formations by Module (opposite of old logic)
+    const loadFormationsByModule = (moduleId, formationSelect, selectedFormationId = null) => {
+        formationSelect.innerHTML = '<option value="">Chargement...</option>';
         
-        fetch(`/get-modules/${formationId}`)
+        fetch(`/courses/modules/${moduleId}/formations`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
@@ -1360,57 +1382,30 @@
                 return response.json();
             })
             .then(data => {
-                moduleSelect.innerHTML = '<option value="">Sélectionnez un module</option>';
-                const uniqueConsultants = {};
+                formationSelect.innerHTML = '<option value="">Sélectionnez une formation</option>';
 
-                if (data.modules && data.modules.length > 0) {
-                    data.modules.forEach(module => {
+                if (data.formations && data.formations.length > 0) {
+                    data.formations.forEach(formation => {
                         const option = document.createElement('option');
-                        option.value = module.id;
-                        option.textContent = module.title;
+                        option.value = formation.id;
+                        option.textContent = formation.title;
                         
-                        // يحدد Module الصحيح عند التعديل
-                        if (module.id == selectedModuleId) {
+                        // يحدد Formation الصحيح عند التعديل أو عند وجود validation error
+                        if (formation.id == selectedFormationId) {
                             option.selected = true;
                         }
-                        moduleSelect.appendChild(option);
-
-                        if (module.user && !uniqueConsultants[module.user.id]) {
-                            uniqueConsultants[module.user.id] = { name: module.user.name, id: module.user.id };
-                        }
+                        formationSelect.appendChild(option);
                     });
-
-                    // إعادة تعمير Select ديال Consultants (مع الحفاظ على القيمة الأصلية)
-                    const currentConsultantId = consultantSelect.value;
-                    
-                    // إفراغ وإعادة ملء Select Consultants (فقط بال Consultants الجدد من Modules)
-                    // Note: You might want to reset the consultant select to include all consultants, not just those tied to modules. 
-                    // This logic assumes you are ONLY listing consultants tied to modules in this formation.
-                    // For simplicity, I'm keeping the original logic which updates based on fetched modules.
-                    for (const id in uniqueConsultants) {
-                        const consultant = uniqueConsultants[id];
-                        // نتأكد أن الخيار غير موجود لتجنب التكرار
-                        if (!consultantSelect.querySelector(`option[value="${consultant.id}"]`)) {
-                            const consultantOption = document.createElement('option');
-                            consultantOption.value = consultant.id;
-                            consultantOption.textContent = consultant.name;
-                            consultantSelect.appendChild(consultantOption);
-                        }
-                    }
-                    // إعادة اختيار Consultant القديم
-                    consultantSelect.value = currentConsultantId;
-
-
                 } else {
-                    moduleSelect.innerHTML = '<option value="">Aucun module trouvé</option>';
+                    formationSelect.innerHTML = '<option value="">Aucune formation trouvée pour ce module</option>';
                 }
             })
             .catch(error => {
-                console.error('Erreur lors de la récupération des modules:', error);
-                moduleSelect.innerHTML = '<option value="">Erreur de chargement</option>';
+                console.error('Erreur lors de la récupération des formations:', error);
+                formationSelect.innerHTML = '<option value="">Erreur de chargement</option>';
             });
     };
-    
+
     // --- NEW FUNCTION: Module Folder Toggle ---
     function toggleModuleContent(moduleFolderElement) {
         const content = moduleFolderElement.querySelector('.module-content');
@@ -1424,7 +1419,6 @@
             icon.style.transform = 'rotate(0deg)';
         }
     }
-    // ------------------------------------------
 
     document.addEventListener('DOMContentLoaded', function() {
         const observerOptions = {
@@ -1441,7 +1435,6 @@
             });
         }, observerOptions);
 
-        // Target both course cards and module folders for animation
         document.querySelectorAll('.course-card, .module-folder').forEach(card => {
             card.style.opacity = '0';
             card.style.transform = 'translateY(20px)';
@@ -1449,7 +1442,7 @@
             observer.observe(card);
         });
 
-        // --- GESTION DES ERREURS DE VALIDATION (Unchanged) ---
+        // --- GESTION DES ERREURS DE VALIDATION ---
         @if ($errors->any() && session('open_create_modal'))
             var createCourseModal = new bootstrap.Modal(document.getElementById('createCourseModal'));
             createCourseModal.show();
@@ -1460,7 +1453,6 @@
             var editCourseModalElement = document.getElementById('editCourseModal');
             var editModal = new bootstrap.Modal(editCourseModalElement);
 
-            // Ce bloc لملء الحقول عند وجود أخطاء Validation
             editCourseModalElement.querySelector('#edit_consultant_id').value = "{{ old('consultant_id', '') }}";
             editCourseModalElement.querySelector('#edit_title').value = "{{ old('title', '') }}";
             editCourseModalElement.querySelector('#edit_description').value = "{{ old('description', '') }}";
@@ -1482,174 +1474,144 @@
             });
         }, 5000);
 
-        // --- GESTION DE LA MODAL D'ÉDITION (EDIT) ---
-        const editCourseModal = document.getElementById('editCourseModal');
-        if (editCourseModal) {
-            const editFormationSelect = editCourseModal.querySelector('#edit_formation_id');
-            const editModuleSelectContainer = editCourseModal.querySelector('#edit-module-select-container');
-            const editModuleSelect = editCourseModal.querySelector('#edit_module_id');
-            const editConsultantSelect = editCourseModal.querySelector('#edit_consultant_id');
+        // --- 🔥 GESTION DE LA MODAL DE CRÉATION (CREATE) - SIMPLIFIED ---
+        const createCourseModal = document.getElementById('createCourseModal');
+        if (createCourseModal) {
+            const createModuleSearch = createCourseModal.querySelector('#create_module_search');
+            const createModuleSelect = createCourseModal.querySelector('#create_module_id');
 
-            // 1. Événement au changement de Formation (pour filtrer les modules)
-            editFormationSelect.addEventListener('change', function() {
-                const formationId = this.value;
-                if (formationId) {
-                    editModuleSelectContainer.style.display = 'block';
-                    loadModules(formationId, editModuleSelect, editConsultantSelect);
-                } else {
-                    editModuleSelectContainer.style.display = 'none';
-                }
-            });
-
-            // 2. Événement à l'ouverture de la Modal (pour remplir les champs)
-            editCourseModal.addEventListener('show.bs.modal', event => {
-                const button = event.relatedTarget;
-                const courseId = button.getAttribute('data-course-id');
+            // 🔥 Search functionality for modules
+            createModuleSearch.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const options = createModuleSelect.querySelectorAll('option');
                 
-                // قراءة البيانات من الزر (البيانات التي تم تصحيحها في الـ Blade)
-                const formationId = button.getAttribute('data-formation-id'); 
-                const moduleId = button.getAttribute('data-module-id'); 
-                
-                const consultantId = button.getAttribute('data-consultant-id');
-                const title = button.getAttribute('data-title');
-                const description = button.getAttribute('data-description');
-                const courseDate = button.getAttribute('data-course-date');
-                const startTime = button.getAttribute('data-start-time');
-                const endTime = button.getAttribute('data-end-time');
-                const zoomLink = button.getAttribute('data-zoom-link');
-                const recordingUrl = button.getAttribute('data-recording-url');
-                const documents = JSON.parse(button.getAttribute('data-documents'));
-
-                const modalForm = editCourseModal.querySelector('#editCourseForm');
-                const existingDocumentsDiv = editCourseModal.querySelector('#existing_documents');
-
-                modalForm.action = `/courses/${courseId}`;
-                
-                // **ملء الحقول الرئيسية**
-                editCourseModal.querySelector('#edit_formation_id').value = formationId;
-                editCourseModal.querySelector('#edit_consultant_id').value = consultantId; 
-                editCourseModal.querySelector('#edit_title').value = title;
-                editCourseModal.querySelector('#edit_description').value = description;
-                editCourseModal.querySelector('#edit_course_date').value = courseDate;
-                editCourseModal.querySelector('#edit_start_time').value = startTime;
-                editCourseModal.querySelector('#edit_end_time').value = endTime;
-                editCourseModal.querySelector('#edit_zoom_link').value = zoomLink;
-                editCourseModal.querySelector('#edit_recording_url').value = recordingUrl;
-
-                // **تحميل Modules وتحديد الـ Module الحالي**
-                if (formationId) {
-                    editModuleSelectContainer.style.display = 'block';
-                    // تمرير moduleId ليتم تحديده (selected) داخل loadModules بعد جلب البيانات
-                    loadModules(formationId, editModuleSelect, editConsultantSelect, moduleId);
-                } else {
-                    editModuleSelectContainer.style.display = 'none';
-                    editModuleSelect.innerHTML = '<option value="">Sélectionnez un module</option>';
-                }
-
-                // --- إدارة الوثائق الموجودة ---
-                existingDocumentsDiv.innerHTML = '';
-                if (documents && documents.length > 0) {
-                    documents.forEach((doc, index) => {
-                        const docHtml = `
-                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
-                                <a href="${doc.url}" target="_blank" class="text-primary"><i class="fas fa-file-alt me-2"></i>${doc.name}</a>
-                                <button type="button" class="btn btn-sm btn-danger remove-existing-doc" data-doc-name="${doc.name}" data-course-id="${courseId}">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                                <input type="hidden" name="existing_documents_to_keep[]" value="${doc.name}">
-                            </div>
-                        `;
-                        existingDocumentsDiv.insertAdjacentHTML('beforeend', docHtml);
-                    });
-                }
-                
-                // Logic for removing documents (must be added after rendering)
-                existingDocumentsDiv.querySelectorAll('.remove-existing-doc').forEach(button => {
-                    button.addEventListener('click', function() {
-                        const docName = this.getAttribute('data-doc-name');
-                        const courseId = this.getAttribute('data-course-id');
-                        
-                        // Replace 'existing_documents_to_keep[]' input with a 'documents_to_delete[]' input
-                        const keepInput = this.closest('.d-flex').querySelector('input[name^="existing_documents_to_keep"]');
-                        if (keepInput) {
-                            keepInput.name = 'documents_to_delete[]';
-                            keepInput.value = docName; // Send the name of the file to delete
-                        }
-
-                        this.closest('.d-flex').style.textDecoration = 'line-through';
-                        this.closest('.d-flex').style.opacity = '0.5';
-                        this.remove(); // Remove the button itself to prevent re-deletion
-
-                        // Optionally, alert the user that the file will be deleted on form submit
-                        console.log(`Document ${docName} marked for deletion.`);
-                    });
+                options.forEach(option => {
+                    if (option.value === '') return; // Skip placeholder
+                    const text = option.textContent.toLowerCase();
+                    option.style.display = text.includes(searchTerm) ? 'block' : 'none';
                 });
             });
         }
 
-        // --- GESTION DE LA MODAL DE CRÉATION (CREATE) (Unchanged) ---
-        const createCourseModal = document.getElementById('createCourseModal');
-        if (createCourseModal) {
-            // ✅ تصحيح: استهداف create_formation_id
-            const createFormationSelect = createCourseModal.querySelector('#create_formation_id'); 
-            // ✅ تصحيح: استهداف module-select-container
-            const createModuleSelectContainer = createCourseModal.querySelector('#module-select-container');
-            // ✅ تصحيح: استهداف create_module_id
-            const createModuleSelect = createCourseModal.querySelector('#create_module_id'); 
-            
-            // Consultant ID صحيح
-            const createConsultantSelect = createCourseModal.querySelector('#create_consultant_id'); 
+        // --- 🔥 GESTION DE LA MODAL D'ÉDITION (EDIT) - NEW LOGIC ---
+       const editCourseModal = document.getElementById('editCourseModal');
+if (editCourseModal) {
+    const editModuleSearch = editCourseModal.querySelector('#edit_module_search');
+    const editModuleSelect = editCourseModal.querySelector('#edit_module_id');
+    const editFormationSelect = editCourseModal.querySelector('#edit_formation_id');
+    const editConsultantSelect = editCourseModal.querySelector('#edit_consultant_id');
 
-            createFormationSelect.addEventListener('change', function() {
-                const formationId = this.value;
-                if (formationId) {
-                    createModuleSelectContainer.style.display = 'block';
-                    // We pass null for selectedModuleId since it's a new course
-                    loadModules(formationId, createModuleSelect, createConsultantSelect);
-                } else {
-                    createModuleSelectContainer.style.display = 'none';
-                    createModuleSelect.innerHTML = '<option value="">Sélectionnez un module</option>';
-                }
+    // 🔥 1. Search functionality for modules (edit modal)
+    if (editModuleSearch) {
+        editModuleSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const options = editModuleSelect.querySelectorAll('option');
+            
+            options.forEach(option => {
+                if (option.value === '') return;
+                const text = option.textContent.toLowerCase();
+                option.style.display = text.includes(searchTerm) ? 'block' : 'none';
+            });
+        });
+    }
+
+    // 🔥 2. When Module changes, load Formations (optionnel selon votre logique)
+    editModuleSelect.addEventListener('change', function() {
+        const moduleId = this.value;
+        if (moduleId && editFormationSelect) {
+            loadFormationsByModule(moduleId, editFormationSelect);
+        }
+    });
+
+    // 🔥 3. On modal open, load data and set formation_id
+    editCourseModal.addEventListener('show.bs.modal', event => {
+        const button = event.relatedTarget;
+        const courseId = button.getAttribute('data-course-id');
+        const moduleId = button.getAttribute('data-module-id');
+        const formationId = button.getAttribute('data-formation-id');
+        const consultantId = button.getAttribute('data-consultant-id');
+        const title = button.getAttribute('data-title');
+        const description = button.getAttribute('data-description');
+        const courseDate = button.getAttribute('data-course-date');
+        const startTime = button.getAttribute('data-start-time');
+        const endTime = button.getAttribute('data-end-time');
+        const zoomLink = button.getAttribute('data-zoom-link');
+        const recordingUrl = button.getAttribute('data-recording-url');
+        const documents = JSON.parse(button.getAttribute('data-documents') || '[]');
+
+        const modalForm = editCourseModal.querySelector('#editCourseForm');
+        const existingDocumentsDiv = editCourseModal.querySelector('#existing_documents');
+
+        // Set form action
+        modalForm.action = `/courses/${courseId}`;
+        
+        // ✅ LIGNE CRITIQUE AJOUTÉE : Set formation_id dans le champ caché
+        if (editFormationSelect) {
+            editFormationSelect.value = formationId || '';
+        }
+        
+        // Set all other fields
+        editCourseModal.querySelector('#edit_module_id').value = moduleId || '';
+        editCourseModal.querySelector('#edit_consultant_id').value = consultantId || '';
+        editCourseModal.querySelector('#edit_title').value = title || '';
+        editCourseModal.querySelector('#edit_description').value = description || '';
+        editCourseModal.querySelector('#edit_course_date').value = courseDate || '';
+        editCourseModal.querySelector('#edit_start_time').value = startTime || '';
+        editCourseModal.querySelector('#edit_end_time').value = endTime || '';
+        editCourseModal.querySelector('#edit_zoom_link').value = zoomLink || '';
+        editCourseModal.querySelector('#edit_recording_url').value = recordingUrl || '';
+
+        // Handle existing documents
+        existingDocumentsDiv.innerHTML = '';
+        if (documents && documents.length > 0) {
+            documents.forEach((doc, index) => {
+                const docHtml = `
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                        <a href="${doc.url || '#'}" target="_blank" class="text-primary">
+                            <i class="fas fa-file-alt me-2"></i>${doc.name || 'Document'}
+                        </a>
+                        <button type="button" class="btn btn-sm btn-danger remove-existing-doc" 
+                                data-doc-name="${doc.name}" data-course-id="${courseId}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <input type="hidden" name="existing_documents_to_keep[]" value="${doc.name}">
+                    </div>
+                `;
+                existingDocumentsDiv.insertAdjacentHTML('beforeend', docHtml);
             });
             
-            // ** مهم: إذا كان هناك خطأ في التحقق (Validation Error) عند الإرسال، 
-            // يجب أن نعمل على تحميل الـ Modules مباشرة عند فتح الصفحة **
-            @if(old('formation_id') && $errors->any() && session('open_create_modal'))
-                // تأكد من ظهور حقل Modules
-                createModuleSelectContainer.style.display = 'block';
-                // حمل الـ Modules مع تحديد القيمة القديمة لـ Module
-                loadModules(
-                    "{{ old('formation_id') }}", 
-                    createModuleSelect, 
-                    createConsultantSelect, 
-                    "{{ old('module_id') }}"
-                );
-            @endif
+            // Add event listeners to remove buttons
+            existingDocumentsDiv.querySelectorAll('.remove-existing-doc').forEach(button => {
+                button.addEventListener('click', function() {
+                    const docName = this.getAttribute('data-doc-name');
+                    const keepInput = this.closest('.d-flex').querySelector('input[name^="existing_documents_to_keep"]');
+                    if (keepInput) {
+                        keepInput.name = 'documents_to_delete[]';
+                        keepInput.value = docName;
+                    }
+                    this.closest('.d-flex').style.textDecoration = 'line-through';
+                    this.closest('.d-flex').style.opacity = '0.5';
+                    this.remove();
+                });
+            });
         }
+    });
+}
     });
 </script>
 <script>
     function toggleModuleContent(headerElement) {
-        // Get the parent card
         const card = headerElement.closest('.module-folder');
-        // Get the content area inside the card
         const content = card.querySelector('.module-content');
-        // Get the toggle icon
         const icon = card.querySelector('.module-toggle-icon');
 
-        // Toggle the 'active' class on the folder card
         card.classList.toggle('active');
 
-        // Toggle visibility of the content
         if (content.style.display === "block" || content.style.display === "") {
             content.style.display = "none";
         } else {
             content.style.display = "block";
         }
-
-        // Note: For smoother animations, you might use Bootstrap's collapse plugin 
-        // or a dedicated CSS transition for max-height, but this simple JS works well.
     }
 </script>
 @endpush
-
