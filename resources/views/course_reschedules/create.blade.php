@@ -260,9 +260,9 @@
                 {{-- Sélection du Cours --}}
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label for="course_id" class="form-label fw-bold">Sélectionner un Cours <span class="text-danger">*</span></label>
+                        <label for="course_id" class="form-label fw-bold">Sélectionner une Séance <span class="text-danger">*</span></label>
                         <select name="course_id" id="course_id" class="form-select form-select-modern @error('course_id') is-invalid @enderror" required>
-                            <option value="">-- Sélectionner un Cours --</option>
+                            <option value="">-- Sélectionner une Séance --</option>
                             {{-- Les cours seront chargés dynamiquement par JavaScript pour les admins, ou pré-chargés pour les autres --}}
                             @foreach($courses as $course)
                                 <option 
@@ -286,7 +286,7 @@
                     <div class="col-md-6">
                         <label for="original_date_display" class="form-label fw-bold">Date & Heure du séance Original</label>
                         <input type="text" id="original_date_display" class="form-control form-control-modern" readonly disabled 
-                               value="{{ $selectedCourse ? \Carbon\Carbon::parse($selectedCourse->course_date)->format('d/m/Y') . ' ' . \Carbon\Carbon::parse($selectedCourse->start_time)->format('H:i') . '-' . \Carbon\Carbon::parse($selectedCourse->end_time)->format('H:i') : 'Sélectionnez un cours' }}">
+                               value="{{ $selectedCourse ? \Carbon\Carbon::parse($selectedCourse->course_date)->format('d/m/Y') . ' ' . \Carbon\Carbon::parse($selectedCourse->start_time)->format('H:i') . '-' . \Carbon\Carbon::parse($selectedCourse->end_time)->format('H:i') : 'Sélectionnez une Séance' }}">
                         <small class="form-text text-muted">Ceci est la date et l'heure actuellement prévues pour la séance sélectionnée.</small>
                     </div>
                 </div>

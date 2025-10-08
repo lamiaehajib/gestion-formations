@@ -552,7 +552,7 @@ a.btn.btn-outline-secondary.btn-modern {
                         <i class="fas fa-chalkboard-teacher fa-3x me-3"></i>
                         <div>
                             <h3 class="mb-0">{{ $courses->count() }}</h3>
-                            <small class="opacity-75">Total des Cours</small>
+                            <small class="opacity-75">Total des Séances</small>
                         </div>
                     </div>
                 </div>
@@ -564,9 +564,9 @@ a.btn.btn-outline-secondary.btn-modern {
                 <form method="GET" action="{{ route('course_reschedules.index') }}" id="filterForm">
                     <div class="row g-4">
                         <div class="col-md-3">
-                            <label class="form-label fw-bold text-dark">Cours</label>
+                            <label class="form-label fw-bold text-dark">Séanc</label>
                             <select name="course_id" class="form-select">
-                                <option value="">Tous les Cours</option>
+                                <option value="">Tous les Séances</option>
                                 @foreach($courses as $course)
                                     <option value="{{ $course->id }}" {{ request('course_id') == $course->id ? 'selected' : '' }}>
                                         {{ $course->title }}
@@ -635,7 +635,7 @@ a.btn.btn-outline-secondary.btn-modern {
                         <table class="table table-modern mb-0">
                             <thead>
                                 <tr>
-                                    <th>Cours</th>
+                                    <th>Séance</th>
                                     <th>Consultant</th>
                                     <th>Date Initiale</th>
                                     <th>Nouvelle Date</th>
@@ -731,7 +731,7 @@ a.btn.btn-outline-secondary.btn-modern {
                     <div class="empty-state">
                         <i class="fas fa-calendar-alt"></i>
                         <h4 class="fw-bold">Aucune Reprogrammation Trouvée</h4>
-                        <p class="text-muted">Aucune reprogrammation de cours ne correspond à vos critères.</p>
+                        <p class="text-muted">Aucune reprogrammation de Séance ne correspond à vos critères.</p>
                         @can('course-edit')
                         <a href="{{ route('course_reschedules.create') }}" class="btn btn-create btn-modern mt-3">
                             <i class="fas fa-plus me-2"></i>Créer la Première Reprogrammation

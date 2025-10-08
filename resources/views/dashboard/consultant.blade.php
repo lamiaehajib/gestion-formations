@@ -595,7 +595,7 @@
         {{-- Header Section --}}
         <div class="card-base header-card mb-4">
             <h1><i class="fa-solid fa-chalkboard-teacher"></i> Tableau de Bord Consultant</h1>
-            <p class="header-subtitle">Bienvenue, {{ Auth::user()->name }} ! Gérez vos modules et vos cours.</p>
+            <p class="header-subtitle">Bienvenue, {{ Auth::user()->name }} ! Gérez vos modules et vos Séances.</p>
             <form action="{{ route('dashboard') }}" method="GET" class="date-filter">
                 <label for="selected_month" class="sr-only">Filtrer par mois :</label>
                 <select name="selected_month" id="selected_month">
@@ -634,7 +634,7 @@
                     <div class="stat-icon" style="background: linear-gradient(45deg, var(--primary-blue), var(--primary-dark-blue));"><i class="fas fa-book-open"></i></div>
                     <div class="stat-info">
                         <div class="stat-number" style="background: linear-gradient(45deg, var(--primary-blue), var(--primary-dark-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $totalCourses }}</div>
-                        <div class="stat-label">Total Cours</div>
+                        <div class="stat-label">Total Séances</div>
                     </div>
                 </div>
             </div>
@@ -654,7 +654,7 @@
                     <div class="stat-icon" style="background: linear-gradient(45deg, var(--accent-orange), #E67E22);"><i class="fas fa-calendar-day"></i></div>
                     <div class="stat-info">
                         <div class="stat-number" style="background: linear-gradient(45deg, var(--accent-orange), #E67E22); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ $coursesToday->count() }}</div>
-                        <div class="stat-label">Cours Aujourd'hui</div>
+                        <div class="stat-label">Séance Aujourd'hui</div>
                     </div>
                 </div>
             </div>
@@ -786,7 +786,7 @@
                                 <tr>
                                     <th>Module</th>
                                     <th>Progression</th>
-                                    <th>Nouveaux Cours</th>
+                                    <th>Nouvelle Séance</th>
                                     <th>Dernière Mise à Jour</th>
                                 </tr>
                             </thead>
@@ -805,7 +805,7 @@
                                         <td>
                                             <span class="badge bg-info">
                                                 <i class="fas fa-plus"></i>
-                                                {{ $module->courses->count() }} nouveau(x) cours
+                                                {{ $module->courses->count() }} Nouvelles Séances
                                             </span>
                                         </td>
                                         <td>
@@ -828,18 +828,18 @@
             {{-- Courses Today --}}
             <div class="col-lg-6 mb-4">
                 <div class="card-base">
-                    <h3 class="chart-title"><i class="fa-solid fa-calendar-check"></i> Mes Cours Aujourd'hui</h3>
+                    <h3 class="chart-title"><i class="fa-solid fa-calendar-check"></i> Mes Séances Aujourd'hui</h3>
                     @if($coursesToday->isEmpty())
                         <div class="empty-state">
                             <div class="icon"><i class="fa-solid fa-calendar-check"></i></div>
-                            <p>Aucun cours prévu pour aujourd'hui.</p>
+                            <p>Aucun Séance prévu pour aujourd'hui.</p>
                         </div>
                     @else
                         <div class="table-responsive">
                             <table class="table table-subtle-depth">
                                 <thead>
                                     <tr>
-                                        <th>Cours</th>
+                                        <th>Séance</th>
                                         <th>Module</th>
                                         <th>Heure</th>
                                         <th>Lien Zoom</th>
@@ -882,18 +882,18 @@
             {{-- Upcoming Courses --}}
             <div class="col-lg-6 mb-4">
                 <div class="card-base">
-                    <h3 class="chart-title"><i class="fa-solid fa-calendar-alt"></i> Mes Prochains Cours</h3>
+                    <h3 class="chart-title"><i class="fa-solid fa-calendar-alt"></i> Mes Prochains Séances</h3>
                     @if($upcomingCourses->isEmpty())
                         <div class="empty-state">
                             <div class="icon"><i class="fa-solid fa-calendar-plus"></i></div>
-                            <p>Aucun cours à venir pour le moment.</p>
+                            <p>Aucun Séance à venir pour le moment.</p>
                         </div>
                     @else
                         <div class="table-responsive">
                             <table class="table table-subtle-depth">
                                 <thead>
                                     <tr>
-                                        <th>Cours</th>
+                                        <th>Séance</th>
                                         <th>Module</th>
                                         <th>Date</th>
                                         <th>Heure</th>
@@ -939,7 +939,7 @@
                         <table class="table table-subtle-depth">
                             <thead>
                                 <tr>
-                                    <th>Cours</th>
+                                    <th>Séance</th>
                                     <th>Module</th>
                                     <th>Ancienne Date</th>
                                     <th>Nouvelle Date</th>

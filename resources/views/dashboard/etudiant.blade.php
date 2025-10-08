@@ -1052,7 +1052,7 @@
                             <div class="empty-state">
                                 <div class="icon"><i class="fa-solid fa-calendar-check"></i></div>
                                 <p>Vous n'avez aucun Séance prévu pour aujourd'hui.</p>
-                                <a href="{{ route('courses.index', ['start_date' => \Carbon\Carbon::today()->toDateString()]) }}" class="btn btn-outline-primary">Voir tous mes cours</a>
+                                <a href="{{ route('courses.index', ['start_date' => \Carbon\Carbon::today()->toDateString()]) }}" class="btn btn-outline-primary">Voir tous mes Séances</a>
                             </div>
                         @else
                             <div class="table-responsive">

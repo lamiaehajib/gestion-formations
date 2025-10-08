@@ -756,7 +756,7 @@
 
                     @can('course-create')
                         <button type="button" class="btn-new-course" data-bs-toggle="modal" data-bs-target="#createCourseModal">
-                            <i class="fas fa-plus me-2"></i>Nouveau Séance
+                            <i class="fas fa-plus me-2"></i>nouvelle Séance
                         </button>
                     @endcan
                 </div>
