@@ -338,7 +338,7 @@ Route::get('/modules/details/{module}', [ModuleController::class, 'details'])->n
 
 Route::get('/get-modules/{formationId}', [AjaxController::class, 'getModules']);
 
-Route::get('/download-backup', [BackupController::class, 'downloadBackup'])->name('download.backup');
+Route::get('/download-backup', [BackupController::class, 'download'])->name('download.backup');
 
 
 

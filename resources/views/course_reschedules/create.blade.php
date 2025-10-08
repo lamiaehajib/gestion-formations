@@ -1,12 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Create Course Reschedule')
+@section('title', 'Créer un Report de Cours')
 
 @push('styles')
+{{-- Liens vers les styles externes (Font Awesome et Flatpickr) --}}
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
 <style>
-    /* Consistent Color Variables from Index Page */
+    /* Variables de Couleur Cohérentes de la Page d'Index */
     :root {
         --primary-red: #D32F2F;
         --secondary-pink: #C2185B;
@@ -19,23 +20,24 @@
     }
 
     body {
-        background: linear-gradient(135deg, #f8f9ff 0%, #fff0f5 100%); /* Consistent background */
+        background: linear-gradient(135deg, #f8f9ff 0%, #fff0f5 100%); /* Arrière-plan cohérent */
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        color: #333; /* Default text color */
+        color: #333; /* Couleur de texte par défaut */
     }
 
     .card-modern {
         border: none;
-        border-radius: 20px; /* Consistent border-radius */
-        box-shadow: 0 15px 35px rgba(0,0,0,0.08); /* Consistent shadow */
+        border-radius: 20px; /* Rayon de bordure cohérent */
+        box-shadow: 0 15px 35px rgba(0,0,0,0.08); /* Ombre cohérente */
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         backdrop-filter: blur(10px);
         background: rgba(255,255,255,0.95);
+        animation: fadeIn 0.6s ease-out forwards; /* Animation d'entrée de la carte */
     }
 
-    /* Gradient header (for modal or specific card headers) */
+    /* En-tête en dégradé (pour les en-têtes de carte spécifiques) */
     .gradient-header {
-        background: var(--gradient-primary); /* Use primary gradient */
+        background: var(--gradient-primary); /* Utilisation du dégradé primaire */
         color: white;
         border-radius: 20px 20px 0 0;
         padding: 25px 30px;
@@ -43,7 +45,7 @@
         overflow: hidden;
     }
 
-    /* Header ::before animation remains the same */
+    /* Animation ::before de l'en-tête (reste la même) */
     .gradient-header::before {
         content: '';
         position: absolute;
@@ -60,11 +62,12 @@
         50% { transform: translateY(-20px) rotate(180deg); }
     }
 
+    /* Boutons modernes */
     .btn-modern {
-        border-radius: 30px; /* Consistent button radius */
+        border-radius: 30px; /* Rayon de bouton cohérent */
         padding: 12px 30px;
         font-weight: 600;
-        font-size: 14px; /* Consistent font size */
+        font-size: 14px; /* Taille de police cohérente */
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         border: none;
         position: relative;
@@ -73,20 +76,20 @@
         letter-spacing: 0.5px;
     }
 
-    
     .btn-primary-modern {
-        background: var(--gradient-secondary); /* Use the secondary gradient for primary action */
+        background: var(--gradient-secondary); /* Dégradé secondaire pour l'action principale */
         color: white;
-        box-shadow: 0 8px 25px var(--shadow-red); /* Consistent shadow for primary buttons */
+        box-shadow: 0 8px 25px var(--shadow-red); /* Ombre cohérente */
     }
 
     .btn-primary-modern:hover {
-        transform: translateY(-3px) scale(1.05); /* Consistent hover effect */
+        transform: translateY(-3px) scale(1.05); /* Effet de survol cohérent */
         box-shadow: 0 15px 35px var(--shadow-red);
         color: white;
     }
 
     .btn-primary-modern::before {
+        /* Effet de brillance/vague au survol */
         content: '';
         position: absolute;
         top: 0;
@@ -101,52 +104,53 @@
         left: 100%;
     }
 
-    /* Secondary action button (Back to List) */
+    /* Bouton d'action secondaire (Retour à la Liste) */
     .btn-secondary-modern {
-        background-color: #6c757d; /* Standard Bootstrap secondary color for consistency */
-        color: white;
-        box-shadow: 0 5px 15px rgba(108, 117, 125, 0.2); /* Subtle shadow for secondary */
+        background-color: #db3f3f; /* Couleur ajustée (était #6c757d) */
+        color: black !important;
+        box-shadow: 0 5px 15px rgba(108, 117, 125, 0.2);
     }
 
     .btn-secondary-modern:hover {
-        background-color: #5a6268; /* Darker on hover */
+        background-color: #cc3939; /* Plus foncé au survol */
         color: white;
-        transform: translateY(-2px); /* Subtle lift on hover */
+        transform: translateY(-2px); /* Léger soulèvement */
     }
 
-    /* Outline secondary for "Clear Form" */
+    /* Bouton Outline secondaire pour "Effacer le Formulaire" */
     .btn-outline-secondary.btn-modern {
-        border: 2px solid var(--secondary-pink); /* Use a primary theme color for outline */
+        border: 2px solid var(--secondary-pink); /* Couleur de thème principale pour le contour */
         color: var(--secondary-pink);
         background-color: transparent;
-        box-shadow: none; /* No initial shadow for outline */
+        box-shadow: none;
     }
 
-    .btn-outline-secondary.btn-modern{
-        background: var(--secondary-pink); /* Fill with color on hover */
+    .btn-outline-secondary.btn-modern:hover {
+        background: var(--secondary-pink); /* Remplissage de couleur au survol */
         color: white;
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px var(--shadow-pink); /* Add shadow on hover */
+        box-shadow: 0 5px 15px var(--shadow-pink); /* Ajout d'ombre au survol */
     }
 
+    /* Styles des éléments de formulaire */
     .form-label {
         font-weight: 700;
-        color: #4a4a4a; /* Darker text for labels */
+        color: #4a4a4a;
         margin-bottom: 8px;
     }
 
     .form-control-modern, .form-select-modern {
-        border-radius: 15px; /* Consistent with index page inputs */
-        border: 2px solid rgba(211,47,47,0.1); /* Consistent border */
-        padding: 12px 18px; /* Consistent padding */
+        border-radius: 15px;
+        border: 2px solid rgba(211,47,47,0.1);
+        padding: 12px 18px;
         font-weight: 500;
         transition: all 0.3s ease;
         background-color: #ffffff;
     }
 
     .form-control-modern:focus, .form-select-modern:focus {
-        border-color: var(--primary-red); /* Consistent focus color */
-        box-shadow: 0 0 20px rgba(211,47,47,0.2); /* Consistent focus shadow */
+        border-color: var(--primary-red);
+        box-shadow: 0 0 20px rgba(211,47,47,0.2);
     }
 
     .form-text {
@@ -155,36 +159,19 @@
         margin-top: 5px;
     }
 
-    /* Alert styles (adjusting existing ones to fit theme) */
+    /* Styles d'alerte */
     .alert-danger {
-        background: linear-gradient(135deg, #fde7e7 0%, #fcdede 100%); /* Lighter, themed background */
-        border: 1px solid #e57373; /* Slightly darker red border */
-        border-radius: 15px; /* Consistent with other rounded elements */
-        color: #c62828; /* Stronger red text */
-        padding: 15px 20px;
-    }
-
-    .alert-info-modern {
-        background: linear-gradient(135deg, #e0f2f7 0%, #d4eaf0 100%); /* Light blue gradient */
-        color: #005662;
-        border-left: 5px solid #00acc1;
+        background: linear-gradient(135deg, #fde7e7 0%, #fcdede 100%);
+        border: 1px solid #e57373;
         border-radius: 15px;
+        color: #c62828;
         padding: 15px 20px;
     }
 
-    /* Page header specific to this "Create" page */
-    .py-4 {
-        padding-top: 2.5rem !important;
-        padding-bottom: 2.5rem !important;
-    }
-
-    .mb-4 {
-        margin-bottom: 2.5rem !important;
-    }
-
+    /* Styles de l'en-tête de page */
     h2 {
         font-size: 2rem;
-        color: var(--primary-red); /* Main heading color from index theme */
+        color: var(--primary-red);
     }
 
     .text-muted {
@@ -192,34 +179,20 @@
     }
 
     .fas.fa-calendar-plus {
-        color: var(--primary-red) !important; /* Icon color consistent with primary theme */
+        color: var(--primary-red) !important;
     }
 
-    /* Keyframes for button ripple (if not already global) */
-    @keyframes ripple {
-        to {
-            transform: scale(4);
-            opacity: 0;
-        }
-    }
-
-    /* Basic entrance animation for the card */
+    /* Animation d'entrée */
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
-    .card-modern {
-        animation: fadeIn 0.6s ease-out forwards;
-    }
-    a.btn.btn-secondary-modern.btn-modern {
-    color: black !important;
-    background-color: #db3f3f;
-}
 </style>
 @endpush
 
 @section('content')
 <div class="container-fluid py-4">
+    {{-- En-tête de la Page --}}
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
@@ -227,26 +200,28 @@
                 <div>
                     <h2 class="fw-bold mb-1">
                         <i class="fas fa-calendar-plus me-3"></i>
-                        Create New Course Reschedule
+                        Créer un Nouveau Report de Cours
                     </h2>
-                    <p class="text-muted mb-0">Fill in the details to reschedule a course</p>
+                    <p class="text-muted mb-0">Remplissez les détails pour reporter un cours</p>
                 </div>
-                {{-- Using btn-secondary-modern for the "Back to List" button --}}
+                {{-- Bouton "Retour à la Liste" --}}
                 <a href="{{ route('course_reschedules.index') }}" class="btn btn-secondary-modern btn-modern">
-                    <i class="fas fa-arrow-left me-2"></i>Back to List
+                    <i class="fas fa-arrow-left me-2"></i>Retour à la Liste
                 </a>
             </div>
         </div>
     </div>
 
+    {{-- Carte du Formulaire --}}
     <div class="card card-modern">
         <div class="card-header gradient-header">
-            <h5 class="mb-0 fw-bold">Reschedule Details</h5>
+            <h5 class="mb-0 fw-bold">Détails du Report</h5>
         </div>
         <div class="card-body">
+            {{-- Affichage des Erreurs de Validation --}}
             @if ($errors->any())
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <strong>Whoops!</strong> There were some problems with your input.
+                    <strong>Oups!</strong> Il y a eu quelques problèmes avec votre saisie.
                     <ul class="mb-0 mt-2">
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
@@ -259,13 +234,13 @@
             <form action="{{ route('course_reschedules.store') }}" method="POST">
                 @csrf
 
-                {{-- This section only appears if the user has 'course-manage-all' permission (e.g., admin) --}}
+                {{-- Sélection du Consultant (Visible uniquement si l'utilisateur a la permission 'course-manage-all', par exemple, un administrateur) --}}
                 @can('course-manage-all') 
                 <div class="row mb-3">
                     <div class="col-md-12">
-                        <label for="consultant_id" class="form-label fw-bold">Select Consultant <span class="text-danger">*</span></label>
+                        <label for="consultant_id" class="form-label fw-bold">Sélectionner un Consultant <span class="text-danger">*</span></label>
                         <select name="consultant_id" id="consultant_id" class="form-select form-select-modern @error('consultant_id') is-invalid @enderror" required>
-                            <option value="">-- Select a Consultant --</option>
+                            <option value="">-- Sélectionner un Consultant --</option>
                             @foreach($consultants as $consultant)
                                 <option value="{{ $consultant->id }}" {{ old('consultant_id', $selectedConsultantId ?? '') == $consultant->id ? 'selected' : '' }}>
                                     {{ $consultant->name }}
@@ -275,20 +250,20 @@
                         @error('consultant_id')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                        <small class="form-text text-muted">Select the consultant whose course you want to reschedule.</small>
+                        <small class="form-text text-muted">Sélectionnez le consultant dont vous voulez reporter le cours.</small>
                     </div>
                 </div>
-                @else {{-- This section appears for consultants or students (where the consultant is implicitly the current user) --}}
+                @else {{-- Pour les consultants ou étudiants (où le consultant est l'utilisateur actuel) --}}
                     <input type="hidden" name="consultant_id" value="{{ Auth::id() }}">
                 @endcan
 
-                {{-- Course Selection --}}
+                {{-- Sélection du Cours --}}
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label for="course_id" class="form-label fw-bold">Select Course <span class="text-danger">*</span></label>
+                        <label for="course_id" class="form-label fw-bold">Sélectionner un Cours <span class="text-danger">*</span></label>
                         <select name="course_id" id="course_id" class="form-select form-select-modern @error('course_id') is-invalid @enderror" required>
-                            <option value="">-- Select a Course --</option>
-                            {{-- Courses will be dynamically loaded by JavaScript for admins, or pre-loaded for others --}}
+                            <option value="">-- Sélectionner un Cours --</option>
+                            {{-- Les cours seront chargés dynamiquement par JavaScript pour les admins, ou pré-chargés pour les autres --}}
                             @foreach($courses as $course)
                                 <option 
                                     value="{{ $course->id }}" 
@@ -304,45 +279,48 @@
                         @error('course_id')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                        <div id="todayCourseError" class="alert alert-danger mt-2 d-none" role="alert">
+                            ⚠️ Vous ne pouvez pas reporter un cours qui a lieu aujourd'hui.
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <label for="original_date_display" class="form-label fw-bold">Original Course Date & Time</label>
+                        <label for="original_date_display" class="form-label fw-bold">Date & Heure du Cours Original</label>
                         <input type="text" id="original_date_display" class="form-control form-control-modern" readonly disabled 
-                               value="{{ $selectedCourse ? \Carbon\Carbon::parse($selectedCourse->course_date)->format('d/m/Y') . ' ' . \Carbon\Carbon::parse($selectedCourse->start_time)->format('H:i') . '-' . \Carbon\Carbon::parse($selectedCourse->end_time)->format('H:i') : 'Select a course' }}">
-                        <small class="form-text text-muted">This is the current scheduled date and time for the selected course.</small>
+                               value="{{ $selectedCourse ? \Carbon\Carbon::parse($selectedCourse->course_date)->format('d/m/Y') . ' ' . \Carbon\Carbon::parse($selectedCourse->start_time)->format('H:i') . '-' . \Carbon\Carbon::parse($selectedCourse->end_time)->format('H:i') : 'Sélectionnez un cours' }}">
+                        <small class="form-text text-muted">Ceci est la date et l'heure actuellement prévues pour le cours sélectionné.</small>
                     </div>
                 </div>
 
-                {{-- New Date Field --}}
+                {{-- Champ Nouvelle Date --}}
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label for="new_date" class="form-label fw-bold">New Date <span class="text-danger">*</span></label>
+                        <label for="new_date" class="form-label fw-bold">Nouvelle Date <span class="text-danger">*</span></label>
                         <input type="datetime-local" name="new_date" id="new_date" class="form-control form-control-modern @error('new_date') is-invalid @enderror" 
                                value="{{ old('new_date') }}" required>
                         @error('new_date')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                        <small class="form-text text-muted">Select the new date and time for the course.</small>
+                        <small class="form-text text-muted">Sélectionnez la nouvelle date et heure pour le cours. (Minimum demain)</small>
                     </div>
                 </div>
 
-                {{-- Reason Field --}}
+                {{-- Champ Raison --}}
                 <div class="mb-4">
-                    <label for="reason" class="form-label fw-bold">Reason for Rescheduling</label>
+                    <label for="reason" class="form-label fw-bold">Raison du Report</label>
                     <textarea name="reason" id="reason" rows="4" class="form-control form-control-modern @error('reason') is-invalid @enderror" 
-                                 placeholder="Provide a brief reason for the reschedule (optional)">{{ old('reason') }}</textarea>
+                             placeholder="Fournissez une brève raison pour le report (facultatif)">{{ old('reason') }}</textarea>
                     @error('reason')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
-                {{-- Action Buttons --}}
+                {{-- Boutons d'Action --}}
                 <div class="d-flex justify-content-end gap-2">
                     <button type="submit" class="btn btn-primary-modern btn-modern">
-                        <i class="fas fa-save me-2"></i>Reschedule Course
+                        <i class="fas fa-save me-2"></i>Reporter le Cours
                     </button>
                     <button type="reset" class="btn btn-outline-secondary btn-modern">
-                        <i class="fas fa-times me-2"></i>Clear Form
+                        <i class="fas fa-times me-2"></i>Effacer le Formulaire
                     </button>
                 </div>
             </form>
@@ -356,15 +334,15 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // ... b9a l'code dyal les tooltips hna ...
+    // b9a l'code dyal les tooltips hna (Code des infobulles)
 
-    // Flatpickr initialization for new_date field
+    // Initialisation de Flatpickr pour le champ new_date
     flatpickr("#new_date", {
         dateFormat: "Y-m-d H:i",
         enableTime: true,
         altInput: true,
         altFormat: "F j, Y H:i",
-        minDate: "tomorrow", // <-- Hada howa l'changement l'mohim!
+        minDate: "tomorrow", // <-- Changement important: la date minimale est demain
         allowInput: true,
         theme: 'material_red',
         locale: {
@@ -376,7 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const originalDateDisplay = document.getElementById('original_date_display');
     const consultantSelect = document.getElementById('consultant_id');
 
-    // Function to update the display of the original course date
+    // Fonction pour mettre à jour l'affichage de la date de cours originale
     function updateOriginalDateDisplay() {
         const selectedOption = courseSelect.options[courseSelect.selectedIndex];
         if (selectedOption && selectedOption.value) {
@@ -384,40 +362,46 @@ document.addEventListener('DOMContentLoaded', function() {
             const startTime = selectedOption.dataset.startTime;
             const endTime = selectedOption.dataset.endTime;
             
+            // Formatage de la date pour l'affichage (jj/mm/aaaa)
             const formattedOriginalDate = new Date(originalDate + 'T' + startTime).toLocaleDateString('en-GB', {
                 day: '2-digit', month: '2-digit', year: 'numeric'
             });
 
             originalDateDisplay.value = `${formattedOriginalDate} ${startTime}-${endTime}`;
         } else {
-            originalDateDisplay.value = 'Select a course';
+            originalDateDisplay.value = 'Sélectionnez un cours';
         }
     }
 
+    // Appel initial et écouteur d'événement pour la sélection de cours
     updateOriginalDateDisplay();
     courseSelect.addEventListener('change', updateOriginalDateDisplay);
 
+    // Logique de chargement des cours si l'utilisateur peut sélectionner un consultant (Admin)
     if (consultantSelect) {
         consultantSelect.addEventListener('change', function() {
             const selectedConsultantId = this.value;
-            courseSelect.innerHTML = '<option value="">-- Select a Course --</option>';
-            originalDateDisplay.value = 'Select a course';
+            // Réinitialisation du sélecteur de cours et de l'affichage de la date originale
+            courseSelect.innerHTML = '<option value="">-- Sélectionner un Cours --</option>';
+            originalDateDisplay.value = 'Sélectionnez un cours';
 
             if (selectedConsultantId) {
-                courseSelect.innerHTML = '<option value="">Loading...</option>';
+                courseSelect.innerHTML = '<option value="">Chargement...</option>';
                 courseSelect.disabled = true;
 
+                // Appel AJAX pour récupérer les cours du consultant sélectionné
                 fetch('/course-reschedules/get-courses-by-consultant?consultant_id=' + selectedConsultantId)
                     .then(response => response.json())
                     .then(courses => {
-                        courseSelect.innerHTML = '<option value="">-- Select a Course --</option>';
+                        courseSelect.innerHTML = '<option value="">-- Sélectionner un Cours --</option>';
                         courseSelect.disabled = false;
 
                         if (courses.length === 0) {
-                            courseSelect.innerHTML = '<option value="">No courses found</option>';
+                            courseSelect.innerHTML = '<option value="">Aucun cours trouvé</option>';
                             return;
                         }
 
+                        // Remplissage du sélecteur de cours avec les données reçues
                         courses.forEach(course => {
                             const option = document.createElement('option');
                             option.value = course.id;
@@ -429,8 +413,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                     })
                     .catch(error => {
-                        console.log('Error:', error);
-                        courseSelect.innerHTML = '<option value="">Error loading courses</option>';
+                        console.log('Erreur:', error);
+                        courseSelect.innerHTML = '<option value="">Erreur de chargement des cours</option>';
                         courseSelect.disabled = false;
                     });
             } else {
@@ -439,31 +423,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Le code li kayvalidi la soumission dyal l'form bach yban l'message
+    // Code de validation pour empêcher la soumission si le cours est pour aujourd'hui
     document.querySelector('form').addEventListener('submit', function(event) {
-        const courseSelect = document.getElementById('course_id');
         const selectedOption = courseSelect.options[courseSelect.selectedIndex];
         
-        // La date actuelle
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Reset time for comparison
+        today.setHours(0, 0, 0, 0); // Réinitialisation de l'heure pour la comparaison
 
         if (selectedOption && selectedOption.value) {
             const originalDate = new Date(selectedOption.dataset.originalDate);
-            originalDate.setHours(0, 0, 0, 0); // Reset time for comparison
+            originalDate.setHours(0, 0, 0, 0); // Réinitialisation de l'heure pour la comparaison
 
+            // Si la date originale est égale à la date d'aujourd'hui
             if (originalDate.getTime() === today.getTime()) {
                 const errorMessage = document.getElementById('todayCourseError');
-                errorMessage.classList.remove('d-none');
-                event.preventDefault();
+                errorMessage.classList.remove('d-none'); // Afficher l'alerte
+                event.preventDefault(); // Empêcher l'envoi du formulaire
             }
         }
     });
 
-    // Add ripple effect to buttons
+    // Ajout de l'effet "ripple" aux boutons (Animation au clic)
     document.querySelectorAll('.btn-modern').forEach(btn => {
         btn.addEventListener('click', function(e) {
-            // ... le code dyal ripple ...
+            // ... le code dyal ripple (Création et animation de l'onde au clic) ...
             const ripple = document.createElement('span');
             const rect = this.getBoundingClientRect();
             const size = Math.max(rect.width, rect.height);
