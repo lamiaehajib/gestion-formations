@@ -213,7 +213,7 @@ class DashboardController extends Controller
     
 private function getConsultantDashboardData(User $user, Request $request)
 {
-    // Date filtering logic, similar to other dashboards
+    // Date filtering logic
     $selectedMonth = $request->input('selected_month');
     $selectedYear = $request->input('selected_year', Carbon::now()->year);
 
@@ -233,61 +233,90 @@ private function getConsultantDashboardData(User $user, Request $request)
         $months[$i] = Carbon::create()->month($i)->translatedFormat('F');
     }
 
-   
-    $today = Carbon::today();
-    $coursesToday = Course::where('consultant_id', $user->id)
-        ->whereDate('course_date', $today)
+    // 🔥 JDID: Kanjibu ga3 les courses dyal consultant (bila pagination)
+    $allCoursesToday = Course::where('consultant_id', $user->id)
+        ->whereDate('course_date', Carbon::today())
         ->orderBy('start_time', 'asc')
-        ->with('module') // ✅ Changed from 'formation' to 'module'
+        ->with('module')
         ->get();
-    $upcomingCourses = Course::where('consultant_id', $user->id)
-        ->where('course_date', '>', $today)
+
+    // 🔥 Filtration des doublons (nfes l'logique kif f index)
+    $coursesToday = $allCoursesToday->unique(function($course) {
+        return $course->module_id . '-' . 
+               $course->course_date . '-' . 
+               $course->start_time . '-' . 
+               $course->title;
+    })->values(); // values() bach n-reset les keys
+
+    // 🔥 Nfes l'ḥaja l upcoming courses
+    $allUpcomingCourses = Course::where('consultant_id', $user->id)
+        ->where('course_date', '>', Carbon::today())
         ->orderBy('course_date', 'asc')
         ->orderBy('start_time', 'asc')
-        ->with('module') // ✅ Changed from 'formation' to 'module'
+        ->with('module')
         ->get();
-    $totalCourses = Course::where('consultant_id', $user->id)
+
+    $upcomingCourses = $allUpcomingCourses->unique(function($course) {
+        return $course->module_id . '-' . 
+               $course->course_date . '-' . 
+               $course->start_time . '-' . 
+               $course->title;
+    })->values();
+
+    // 🔥 Total courses (après filtration)
+    $allCourses = Course::where('consultant_id', $user->id)
         ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
             $query->whereBetween('created_at', [$startDate, $endDate]);
         })
-        ->count();
+        ->with('module')
+        ->get();
 
+    $uniqueCourses = $allCourses->unique(function($course) {
+        return $course->module_id . '-' . 
+               $course->course_date . '-' . 
+               $course->start_time . '-' . 
+               $course->title;
+    });
+
+    $totalCourses = $uniqueCourses->count();
+
+    // Recent reschedules (ma khasshomch filtration)
     $recentReschedules = CourseReschedule::whereHas('course', function ($q) use ($user) {
         $q->where('consultant_id', $user->id);
     })
         ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
             $query->whereBetween('created_at', [$startDate, $endDate]);
         })
-        ->with('course.module') // ✅ Changed to load module instead of formation
+        ->with('course.module')
         ->orderBy('created_at', 'desc')
         ->take(5)
         ->get();
+
+    // Modules data (unchanged)
     $consultantModules = Module::where('user_id', $user->id)
         ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
             $query->whereBetween('created_at', [$startDate, $endDate]);
         })
         ->get();
+
     $totalModules = $consultantModules->count();
     $totalCompletedModules = $consultantModules->where('progress', 100)->count();
     $totalInProgressModules = $consultantModules->whereBetween('progress', [1, 99])->count();
     $totalNotStartedModules = $consultantModules->where('progress', 0)->count();
     $overallAverageProgress = $totalModules > 0 ? round($consultantModules->avg('progress'), 2) : 0;
+
     $globalModulesChart = [
         'labels' => $consultantModules->pluck('title')->toArray(),
         'data' => $consultantModules->pluck('progress')->toArray(),
         'backgroundColor' => $consultantModules->map(function ($module) {
-            if ($module->progress >= 80)
-                return '#28a745'; // Green
-            elseif ($module->progress >= 60)
-                return '#17a2b8'; // Blue
-            elseif ($module->progress >= 40)
-                return '#ffc107'; // Yellow
-            elseif ($module->progress >= 20)
-                return '#fd7e14'; // Orange
-            else
-                return '#dc3545'; // Red
+            if ($module->progress >= 80) return '#28a745';
+            elseif ($module->progress >= 60) return '#17a2b8';
+            elseif ($module->progress >= 40) return '#ffc107';
+            elseif ($module->progress >= 20) return '#fd7e14';
+            else return '#dc3545';
         })->toArray()
     ];
+
     $moduleProgressStats = [
         'completed' => [
             'count' => $totalCompletedModules, 
@@ -302,14 +331,15 @@ private function getConsultantDashboardData(User $user, Request $request)
             'percentage' => $totalModules > 0 ? round(($totalNotStartedModules / $totalModules) * 100, 1) : 0
         ]
     ];
+
     $recentModuleUpdates = Module::where('user_id', $user->id)
         ->whereHas('courses', function ($q) use ($user) {
-            $q->where('consultant_id', $user->id) // ✅ Only consultant's courses
+            $q->where('consultant_id', $user->id)
               ->where('created_at', '>=', Carbon::now()->subDays(7));
         })
         ->with([
             'courses' => function ($q) use ($user) {
-                $q->where('consultant_id', $user->id) // ✅ Only consultant's courses
+                $q->where('consultant_id', $user->id)
                   ->where('created_at', '>=', Carbon::now()->subDays(7))
                   ->orderBy('created_at', 'desc');
             }
@@ -317,14 +347,31 @@ private function getConsultantDashboardData(User $user, Request $request)
         ->orderBy('updated_at', 'desc')
         ->take(5)
         ->get();
-    $coursesTrend = Course::where('consultant_id', $user->id)
+
+    // 🔥 Courses trend (avec unique courses)
+    $allCoursesForTrend = Course::where('consultant_id', $user->id)
         ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
             $query->whereBetween('created_at', [$startDate, $endDate]);
         })
-        ->select(DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'), DB::raw('count(*) as total_courses'))
-        ->groupBy('month')
-        ->orderBy('month')
+        ->with('module')
         ->get();
+
+    $uniqueCoursesForTrend = $allCoursesForTrend->unique(function($course) {
+        return $course->module_id . '-' . 
+               $course->course_date . '-' . 
+               $course->start_time . '-' . 
+               $course->title;
+    });
+
+    // Group by month
+    $coursesTrend = $uniqueCoursesForTrend->groupBy(function($course) {
+        return Carbon::parse($course->created_at)->format('Y-m');
+    })->map(function($courses, $month) {
+        return [
+            'month' => $month,
+            'total_courses' => $courses->count()
+        ];
+    })->values();
 
     return [
         'consultant' => $user,
@@ -338,8 +385,6 @@ private function getConsultantDashboardData(User $user, Request $request)
         'selectedYear' => $selectedYear,
         'startDate' => $startDate ? $startDate->toDateString() : null,
         'endDate' => $endDate ? $endDate->toDateString() : null,
-
-        // ✅ KEPT: Module-related data (simplified)
         'consultantModules' => $consultantModules,
         'totalModules' => $totalModules,
         'totalCompletedModules' => $totalCompletedModules,

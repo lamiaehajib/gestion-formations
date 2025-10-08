@@ -453,40 +453,56 @@
                         <li><i class="fas fa-clock"></i> Heure: <strong>{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}</strong></li>
                         <li><i class="fas fa-calendar-day"></i> Date: <strong>{{ \Carbon\Carbon::parse($course->course_date)->format('d/m/Y') }}</strong></li>
                         {{-- L'partie li khassha tji 9bel had l'block bach tchouf l'date dyal lyoma --}}
-                        @php
-    // ... (Your existing date comparison logic)
-    $courseDate = \Carbon\Carbon::parse($course->course_date)->startOfDay();
-    $today = \Carbon\Carbon::today();
-    $isCourseUpcomingOrToday = $courseDate->gte($today); 
-    @endphp
+                      @php
+                    use Carbon\Carbon;
+                    
+                    // Carbon objects
+                    $courseDate = Carbon::parse($course->course_date)->startOfDay();
+                    $courseEndTime = Carbon::parse($course->course_date)->setTimeFromTimeString($course->end_time);
+                    $now = Carbon::now();
+                    
+                    // Calculate Status (The main logic)
+                    $actionStatus = 'Terminé';
+                    
+                    if ($courseDate->greaterThan($now->startOfDay())) {
+                        $actionStatus = 'À Venir';
+                    } elseif ($courseDate->isSameDay($now) && $courseEndTime->greaterThan($now)) {
+                        $actionStatus = 'Rejoindre';
+                    }
+                @endphp
 
     {{-- Lien Zoom: N'affichew l'action dyal "Rejoindre" ghir ila kan mazal --}}
-    @if ($course->zoom_link && $isCourseUpcomingOrToday)
-        <li>
-            <i class="fas fa-video"></i> Lien Zoom/Teams: 
+    {{-- Lien Zoom: Affichage basé sur le statut --}}
+                @if ($course->zoom_link)
+                    <li>
+                        <i class="fas fa-video"></i> Lien Zoom: 
 
-            {{-- Hna khassna nst3mlo un Form bach n9dro nsjlo l'click --}}
-            <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-link p-0 m-0 align-baseline text-primary-emphasis" style="text-decoration: underline;">
-                    Rejoindre la réunion
-                </button>
-            </form>
-        </li>
-    @elseif ($course->zoom_link && !$isCourseUpcomingOrToday)
-        {{-- Ila kan daz: Kan'affichew 'Disponible' bghir Lien ghir maktoub --}}
-        <li><i class="fas fa-video"></i> Lien Zoom: <span class="text-success">Disponible (Cours passé)</span></li>
-    @else
-        {{-- Ila ma kan la zoom link la walo --}}
-        <li><i class="fas fa-video-slash"></i> Lien Zoom: <span class="text-muted">Non disponible</span></li>
-    @endif
-
-
-                        @if ($course->recording_url)
-                            <li><i class="fas fa-record-vinyl"></i> Enregistrement: <a href="{{ $course->recording_url }}" target="_blank" class="text-primary-emphasis">Voir l'enregistrement</a></li>
+                        @if ($actionStatus === 'Rejoindre')
+                            {{-- Hna khassna nst3mlo un Form bach n9dro nsjlo l'click --}}
+                            <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-link p-0 m-0 align-baseline text-primary-emphasis" style="text-decoration: underline;">
+                                    Rejoindre la réunion (Maintenant)
+                                </button>
+                            </form>
+                        @elseif ($actionStatus === 'À Venir')
+                            <span class="text-info">À Venir (Lien actif le jour du cours)</span>
                         @else
-                            <li><i class="fas fa-compact-disc"></i> Enregistrement: <span class="text-muted">Non disponible</span></li>
+                            {{-- Terminé --}}
+                            <span class="text-success">Disponible (Cours terminé)</span>
                         @endif
+                    </li>
+                @else
+                    {{-- Pas de lien Zoom --}}
+                    <li><i class="fas fa-video-slash"></i> Lien Zoom: <span class="text-muted">Non disponible</span></li>
+                @endif
+
+
+                @if ($course->recording_url)
+                    <li><i class="fas fa-record-vinyl"></i> Enregistrement: <a href="{{ $course->recording_url }}" target="_blank" class="text-primary-emphasis">Voir l'enregistrement</a></li>
+                @else
+                    <li><i class="fas fa-compact-disc"></i> Enregistrement: <span class="text-muted">Non disponible</span></li>
+                @endif
                     </ul>
                 </div>
 
@@ -529,32 +545,33 @@
                         <i class="fas fa-arrow-left"></i> Retour aux Cours
                     </a>
 
-                    <div class="d-flex gap-3 mt-3 mt-md-0">
-                                    {{-- Test de la date : N'affichiw "Rejoindre" ghir ila kan l'cours mazal ma dazch --}}
-                        @php
-    use Carbon\Carbon;
-    // Kan-comparéw ghir la date (sans heure)
-    $courseDate = Carbon::parse($course->course_date)->startOfDay();
-    $today = Carbon::today();
-                        @endphp
-
-                          @if ($course->zoom_link && $courseDate->gte($today))
-                            <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn-custom btn-join-zoom">
-                                    <i class="fas fa-door-open"></i> Rejoindre le Cours
-                                </button>
-                            </form>
-                        @elseif ($course->zoom_link && $courseDate->lt($today))
-                            {{-- Message ila kan l'course daz --}}
-                            <span class="alert alert-warning alert-message mb-0 py-2 px-3">
-                                <i class="fas fa-calendar-check"></i> Ce cours a déjà eu lieu.
-                                 </span>
-                        @endif
-
-         
-       
-                    </div>
+                    < <div class="d-flex gap-3 mt-3 mt-md-0">
+                
+                @if ($course->zoom_link)
+                    @if ($actionStatus === 'Rejoindre')
+                        <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn-custom btn-join-zoom">
+                                <i class="fas fa-door-open"></i> Rejoindre le Cours
+                            </button>
+                        </form>
+                    @elseif ($actionStatus === 'À Venir')
+                        <span class="btn-custom alert-message mb-0 py-2 px-3 text-white" style="background-color: #4299e1; box-shadow: 0 5px 15px rgba(66, 153, 225, 0.3);">
+                            <i class="fas fa-clock"></i> **À Venir**
+                        </span>
+                    @else
+                        {{-- Terminé --}}
+                        <span class="alert alert-warning alert-message mb-0 py-2 px-3">
+                            <i class="fas fa-calendar-check"></i> **Ce cours a déjà eu lieu.**
+                        </span>
+                    @endif
+                @else
+                    {{-- Pas de lien Zoom --}}
+                    <span class="alert alert-danger alert-message mb-0 py-2 px-3">
+                        <i class="fas fa-video-slash"></i> **Lien de réunion manquant.**
+                    </span>
+                @endif
+            </div>
                 </div>
                  @can('course-create')
                 <div class="participation-section">
