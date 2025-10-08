@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Course Reschedule Details')
+@section('title', 'Détails du Report de Séance')
 
 @push('styles')
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -79,7 +79,7 @@
         box-shadow: 0 8px 25px var(--shadow-red); /* Consistent shadow for primary buttons */
     }
 
-    .btn-primary-modern{
+    .btn-primary-modern:hover {
         transform: translateY(-3px) scale(1.05); /* Consistent hover effect */
         box-shadow: 0 15px 35px var(--shadow-red);
         color: white;
@@ -121,7 +121,7 @@
         box-shadow: none;
     }
 
-    .btn-outline-danger.btn-modern{
+    .btn-outline-danger.btn-modern:hover {
         background: var(--primary-red); /* Fill with color on hover */
         color: white;
         transform: translateY(-2px);
@@ -283,18 +283,18 @@
                 <div>
                     <h2 class="fw-bold mb-1">
                         <i class="fas fa-info-circle me-3"></i>
-                        Reschedule Details
+                        Détails du Report
                     </h2>
-                    <p class="text-muted mb-0">Detailed information about the course reschedule</p>
+                    <p class="text-muted mb-0">Informations détaillées sur le report de la séance</p>
                 </div>
                 <div>
                     <a href="{{ route('course_reschedules.index') }}" class="btn btn-secondary-modern btn-modern me-2">
-                        <i class="fas fa-arrow-left me-2"></i>Back to List
+                        <i class="fas fa-arrow-left me-2"></i>Retour à la liste
                     </a>
                     @can('course-edit')
                         @if(Auth::user()->can('course-manage-all') || $reschedule->consultant_id == Auth::id())
                         <a href="{{ route('course_reschedules.edit', $reschedule->id) }}" class="btn btn-primary-modern btn-modern">
-                            <i class="fas fa-edit me-2"></i>Edit Reschedule
+                            <i class="fas fa-edit me-2"></i>Modifier le Report
                         </a>
                         @endif
                     @endcan
@@ -306,22 +306,22 @@
     <div class="card card-modern">
         <div class="card-header gradient-header">
             <h5 class="mb-0 fw-bold">
-                <i class="fas fa-file-alt me-2"></i>Reschedule for: {{ $reschedule->course->title }}
+                <i class="fas fa-file-alt me-2"></i>Report pour la séance : {{ $reschedule->course->title }}
             </h5>
         </div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
                     <div class="detail-item">
-                        <strong>Course Title:</strong>
+                        <strong>Titre de la Séance :</strong>
                         <span>{{ $reschedule->course->title }}</span>
                     </div>
                     <div class="detail-item">
-                        <strong>Course ID:</strong>
+                        <strong>ID de la Séance :</strong>
                         <span>#{{ $reschedule->course->id }}</span>
                     </div>
                     <div class="detail-item">
-                        <strong>Original Date & Time:</strong>
+                        <strong>Date et Heure Initiales :</strong>
                         <span class="badge badge-original badge-date">
                             <i class="fas fa-calendar-times me-1"></i>
                             {{ 
@@ -332,7 +332,7 @@
                         </span>
                     </div>
                     <div class="detail-item">
-                        <strong>New Date & Time:</strong>
+                        <strong>Nouvelle Date et Heure :</strong>
                         <span class="badge badge-new badge-date">
                             <i class="fas fa-calendar-check me-1"></i>
                             {{ \Carbon\Carbon::parse($reschedule->new_date)->format('d/m/Y H:i') }}
@@ -341,26 +341,26 @@
                 </div>
                 <div class="col-md-6">
                     <div class="detail-item">
-                        <strong>Rescheduled By Consultant:</strong>
+                        <strong>Consultant ayant Reporté :</strong>
                         <span>{{ $reschedule->consultant->name }}</span>
                     </div>
                     <div class="detail-item">
-                        <strong>Consultant Email:</strong>
+                        <strong>Email du Consultant :</strong>
                         <span>{{ $reschedule->consultant->email }}</span>
                     </div>
                     <div class="detail-item">
-                        <strong>Reason for Reschedule:</strong>
-                        <span>{{ $reschedule->reason ?: 'No reason provided.' }}</span>
+                        <strong>Raison du Report :</strong>
+                        <span>{{ $reschedule->reason ?: 'Aucune raison fournie.' }}</span>
                     </div>
                     <div class="detail-item">
-                        <strong>Rescheduled On:</strong>
+                        <strong>Reporté le :</strong>
                         <span>
                             {{ $reschedule->created_at->format('d/m/Y H:i') }}
                             ({{ $reschedule->created_at->diffForHumans() }})
                         </span>
                     </div>
                     <div class="detail-item">
-                        <strong>Last Updated:</strong>
+                        <strong>Dernière Mise à Jour :</strong>
                         <span>
                             {{ $reschedule->updated_at->format('d/m/Y H:i') }}
                             ({{ $reschedule->updated_at->diffForHumans() }})
@@ -374,7 +374,7 @@
                 @if(Auth::user()->can('course-manage-all') || $reschedule->consultant_id == Auth::id())
                 <button type="button" class="btn btn-outline-danger btn-modern" 
                         onclick="confirmDelete({{ $reschedule->id }})">
-                    <i class="fas fa-trash-alt me-2"></i>Delete Reschedule
+                    <i class="fas fa-trash-alt me-2"></i>Supprimer le Report
                 </button>
                 @endif
             @endcan
@@ -388,26 +388,26 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title fw-bold" id="deleteModalLabel">
-                    <i class="fas fa-exclamation-triangle me-2"></i>Confirm Deletion
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmer la Suppression
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <p class="mb-3">Are you sure you want to delete this reschedule record?</p>
+                <p class="mb-3">Êtes-vous sûr de vouloir supprimer cet enregistrement de report de séance ?</p>
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Warning:</strong> This action cannot be undone!
+                    <strong>Attention :</strong> Cette action est irréversible !
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-modern" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-2"></i>Cancel
+                    <i class="fas fa-times me-2"></i>Annuler
                 </button>
                 <form id="deleteForm" method="POST" style="display: inline;">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger btn-modern">
-                        <i class="fas fa-trash me-2"></i>Delete
+                        <i class="fas fa-trash me-2"></i>Supprimer
                     </button>
                 </form>
             </div>
@@ -467,7 +467,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function confirmDelete(rescheduleId) {
     const form = document.getElementById('deleteForm');
-    form.action = `/course-reschedules/${rescheduleId}`; // Ensure this matches your route
+    form.action = `/course-reschedules/${rescheduleId}`; // S'assurer que cela correspond à votre route
     
     const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
     deleteModal.show();

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Reprogrammations des Cours')
+@section('title', 'Les séances reportées')
 
 @push('styles')
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -496,13 +496,13 @@ a.btn.btn-outline-secondary.btn-modern {
                         <div>
                             <h2 class="fw-bold mb-1">
                                 <i class="fas fa-calendar-alt me-3"></i>
-                                Gestion des Reprogrammations des Cours
+                                Gestion des Séances Reportées
                             </h2>
-                            <p class="text-muted mb-0 fs-6">Gérez et suivez toutes les demandes de reprogrammation des cours avec style</p>
+                            <p class="text-muted mb-0 fs-6">Gérez et suivez toutes les demandes de séances reportées depuis un seul endroit.</p>
                         </div>
              @if (Auth::check() && !Auth::user()->hasRole('Etudiant'))
     <a href="{{ route('course_reschedules.create') }}" class="btn btn-create btn-modern">
-        <i class="fas fa-plus me-2"></i>Nouvelle Reprogrammation
+        <i class="fas fa-plus me-2"></i>Nouvelle séance reportée
     </a>
 @endif
 

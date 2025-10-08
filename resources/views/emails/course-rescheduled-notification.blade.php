@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ajournement du cours</title>
+    <title>Ajournement du la Séance</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
         .container { width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
@@ -31,9 +31,9 @@
                 <table class="content" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
                     <tr>
                         <td>
-                            <h1 class="heading">Ajournement du cours !</h1>
+                            <h1 class="heading">Ajournement du la Séance !</h1>
                             <p>
-                                Le cours <strong>{{ $course->title }}</strong> a été ajourné.
+                                La Séance <strong>{{ $course->title }}</strong> a été ajourné.
                             </p>
                             
                             <div class="details-box">

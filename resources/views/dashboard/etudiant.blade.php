@@ -791,7 +791,7 @@
         <div class="dashboard-container">
             <div class="card-base header-card">
                 <h1><i class="fa-solid fa-graduation-cap"></i> Mon Tableau de Bord Étudiant</h1>
-                <p class="header-subtitle">Bienvenue ! Gérez vos cours, paiements et progrès en toute simplicité.</p>
+                <p class="header-subtitle">Bienvenue ! Gérez vos Séances, paiements et progrès en toute simplicité.</p>
 
                 <form action="{{ route('dashboard') }}" method="GET" class="date-filter">
                     <label for="selected_month" class="sr-only">Filtrer par mois :</label>
@@ -1047,11 +1047,11 @@
             <div class="row">
                 <div class="col-lg-8 mb-4">
                     <div class="card-base">
-                        <h3 class="chart-title"><i class="fa-solid fa-calendar-day"></i> Mes Cours Aujourd'hui ({{ \Carbon\Carbon::today()->format('d/m/Y') }})</h3>
+                        <h3 class="chart-title"><i class="fa-solid fa-calendar-day"></i> Mes Séances Aujourd'hui ({{ \Carbon\Carbon::today()->format('d/m/Y') }})</h3>
                         @if($coursesToday->isEmpty())
                             <div class="empty-state">
                                 <div class="icon"><i class="fa-solid fa-calendar-check"></i></div>
-                                <p>Vous n'avez aucun cours prévu pour aujourd'hui.</p>
+                                <p>Vous n'avez aucun Séance prévu pour aujourd'hui.</p>
                                 <a href="{{ route('courses.index', ['start_date' => \Carbon\Carbon::today()->toDateString()]) }}" class="btn btn-outline-primary">Voir tous mes cours</a>
                             </div>
                         @else
@@ -1060,7 +1060,7 @@
                                 <table class="table table-dark-header">
                                     <thead>
                                         <tr>
-                                            <th>Cours</th>
+                                            <th>Séance</th>
                                             <th>Formation</th>
                                             <th>Heure</th>
                                             <th>Consultant</th>
@@ -1103,7 +1103,7 @@
                                 </table>
                             </div>
                             <div class="text-center mt-3">
-                                <a href="{{ route('courses.index') }}" class="btn btn-outline-primary">Voir tous mes cours</a>
+                                <a href="{{ route('courses.index') }}" class="btn btn-outline-primary">Voir tous mes Séances</a>
                             </div>
                         @endif
                     </div>
@@ -1129,11 +1129,11 @@
             <div class="row">
                 <div class="col-lg-8 mb-4">
                     <div class="card-base">
-                        <h3 class="chart-title"><i class="fa-solid fa-calendar-refresh"></i> Dernières Reprogrammations de mes Cours</h3>
+                        <h3 class="chart-title"><i class="fa-solid fa-calendar-refresh"></i> Dernières Reprogrammations de mes Séances</h3>
                         @if($recentCourseReschedules->isEmpty())
                             <div class="empty-state">
                                 <div class="icon"><i class="fa-solid fa-check-circle"></i></div>
-                                <p>Aucune reprogrammation de cours récente vous concernant.</p>
+                                <p>Aucune reprogrammation de Séance récente vous concernant.</p>
                                 <a href="{{ route('course_reschedules.index') }}" class="btn btn-outline-primary">Voir toutes les reprogrammations</a>
                             </div>
                         @else
@@ -1142,7 +1142,7 @@
                                 <table class="table table-subtle-depth">
                                     <thead>
                                         <tr>
-                                            <th>Cours</th>
+                                            <th>Séance</th>
                                             <th>Date Originale</th>
                                             <th>Nouvelle Date</th>
                                             <th>Raison</th>

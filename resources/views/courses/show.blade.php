@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Détails du Cours : ' . $course->title)
+@section('title', 'Détails de la Séance : ' . $course->title)
 
 @push('styles')
 <style>
@@ -447,7 +447,9 @@
                 </div>
 
                 {{-- Course Details --}}
-                <h2 class="section-title"><i class="fas fa-info-circle"></i> Détails du Cours</h2>
+                <h2 class="section-title"><i class="fas fa-info-circle"></i> Détails de la Séance
+
+</h2>
                 <div class="card-info">
                     <ul>
                         <li><i class="fas fa-clock"></i> Heure: <strong>{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}</strong></li>
@@ -486,10 +488,10 @@
                                 </button>
                             </form>
                         @elseif ($actionStatus === 'À Venir')
-                            <span class="text-info">À Venir (Lien actif le jour du cours)</span>
+                            <span class="text-info">À Venir (Lien actif le jour de la Séance)</span>
                         @else
                             {{-- Terminé --}}
-                            <span class="text-success">Disponible (Cours terminé)</span>
+                            <span class="text-success">Disponible (Séance terminé)</span>
                         @endif
                     </li>
                 @else
@@ -507,14 +509,14 @@
                 </div>
 
                 {{-- Course Description --}}
-                <h2 class="section-title"><i class="fas fa-align-left"></i> Description du Cours</h2>
+                <h2 class="section-title"><i class="fas fa-align-left"></i> Description de la Séance</h2>
                 <div class="description-content">
                     <p> {!! nl2br(e($course->description)) !!}</p>
 
                 </div>
 
                 {{-- Documents Section --}}
-                <h2 class="section-title"><i class="fas fa-file-alt"></i> Documents du Cours</h2>
+                <h2 class="section-title"><i class="fas fa-file-alt"></i> Documents de la Séance</h2>
                 @if ($course->documents && count($course->documents) > 0)
                     <ul class="documents-list">
                         @foreach ($course->documents as $index => $document)
@@ -532,7 +534,7 @@
                     </ul>
                 @else
                     <div class="alert alert-info alert-message text-center">
-                        <i class="fas fa-info-circle"></i> Aucun document n'est disponible pour ce cours pour le moment.
+                        <i class="fas fa-info-circle"></i> Aucun document n'est disponible pour cette Séance pour le moment.
                     </div>
                 @endif
 
@@ -542,7 +544,7 @@
                 {{-- Actions --}}
                 <div class="d-flex justify-content-between align-items-center mt-5 flex-wrap btn-group-actions">
                     <a href="{{ route('courses.index') }}" class="btn-custom btn-back">
-                        <i class="fas fa-arrow-left"></i> Retour aux Cours
+                        <i class="fas fa-arrow-left"></i> Retour aux Séances
                     </a>
 
                     < <div class="d-flex gap-3 mt-3 mt-md-0">
@@ -552,7 +554,7 @@
                         <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline">
                             @csrf
                             <button type="submit" class="btn-custom btn-join-zoom">
-                                <i class="fas fa-door-open"></i> Rejoindre le Cours
+                                <i class="fas fa-door-open"></i> Rejoindre la Séance
                             </button>
                         </form>
                     @elseif ($actionStatus === 'À Venir')
@@ -562,7 +564,7 @@
                     @else
                         {{-- Terminé --}}
                         <span class="alert alert-warning alert-message mb-0 py-2 px-3">
-                            <i class="fas fa-calendar-check"></i> **Ce cours a déjà eu lieu.**
+                            <i class="fas fa-calendar-check"></i> **Cette Séance a déjà eu lieu.**
                         </span>
                     @endif
                 @else
@@ -630,7 +632,7 @@
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <p class="mb-0">Êtes-vous sûr de vouloir supprimer ce cours ? Cette action est irréversible.</p>
+                            <p class="mb-0">Êtes-vous sûr de vouloir supprimer cette Séance ? Cette action est irréversible.</p>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Course Reschedule')
+@section('title', 'Modifier le report de séance')
 
 @push('styles')
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -256,8 +256,8 @@
 }
 
 a.btn.btn-secondary-modern.btn-modern {
-    color: black !important;
-    background-color: #db3f3f;
+    color: white !important; /* Changed to white for better contrast on secondary button style */
+    background-color: #6c757d; /* Ensuring consistency with secondary color */
 }
 </style>
 @endpush
@@ -270,12 +270,12 @@ a.btn.btn-secondary-modern.btn-modern {
                 <div>
                     <h2 class="fw-bold mb-1">
                         <i class="fas fa-calendar-alt me-3"></i>
-                        Edit Course Reschedule
+                        Modifier le report de séance
                     </h2>
-                    <p class="text-muted mb-0">Modify the reschedule details for **{{ $reschedule->course->title }}**</p>
+                    <p class="text-muted mb-0">Modifier les détails du report pour la séance **{{ $reschedule->course->title }}**</p>
                 </div>
                 <a href="{{ route('course_reschedules.index') }}" class="btn btn-secondary-modern btn-modern">
-                    <i class="fas fa-arrow-left me-2"></i>Back to List
+                    <i class="fas fa-arrow-left me-2"></i>Retour à la liste
                 </a>
             </div>
         </div>
@@ -283,12 +283,12 @@ a.btn.btn-secondary-modern.btn-modern {
 
     <div class="card card-modern">
         <div class="card-header gradient-header">
-            <h5 class="mb-0 fw-bold">Reschedule Details</h5>
+            <h5 class="mb-0 fw-bold">Détails du Report</h5>
         </div>
         <div class="card-body">
             @if ($errors->any())
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <strong>Whoops!</strong> There were some problems with your input.
+                    <strong>Oups !</strong> Il y a eu des problèmes avec votre saisie.
                     <ul class="mb-0 mt-2">
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
@@ -301,9 +301,9 @@ a.btn.btn-secondary-modern.btn-modern {
             <div class="row">
                 <div class="col-md-6">
                     <div class="info-box">
-                        <p class="mb-2"><strong>Course Title:</strong> <span class="d-block">{{ $reschedule->course->title }}</span></p>
-                        <p class="mb-2"><strong>Consultant:</strong> <span class="d-block">{{ $reschedule->consultant->name }}</span></p>
-                        <p class="mb-0"><strong>Original Date:</strong> <span class="badge bg-danger badge-modern">
+                        <p class="mb-2"><strong>Titre de la Séance :</strong> <span class="d-block">{{ $reschedule->course->title }}</span></p>
+                        <p class="mb-2"><strong>Consultant :</strong> <span class="d-block">{{ $reschedule->consultant->name }}</span></p>
+                        <p class="mb-0"><strong>Date Initiale :</strong> <span class="badge bg-danger badge-modern">
                             <i class="fas fa-calendar-times me-1"></i>
                              {{ 
             \Carbon\Carbon::parse($reschedule->course->course_date)
@@ -315,12 +315,12 @@ a.btn.btn-secondary-modern.btn-modern {
                 </div>
                 <div class="col-md-6">
                     <div class="info-box">
-                        <p class="mb-2"><strong>Current Rescheduled Date:</strong> <span class="badge bg-success badge-modern">
+                        <p class="mb-2"><strong>Nouvelle Date de Report Actuelle :</strong> <span class="badge bg-success badge-modern">
                             <i class="fas fa-calendar-check me-1"></i>
                             {{ \Carbon\Carbon::parse($reschedule->new_date)->format('d/m/Y H:i') }}
                         </span></p>
-                        <p class="mb-2"><strong>Rescheduled By:</strong> <span class="d-block">{{ $reschedule->consultant->name }}</span></p>
-                        <p class="mb-0"><strong>Rescheduled On:</strong> <span class="d-block text-primary fw-bold">{{ $reschedule->created_at->format('d/m/Y H:i') }} ({{ $reschedule->created_at->diffForHumans() }})</span></p>
+                        <p class="mb-2"><strong>Reporté par :</strong> <span class="d-block">{{ $reschedule->consultant->name }}</span></p>
+                        <p class="mb-0"><strong>Date du Report :</strong> <span class="d-block text-primary fw-bold">{{ $reschedule->created_at->format('d/m/Y H:i') }} ({{ $reschedule->created_at->diffForHumans() }})</span></p>
                     </div>
                 </div>
             </div>
@@ -333,22 +333,22 @@ a.btn.btn-secondary-modern.btn-modern {
 
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label for="new_date" class="form-label fw-bold">New Date <span class="text-danger">*</span></label>
+                        <label for="new_date" class="form-label fw-bold">Nouvelle Date <span class="text-danger">*</span></label>
                         <input type="datetime-local" name="new_date" id="new_date" 
                                class="form-control form-control-modern @error('new_date') is-invalid @enderror" 
                                value="{{ old('new_date', \Carbon\Carbon::parse($reschedule->new_date)->format('Y-m-d\TH:i')) }}" required>
                         @error('new_date')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                        <small class="form-text text-muted">Select the new date and time for the course.</small>
+                        <small class="form-text text-muted">Sélectionnez la nouvelle date et heure pour la séance.</small>
                     </div>
                 </div>
 
                 <div class="mb-4">
-                    <label for="reason" class="form-label fw-bold">Reason for Rescheduling</label>
+                    <label for="reason" class="form-label fw-bold">Raison du Report</label>
                     <textarea name="reason" id="reason" rows="4" 
                                  class="form-control form-control-modern @error('reason') is-invalid @enderror" 
-                                 placeholder="Provide a brief reason for the reschedule (optional)">{{ old('reason', $reschedule->reason) }}</textarea>
+                                 placeholder="Fournir une brève raison pour le report (facultatif)">{{ old('reason', $reschedule->reason) }}</textarea>
                     @error('reason')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -356,10 +356,10 @@ a.btn.btn-secondary-modern.btn-modern {
 
                 <div class="d-flex justify-content-end gap-2">
                     <button type="submit" class="btn btn-primary-modern btn-modern">
-                        <i class="fas fa-save me-2"></i>Update Reschedule
+                        <i class="fas fa-save me-2"></i>Mettre à jour le Report
                     </button>
                     <button type="reset" class="btn btn-outline-secondary btn-modern">
-                        <i class="fas fa-redo-alt me-2"></i>Reset Form
+                        <i class="fas fa-redo-alt me-2"></i>Réinitialiser le Formulaire
                     </button>
                 </div>
             </form>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nouveau cours ajouté</title>
+    <title>nouvelle Séance ajouté</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
         .container { width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
@@ -31,19 +31,19 @@
                 <table class="content" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
                     <tr>
                         <td>
-                            <h1 class="heading">Nouveau cours ajouté !</h1>
+                            <h1 class="heading">nouvelle Séance ajouté !</h1>
                             <p>
-                                Un nouveau cours a été planifié pour la formation <strong>{{ $course->formation->title ?? 'N/A' }}</strong>.
+                                Une nouvelle Séance a été planifié pour la formation <strong>{{ $course->formation->title ?? 'N/A' }}</strong>.
                                 Vous trouverez ci-dessous les détails.
                             </p>
                             
                             <div class="details-box">
-                                <p><strong>Titre du cours :</strong> {{ $course->title }}</p>
+                                <p><strong>Titre du la Séance :</strong> {{ $course->title }}</p>
                                 <p><strong>Description :</strong> {{ $course->description }}</p>
                                 <p><strong>Date :</strong> {{ \Carbon\Carbon::parse($course->course_date)->format('d/m/Y') }}</p>
                                 <p><strong>Heure :</strong> de {{ $course->start_time }} à {{ $course->end_time }}</p>
                                 @if($course->zoom_link)
-                                    <p style="margin-top: 15px;"><a href="{{ $course->zoom_link }}" class="btn">Rejoindre le cours</a></p>
+                                    <p style="margin-top: 15px;"><a href="{{ $course->zoom_link }}" class="btn">Rejoindre la Séance</a></p>
                                 @endif
                             </div>
 

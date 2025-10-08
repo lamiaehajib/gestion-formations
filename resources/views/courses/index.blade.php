@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Gestion des Cours')
+@section('title', 'Gestion des Séances ')
 
 @push('styles')
 <style>
@@ -733,13 +733,13 @@
                         @if($viewMode === 'planning')
                             Mon Planning de la semaine
                         @else
-                            Gestion des Cours
+                            Gestion des Séances 
                         @endif
                     </h1>
                     @if($viewMode === 'planning')
                         <p>Du {{ \Carbon\Carbon::parse($weekStart)->format('d/m/Y') }} au {{ \Carbon\Carbon::parse($weekEnd)->format('d/m/Y') }}</p>
                     @else
-                        <p>Gérez vos formations et cours efficacement</p>
+                        <p>Gérez vos formations et Séances  efficacement</p>
                     @endif
                 </div>
                 <div class="col-md-6 text-end">
@@ -756,7 +756,7 @@
 
                     @can('course-create')
                         <button type="button" class="btn-new-course" data-bs-toggle="modal" data-bs-target="#createCourseModal">
-                            <i class="fas fa-plus me-2"></i>Nouveau Cours
+                            <i class="fas fa-plus me-2"></i>Nouveau Séance
                         </button>
                     @endcan
                 </div>
@@ -798,7 +798,7 @@
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-semibold">Recherche</label>
-                        <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Titre du cours...">
+                        <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Titre du Séance...">
                     </div>
                     @if($viewMode === 'list')
                         <div class="col-md-3 mb-3">
@@ -904,7 +904,7 @@
 
                         {{-- Total Courses and Toggle Icon --}}
                         <div class="d-flex align-items-center">
-                            <span class="course-count me-3 btn btn-sm btn-outline-secondary">{{ $moduleCourses->count() }} Cours</span>
+                            <span class="course-count me-3 btn btn-sm btn-outline-secondary">{{ $moduleCourses->count() }} Séances </span>
                             <i class="fas fa-chevron-down module-toggle-icon"></i>
                         </div>
                     </div>
@@ -1094,7 +1094,7 @@
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="mb-0">Êtes-vous sûr de vouloir supprimer ce cours ? Cette action est irréversible.</p>
+                        <p class="mb-0">Êtes-vous sûr de vouloir supprimer cette Séance ? Cette action est irréversible.</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
@@ -1118,7 +1118,7 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="createCourseModalLabel">
                     <i class="fas fa-plus-circle me-2"></i>
-                    Créer un Nouveau Cours
+                    Créer un Nouveau Séance
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -1159,7 +1159,7 @@
                             @enderror
                             <small class="text-muted">
                                 <i class="fas fa-info-circle me-1"></i>
-                                Le cours sera créé dans toutes les formations contenant ce module
+                                La Séance sera créé dans toutes les formations contenant ce module
                             </small>
                         </div>
                     </div>
@@ -1181,7 +1181,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="create_course_title" class="form-label modal-form-label">Titre du Cours</label>
+                        <label for="create_course_title" class="form-label modal-form-label">Titre de la Séance</label>
                         <input type="text" name="title" id="create_course_title" class="form-control @error('title') is-invalid @enderror" value="{{ old('title') }}" required>
                         @error('title')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -1198,7 +1198,7 @@
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label for="create_course_date" class="form-label modal-form-label">Date du Cours</label>
+                            <label for="create_course_date" class="form-label modal-form-label">Date de la Séance</label>
                             <input type="date" name="course_date" id="create_course_date" class="form-control @error('course_date') is-invalid @enderror" value="{{ old('course_date') }}" required>
                             @error('course_date')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -1239,7 +1239,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                     <button type="submit" class="btn btn-new-course">
-                        <i class="fas fa-save"></i> Créer le Cours
+                        <i class="fas fa-save"></i> Créer la Séance
                     </button>
                 </div>
             </form>
@@ -1256,7 +1256,7 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="editCourseModalLabel">
                     <i class="fas fa-edit me-2"></i>
-                    Modifier le Cours
+                    Modifier la Séance
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -1295,7 +1295,7 @@
                             @enderror
                             <small class="text-muted">
                                 <i class="fas fa-info-circle me-1"></i>
-                                La modification du module mettra à jour le cours dans toutes les formations associées.
+                                La modification du module mettra à jour la Séance dans toutes les formations associées.
                             </small>
                         </div>
 
@@ -1308,7 +1308,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="edit_title" class="form-label modal-form-label">Titre du Cours</label>
+                        <label for="edit_title" class="form-label modal-form-label">Titre de la Séance</label>
                         <input type="text" name="title" id="edit_title"
                             class="form-control @error('title') is-invalid @enderror" required>
                         @error('title')
@@ -1341,7 +1341,7 @@
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label for="edit_course_date" class="form-label modal-form-label">Date du Cours</label>
+                            <label for="edit_course_date" class="form-label modal-form-label">Date de la Séance</label>
                             <input type="date" name="course_date" id="edit_course_date"
                                 class="form-control @error('course_date') is-invalid @enderror" required>
                             @error('course_date')

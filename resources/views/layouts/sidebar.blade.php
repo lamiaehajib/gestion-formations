@@ -581,14 +581,14 @@
                     <li class="sidebar-menu__item">
                         <a href="{{ route('courses.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-book"></i></span>
-                            <span class="text">Cours</span>
+                            <span class="text">Séances</span>
                         </a>
                     </li>
 
                     <li class="sidebar-menu__item">
                         <a href="{{ route('course_reschedules.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-book"></i></span>
-                            <span class="text">Cours reschedules</span>
+                            <span class="text">Séances Reportées</span>
                         </a>
                     </li>
 

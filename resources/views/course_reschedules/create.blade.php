@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Créer un Report de Cours')
+@section('title', 'Créer un Report de séance ')
 
 @push('styles')
 {{-- Liens vers les styles externes (Font Awesome et Flatpickr) --}}
@@ -200,9 +200,9 @@
                 <div>
                     <h2 class="fw-bold mb-1">
                         <i class="fas fa-calendar-plus me-3"></i>
-                        Créer un Nouveau Report de Cours
+                        Créer un Nouveau Report de séance
                     </h2>
-                    <p class="text-muted mb-0">Remplissez les détails pour reporter un cours</p>
+                    <p class="text-muted mb-0">Remplissez les détails pour reporter une séance.</p>
                 </div>
                 {{-- Bouton "Retour à la Liste" --}}
                 <a href="{{ route('course_reschedules.index') }}" class="btn btn-secondary-modern btn-modern">
@@ -250,7 +250,7 @@
                         @error('consultant_id')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                        <small class="form-text text-muted">Sélectionnez le consultant dont vous voulez reporter le cours.</small>
+                        <small class="form-text text-muted">Sélectionnez le consultant dont vous voulez reporter la séance.</small>
                     </div>
                 </div>
                 @else {{-- Pour les consultants ou étudiants (où le consultant est l'utilisateur actuel) --}}
@@ -280,14 +280,14 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                         <div id="todayCourseError" class="alert alert-danger mt-2 d-none" role="alert">
-                            ⚠️ Vous ne pouvez pas reporter un cours qui a lieu aujourd'hui.
+                            ⚠️ Vous ne pouvez pas reporter une séance qui a lieu aujourd’hui
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label for="original_date_display" class="form-label fw-bold">Date & Heure du Cours Original</label>
+                        <label for="original_date_display" class="form-label fw-bold">Date & Heure du séance Original</label>
                         <input type="text" id="original_date_display" class="form-control form-control-modern" readonly disabled 
                                value="{{ $selectedCourse ? \Carbon\Carbon::parse($selectedCourse->course_date)->format('d/m/Y') . ' ' . \Carbon\Carbon::parse($selectedCourse->start_time)->format('H:i') . '-' . \Carbon\Carbon::parse($selectedCourse->end_time)->format('H:i') : 'Sélectionnez un cours' }}">
-                        <small class="form-text text-muted">Ceci est la date et l'heure actuellement prévues pour le cours sélectionné.</small>
+                        <small class="form-text text-muted">Ceci est la date et l'heure actuellement prévues pour la séance sélectionnée.</small>
                     </div>
                 </div>
 
@@ -300,7 +300,7 @@
                         @error('new_date')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                        <small class="form-text text-muted">Sélectionnez la nouvelle date et heure pour le cours. (Minimum demain)</small>
+                        <small class="form-text text-muted">Sélectionnez la nouvelle date et heure pour la séance. (Minimum demain)</small>
                     </div>
                 </div>
 
@@ -317,7 +317,7 @@
                 {{-- Boutons d'Action --}}
                 <div class="d-flex justify-content-end gap-2">
                     <button type="submit" class="btn btn-primary-modern btn-modern">
-                        <i class="fas fa-save me-2"></i>Reporter le Cours
+                        <i class="fas fa-save me-2"></i>Reporter la séance
                     </button>
                     <button type="reset" class="btn btn-outline-secondary btn-modern">
                         <i class="fas fa-times me-2"></i>Effacer le Formulaire
@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             originalDateDisplay.value = `${formattedOriginalDate} ${startTime}-${endTime}`;
         } else {
-            originalDateDisplay.value = 'Sélectionnez un cours';
+            originalDateDisplay.value = 'Sélectionnez une séance';
         }
     }
 
@@ -382,8 +382,8 @@ document.addEventListener('DOMContentLoaded', function() {
         consultantSelect.addEventListener('change', function() {
             const selectedConsultantId = this.value;
             // Réinitialisation du sélecteur de cours et de l'affichage de la date originale
-            courseSelect.innerHTML = '<option value="">-- Sélectionner un Cours --</option>';
-            originalDateDisplay.value = 'Sélectionnez un cours';
+            courseSelect.innerHTML = '<option value="">-- Sélectionner une séance --</option>';
+            originalDateDisplay.value = 'Sélectionnez une séance';
 
             if (selectedConsultantId) {
                 courseSelect.innerHTML = '<option value="">Chargement...</option>';
@@ -393,11 +393,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetch('/course-reschedules/get-courses-by-consultant?consultant_id=' + selectedConsultantId)
                     .then(response => response.json())
                     .then(courses => {
-                        courseSelect.innerHTML = '<option value="">-- Sélectionner un Cours --</option>';
+                        courseSelect.innerHTML = '<option value="">-- Sélectionner une séance --</option>';
                         courseSelect.disabled = false;
 
                         if (courses.length === 0) {
-                            courseSelect.innerHTML = '<option value="">Aucun cours trouvé</option>';
+                            courseSelect.innerHTML = '<option value="">Aucun séance trouvé</option>';
                             return;
                         }
 
@@ -414,7 +414,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     })
                     .catch(error => {
                         console.log('Erreur:', error);
-                        courseSelect.innerHTML = '<option value="">Erreur de chargement des cours</option>';
+                        courseSelect.innerHTML = '<option value="">Erreur de chargement des séances</option>';
                         courseSelect.disabled = false;
                     });
             } else {
