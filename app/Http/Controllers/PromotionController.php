@@ -111,7 +111,12 @@ class PromotionController extends Controller
         'users' => function ($query) use ($promotion) {
             $query->with(['inscriptions' => function ($q) use ($promotion) {
                 $q->where('formation_id', $promotion->formation_id)->with('payments');
-            }]); // <-- J'ai supprimé ', 'avatar''
+            }])
+            // 🎯 ترتيب الطلاب حسب تاريخ الـ inscription (الأقدم أولاً)
+            ->join('inscriptions', 'users.id', '=', 'inscriptions.user_id')
+            ->where('inscriptions.formation_id', $promotion->formation_id)
+            ->orderBy('inscriptions.inscription_date', 'asc') // الأقدم لاول ✅
+            ->select('users.*'); // نجيبو غير الـ users
         },
     ]);
 
@@ -133,8 +138,9 @@ class PromotionController extends Controller
                 'payment_type' => $inscription->payment_type,
                 'last_payment_date' => $inscription->payments->max('paid_date'),
                 'payments_count' => $inscription->payments->count(),
-                // Ajoute le chemin de l'avatar ici
                 'avatar_url' => $user->avatar ? asset('storage/' . $user->avatar) : null,
+                // 🎯 نزيدو تاريخ الـ inscription
+                'inscription_date' => $inscription->inscription_date,
             ];
 
             $studentsData[] = $studentData;

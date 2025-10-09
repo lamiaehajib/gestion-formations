@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
+use App\Models\Inscription;
+use App\Observers\InscriptionObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,6 +26,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-       Paginator::useBootstrapFive();
+        Paginator::useBootstrapFive();
+        
+        // 🎯 تسجيل الـ Observer ديال Inscription
+        Inscription::observe(InscriptionObserver::class);
     }
 }
