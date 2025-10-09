@@ -89,21 +89,21 @@ public function index(Request $request)
     $query->orderBy('course_date', 'asc')->orderBy('start_time', 'asc');
 
     // 🔥 Mode Planning
-    if ($viewMode === 'planning') {
-        $courses = $query->get();
-        
-        if ($user->hasRole('Consultant')) {
-            $courses = $courses->unique(function($course) {
+    // 🔥 Mode Planning
+        if ($viewMode === 'planning') {
+            $courses = $query->get();
+
+            // 🚨 Appliquer le filtre unique pour TOUS les rôles (Admin, Consultant, etc.)
+            $courses = $courses->unique(function ($course) {
                 return $course->module_id . '-' .
-                       $course->course_date . '-' .
-                       $course->start_time . '-' .
-                       $course->title;
+                    $course->course_date . '-' .
+                    $course->start_time . '-' .
+                    $course->title;
             });
-        }
-        
-        $coursesByDay = $courses->groupBy(function($course) {
-            return Carbon::parse($course->course_date)->format('Y-m-d');
-        });
+
+            $coursesByDay = $courses->groupBy(function ($course) {
+                return Carbon::parse($course->course_date)->format('Y-m-d');
+            });
         
     } else {
         // 🔥 Mode Liste: Filtrer les duplicates POUR TOUS (Admin, Consultant, etc.)

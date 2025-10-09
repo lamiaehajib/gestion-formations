@@ -854,10 +854,7 @@
                                     
                                     {{-- 🚨 MODIFICATION ICI: On n'affiche le nom de la formation que si l'utilisateur n'est PAS un Consultant --}}
                                     @if($course->formation && !auth()->user()->hasRole('Consultant'))
-                                        <small class="text-muted">
-                                            <i class="fas fa-graduation-cap me-1"></i>
-                                            {{ Str::limit($course->formation->title, 30) }}
-                                        </small>
+                                      
                                     @endif
                                 </div>
                             @empty
