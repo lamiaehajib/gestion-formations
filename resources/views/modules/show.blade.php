@@ -1,3 +1,4 @@
+
 @extends('layouts.app')
 
 @section('content')
@@ -8,11 +9,14 @@
         --accent-color: #ef4444;
         --light-pink: #fce4ec;
         --gradient-bg: linear-gradient(135deg, #C2185B 0%, #D32F2F 50%, #ef4444 100%);
+        --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        --card-hover-shadow: 0 8px 30px rgba(194, 24, 91, 0.2);
     }
 
     .custom-container {
         min-height: 100vh;
         padding: 2rem 0;
+        background: #f8f9fa;
     }
 
     .main-card {
@@ -92,106 +96,101 @@
         color: white;
     }
 
-    .module-card {
-        border: none;
-        border-radius: 18px;
+    /* NEW CARD STYLES */
+    .module-card-modern {
+        background: white;
+        border-radius: 20px;
+        padding: 0;
+        box-shadow: var(--card-shadow);
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
         overflow: hidden;
-        transition: all 0.3s ease;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-        background: linear-gradient(145deg, #ffffff 0%, #fafafa 100%);
     }
 
-    .module-card:hover {
+    .module-card-modern:hover {
         transform: translateY(-5px);
-        box-shadow: 0 15px 35px rgba(194, 24, 91, 0.2);
+        box-shadow: var(--card-hover-shadow);
     }
 
-    .module-header {
-        background: var(--gradient-bg);
-        color: white;
+    .module-card-header {
         padding: 1.5rem;
-        position: relative;
+        border-bottom: 1px solid #e2e8f0;
     }
 
-    .module-header::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    }
-
-    .module-title {
-        font-weight: 700;
-        font-size: 1.1rem;
-        margin: 0;
-    }
-
-    .module-actions {
+    .module-header-top {
         display: flex;
-        gap: 0.5rem;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
     }
 
-    .btn-edit {
-        background: rgba(255,255,255,0.2);
-        border: 1px solid rgba(255,255,255,0.3);
-        color: white;
-        border-radius: 10px;
-        padding: 0.5rem 0.75rem;
-        transition: all 0.3s ease;
-    }
-
-    .btn-edit:hover {
-        background: rgba(255,255,255,0.3);
-        color: white;
-        transform: scale(1.05);
-    }
-
-    .btn-delete {
-        background: var(--accent-color);
-        border: none;
-        color: white;
-        border-radius: 10px;
-        padding: 0.5rem 0.75rem;
-        transition: all 0.3s ease;
-    }
-
-    .btn-delete:hover {
-        background: #dc2626;
-        transform: scale(1.05);
-        color: white;
-    }
-
-    .module-body {
-        padding: 2rem;
-    }
-
-    .info-item {
-        margin-bottom: 1.5rem;
-        padding: 1rem;
-        background: var(--light-pink);
+    .module-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--gradient-bg);
         border-radius: 12px;
-        border-left: 4px solid var(--primary-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
     }
-    
-    .info-label {
+
+    .module-title-modern {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1a202c;
+        margin: 0.5rem 0 0.25rem 0;
+    }
+
+    .module-order-badge {
+        background: #f1f5f9;
+        color: var(--primary-color);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
         font-weight: 600;
-        color: #000000;
+        display: inline-block;
+    }
+
+    .module-meta {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+
+    .meta-item {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        margin-bottom: 0.5rem;
+        color: #64748b;
+        font-size: 0.875rem;
     }
 
-    .status-badge {
+    .meta-item i {
+        color: var(--primary-color);
+        font-size: 1rem;
+    }
+
+    .meta-value {
+        font-weight: 600;
+        color: #334155;
+    }
+
+    .module-card-body {
+        padding: 1.5rem;
+    }
+
+    .status-badge-modern {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
         padding: 0.5rem 1rem;
         border-radius: 20px;
         font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        font-size: 0.85rem;
+        font-size: 0.875rem;
+        text-transform: capitalize;
     }
 
     .status-published {
@@ -204,91 +203,178 @@
         color: white;
     }
 
-    .content-list {
-        background: #f8fafc;
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid #e2e8f0;
-    }
-
-    .content-item {
-        padding: 1rem;
-        border-bottom: 1px solid #e2e8f0;
+    .info-row {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        transition: background 0.2s ease;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f1f5f9;
     }
 
-    .content-item:hover {
-        background: var(--light-pink);
-    }
-
-    .content-item:last-child {
+    .info-row:last-child {
         border-bottom: none;
     }
 
-    .progress-section {
-        background: #f1f5f9;
-        padding: 1.5rem;
-        border-radius: 15px;
+    .info-label-modern {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #64748b;
+        font-size: 0.875rem;
+    }
+
+    .info-label-modern i {
+        color: var(--primary-color);
+    }
+
+    .info-value {
+        font-weight: 600;
+        color: #334155;
+    }
+
+    .content-toggle-btn {
+        background: var(--light-pink);
+        color: var(--primary-color);
+        border: 1px solid var(--primary-color);
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        width: 100%;
         margin-top: 1rem;
     }
 
+    .content-toggle-btn:hover {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .content-toggle-btn i {
+        transition: transform 0.3s ease;
+    }
+
+    .content-toggle-btn.active i {
+        transform: rotate(180deg);
+    }
+
+    .module-content-collapsible {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+
+    .module-content-collapsible.show {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .content-list-modern {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .content-item-modern {
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        background: white;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        border-left: 3px solid var(--primary-color);
+    }
+
+    .content-item-modern:last-child {
+        margin-bottom: 0;
+    }
+
+    .content-item-modern i {
+        color: var(--primary-color);
+    }
+
+    .progress-section-modern {
+        background: #f8fafc;
+        padding: 1rem;
+        border-radius: 12px;
+        margin-top: 1rem;
+    }
+
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .progress-label-text {
+        font-weight: 600;
+        color: #334155;
+        font-size: 0.875rem;
+    }
+
+    .progress-percentage {
+        font-weight: 700;
+        color: var(--primary-color);
+        font-size: 1rem;
+    }
+
     .custom-progress {
-        height: 30px;
-        border-radius: 15px;
+        height: 8px;
+        border-radius: 10px;
         background: #e2e8f0;
         overflow: hidden;
-        position: relative;
     }
 
     .custom-progress-bar {
         background: var(--gradient-bg);
         height: 100%;
-        border-radius: 15px;
+        border-radius: 10px;
         transition: width 0.6s ease;
         position: relative;
-        overflow: hidden;
     }
 
-    .custom-progress-bar::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255,255,255,0.3),
-            transparent
-        );
-        animation: shimmer 2s infinite;
+    .module-actions-modern {
+        display: flex;
+        gap: 0.5rem;
     }
 
-    @keyframes shimmer {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
+    .btn-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
     }
 
-    .progress-text {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+    .btn-edit-modern {
+        background: #f1f5f9;
+        color: var(--primary-color);
+    }
+
+    .btn-edit-modern:hover {
+        background: var(--primary-color);
         color: white;
-        font-weight: 600;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+
+    .btn-delete-modern {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .btn-delete-modern:hover {
+        background: #ef4444;
+        color: white;
     }
 
     .update-progress-form {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
         margin-top: 1rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
 
     .progress-input {
@@ -354,11 +440,6 @@
         color: white;
     }
 
-    .alert-info {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
-        color: white;
-    }
-
     .no-modules {
         text-align: center;
         padding: 4rem 2rem;
@@ -371,13 +452,11 @@
         opacity: 0.5;
     }
 
-    .module-card:nth-child(even) .module-header { background: linear-gradient(135deg, #D32F2F, #ef4444); }
-    .module-card:nth-child(even) .info-item { border-left-color: #ef4444; }
-
     @keyframes fadeOutUp {
         from { opacity: 1; transform: translateY(0); }
         to { opacity: 0; transform: translateY(-30px); }
     }
+    
     @keyframes fadeInDown {
         from { opacity: 0; transform: translateY(-30px); }
         to { opacity: 1; transform: translateY(0); }
@@ -439,96 +518,98 @@
                         <p class="text-muted">Start building your formation by adding the first module!</p>
                     </div>
                 @else
-                    <div class="row row-cols-1 g-4" id="modules-list">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="modules-list">
                         @foreach($formation->modules->sortBy('pivot.order') as $module)
                         <div class="col" id="module-card-{{ $module->id }}">
-                            <div class="module-card h-100">
-                                <div class="module-header">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h5 class="module-title">
-                                            <i class="fas fa-cube"></i>
-                                            Module {{ $module->pivot->order }}: {{ $module->title }}
-                                        </h5>
-                                        <div class="module-actions">
+                            <div class="module-card-modern h-100">
+                                <div class="module-card-header">
+                                    <div class="module-header-top">
+                                        <div class="flex-grow-1">
+                                            <span class="module-order-badge">Module {{ $module->pivot->order }}</span>
+                                            <h5 class="module-title-modern">{{ $module->title }}</h5>
+                                        </div>
+                                        <div class="module-actions-modern">
                                             @can('module-edit')
-                                            <button class="btn-edit edit-btn" 
+                                            <button class="btn-icon btn-edit-modern edit-btn" 
                                                     data-id="{{ $module->id }}" 
-                                                    data-order="{{ $module->pivot->order }}">
+                                                    data-order="{{ $module->pivot->order }}"
+                                                    title="Edit module">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             @endcan
                                             @can('module-delete')
-                                            <button class="btn-delete delete-btn" data-id="{{ $module->id }}">
+                                            <button class="btn-icon btn-delete-modern delete-btn" 
+                                                    data-id="{{ $module->id }}"
+                                                    title="Delete module">
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>
                                             @endcan
                                         </div>
                                     </div>
-                                </div>
-                                <div class="module-body">
-                                    <div class="info-item">
-                                        <div class="info-label">
-                                            <i class="fas fa-user-tie"></i>
-                                            Assigned Consultant:
-                                        </div>
-                                        <span class="module-consultant">{{ $module->user->name ?? 'N/A' }}</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">
-                                            <i class="fas fa-flag"></i>
-                                            Status:
-                                        </div>
-                                        <span class="status-badge module-status {{ $module->status == 'published' ? 'status-published' : 'status-draft' }}" data-status="{{ $module->status }}">
-                                            <i class="fas {{ $module->status == 'published' ? 'fa-check-circle' : 'fa-edit' }}"></i>
-                                            {{ $module->status }}
-                                        </span>
-                                    </div>
                                     
-                                    <div class="info-item">
-                                        <div class="info-label">
+                                    <div class="module-meta">
+                                        <div class="meta-item">
                                             <i class="fas fa-clock"></i>
-                                            Duration:
+                                            <span class="meta-value module-duration">{{ $module->duration_hours ?? 'N/A' }} heures</span>
                                         </div>
-                                        <span class="module-duration">{{ $module->duration_hours ?? 'N/A' }} hours</span>
-                                    </div>
-                                    
-                                    <div class="info-item">
-                                        <div class="info-label">
+                                        <div class="meta-item">
                                             <i class="fas fa-calendar-alt"></i>
-                                            Sessions:
+                                            <span class="meta-value module-sessions">{{ $module->number_seance ?? 'N/A' }} séances</span>
                                         </div>
-                                        <span class="module-sessions">{{ $module->number_seance ?? 'N/A' }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="module-card-body">
+                                    <div class="info-row">
+                                        <div class="info-label-modern">
+                                            <i class="fas fa-user-tie"></i>
+                                            Consultant
+                                        </div>
+                                        <div class="info-value module-consultant">{{ $module->user->name ?? 'N/A' }}</div>
                                     </div>
 
-                                    <div class="info-item">
-                                        <div class="info-label">
-                                            <i class="fas fa-list-ul"></i>
-                                            Content:
+                                    <div class="info-row">
+                                        <div class="info-label-modern">
+                                            <i class="fas fa-flag"></i>
+                                            Statut
                                         </div>
-                                        <ul class="content-list module-content">
+                                        <div>
+                                            <span class="status-badge-modern module-status {{ $module->status == 'published' ? 'status-published' : 'status-draft' }}" data-status="{{ $module->status }}">
+                                                <i class="fas {{ $module->status == 'published' ? 'fa-check-circle' : 'fa-edit' }}"></i>
+                                                {{ $module->status }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <button class="content-toggle-btn" data-module-id="{{ $module->id }}">
+                                        <i class="fas fa-chevron-down"></i> Voir le contenu
+                                    </button>
+
+                                    <div class="module-content-collapsible" id="content-{{ $module->id }}">
+                                        <div class="content-list-modern">
                                             @forelse($module->content as $item)
-                                            <li class="content-item">
-                                                <i class="fas fa-chevron-right text-primary"></i>
-                                                {{ $item }}
-                                            </li>
+                                            <div class="content-item-modern">
+                                                <i class="fas fa-check-circle"></i>
+                                                <span>{{ $item }}</span>
+                                            </div>
                                             @empty
-                                            <li class="content-item text-muted">
+                                            <div class="content-item-modern">
                                                 <i class="fas fa-info-circle"></i>
-                                                No content available.
-                                            </li>
+                                                <span class="text-muted">Aucun contenu disponible.</span>
+                                            </div>
                                             @endforelse
-                                        </ul>
+                                        </div>
                                     </div>
 
-                                    <div class="progress-section">
-                                        <div class="info-label">
-                                            <i class="fas fa-chart-line"></i>
-                                            Module Progress:
+                                    <div class="progress-section-modern">
+                                        <div class="progress-label">
+                                            <span class="progress-label-text">
+                                                <i class="fas fa-chart-line"></i> Progression
+                                            </span>
+                                            <span class="progress-percentage">{{ $module->progress }}%</span>
                                         </div>
                                         <div class="custom-progress">
-                                            <div class="custom-progress-bar" style="width: {{ $module->progress }}%;">
-                                                <div class="progress-text">{{ $module->progress }}%</div>
-                                            </div>
+                                            <div class="custom-progress-bar" style="width: {{ $module->progress }}%;"></div>
                                         </div>
                                         
                                         @if(Auth::check() && $module->user_id === Auth::id() && Auth::user()->can('module-update-progress'))
@@ -536,9 +617,9 @@
                                             <form action="{{ route('modules.updateProgress', $module->id) }}" method="POST">
                                                 @csrf
                                                 <div class="input-group">
-                                                    <input type="number" name="progress" class="form-control progress-input" placeholder="Update progress (0-100)" min="0" max="100" value="{{ $module->progress }}" required>
+                                                    <input type="number" name="progress" class="form-control progress-input" placeholder="Mise à jour (0-100)" min="0" max="100" value="{{ $module->progress }}" required>
                                                     <button type="submit" class="btn-update-progress">
-                                                        <i class="fas fa-sync-alt"></i> Update Progress
+                                                        <i class="fas fa-sync-alt"></i> Mettre à jour
                                                     </button>
                                                 </div>
                                             </form>
@@ -554,7 +635,7 @@
 
                 <div class="text-center">
                     <a href="{{ route('modules.index') }}" class="back-btn">
-                        <i class="fas fa-arrow-left"></i> Back to Formations List
+                        <i class="fas fa-arrow-left"></i> Retour à la liste des formations
                     </a>
                 </div>
             </div>
@@ -723,6 +804,25 @@
         const consultants = @json($consultants);
         const formationId = {{ $formation->id }};
 
+        // Toggle content visibility
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.content-toggle-btn')) {
+                const button = e.target.closest('.content-toggle-btn');
+                const moduleId = button.dataset.moduleId;
+                const contentDiv = document.getElementById('content-' + moduleId);
+                
+                if (contentDiv.classList.contains('show')) {
+                    contentDiv.classList.remove('show');
+                    button.innerHTML = '<i class="fas fa-chevron-down"></i> Voir le contenu';
+                    button.classList.remove('active');
+                } else {
+                    contentDiv.classList.add('show');
+                    button.innerHTML = '<i class="fas fa-chevron-up"></i> Masquer le contenu';
+                    button.classList.add('active');
+                }
+            }
+        });
+
         // Populate consultants dropdown
         function populateConsultantsSelect(selectElement, selectedUserId = null) {
             selectElement.innerHTML = '';
@@ -748,7 +848,7 @@
             modulesList.addEventListener('click', function (e) {
                 if (e.target.closest('.delete-btn')) {
                     e.preventDefault();
-                    if (confirm('Are you sure you want to delete this module?')) {
+                    if (confirm('Êtes-vous sûr de vouloir supprimer ce module ?')) {
                         const moduleId = e.target.closest('.delete-btn').dataset.id;
                         deleteModule(moduleId);
                     }
@@ -773,7 +873,7 @@
                     document.getElementById('edit-title').value = module.title;
                     document.getElementById('edit-duration_hours').value = module.duration_hours || '';
                     document.getElementById('edit-number_seance').value = module.number_seance || '';
-                    document.getElementById('edit-new_order').value = currentOrder; // Use pivot order
+                    document.getElementById('edit-new_order').value = currentOrder;
                     document.getElementById('edit-status').value = module.status;
                     document.getElementById('edit-content').value = Array.isArray(module.content) ? module.content.join('\n') : '';
                     
@@ -803,7 +903,7 @@
             axios.post('{{ route('modules.store') }}', formData)
                 .then(response => {
                     createModuleModal.hide();
-                    showAlert('Module created successfully!', 'success');
+                    showAlert('Module créé avec succès!', 'success');
                     setTimeout(() => location.reload(), 1000);
                 })
                 .catch(error => {
@@ -831,9 +931,8 @@
             axios.put(url, formData)
                 .then(response => {
                     editModuleModal.hide();
-                    showAlert('Module updated successfully!', 'success');
+                    showAlert('Module mis à jour avec succès!', 'success');
                     
-                    // Update the module card dynamically
                     if (response.data.modules) {
                         updateModulesList(response.data.modules);
                     } else {
@@ -862,7 +961,7 @@
             });
         }
 
-        // Create module card HTML
+        // Create module card HTML (NEW MODERN DESIGN)
         function createModuleCard(module, order) {
             const statusClass = module.status === 'published' ? 'status-published' : 'status-draft';
             const statusIcon = module.status === 'published' ? 'fa-check-circle' : 'fa-edit';
@@ -870,64 +969,101 @@
             let contentHTML = '';
             if (Array.isArray(module.content) && module.content.length > 0) {
                 module.content.forEach(item => {
-                    contentHTML += `<li class="content-item"><i class="fas fa-chevron-right text-primary"></i>${item}</li>`;
+                    contentHTML += `
+                        <div class="content-item-modern">
+                            <i class="fas fa-check-circle"></i>
+                            <span>${item}</span>
+                        </div>`;
                 });
             } else {
-                contentHTML = '<li class="content-item text-muted"><i class="fas fa-info-circle"></i>No content available.</li>';
+                contentHTML = `
+                    <div class="content-item-modern">
+                        <i class="fas fa-info-circle"></i>
+                        <span class="text-muted">Aucun contenu disponible.</span>
+                    </div>`;
             }
 
             return `
             <div class="col" id="module-card-${module.id}">
-                <div class="module-card h-100">
-                    <div class="module-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="module-title">
-                                <i class="fas fa-cube"></i>
-                                Module ${order}: ${module.title}
-                            </h5>
-                            <div class="module-actions">
+                <div class="module-card-modern h-100">
+                    <div class="module-card-header">
+                        <div class="module-header-top">
+                            <div class="flex-grow-1">
+                                <span class="module-order-badge">Module ${order}</span>
+                                <h5 class="module-title-modern">${module.title}</h5>
+                            </div>
+                            <div class="module-actions-modern">
                                 @can('module-edit')
-                                <button class="btn-edit edit-btn" data-id="${module.id}" data-order="${order}">
+                                <button class="btn-icon btn-edit-modern edit-btn" 
+                                        data-id="${module.id}" 
+                                        data-order="${order}"
+                                        title="Edit module">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 @endcan
                                 @can('module-delete')
-                                <button class="btn-delete delete-btn" data-id="${module.id}">
+                                <button class="btn-icon btn-delete-modern delete-btn" 
+                                        data-id="${module.id}"
+                                        title="Delete module">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                                 @endcan
                             </div>
                         </div>
+                        
+                        <div class="module-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-clock"></i>
+                                <span class="meta-value module-duration">${module.duration_hours || 'N/A'} heures</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span class="meta-value module-sessions">${module.number_seance || 'N/A'} séances</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="module-body">
-                        <div class="info-item">
-                            <div class="info-label"><i class="fas fa-user-tie"></i>Assigned Consultant:</div>
-                            <span class="module-consultant">${module.user ? module.user.name : 'N/A'}</span>
+
+                    <div class="module-card-body">
+                        <div class="info-row">
+                            <div class="info-label-modern">
+                                <i class="fas fa-user-tie"></i>
+                                Consultant
+                            </div>
+                            <div class="info-value module-consultant">${module.user ? module.user.name : 'N/A'}</div>
                         </div>
-                        <div class="info-item">
-                            <div class="info-label"><i class="fas fa-flag"></i>Status:</div>
-                            <span class="status-badge module-status ${statusClass}">
-                                <i class="fas ${statusIcon}"></i>${module.status}
-                            </span>
+
+                        <div class="info-row">
+                            <div class="info-label-modern">
+                                <i class="fas fa-flag"></i>
+                                Statut
+                            </div>
+                            <div>
+                                <span class="status-badge-modern module-status ${statusClass}" data-status="${module.status}">
+                                    <i class="fas ${statusIcon}"></i>
+                                    ${module.status}
+                                </span>
+                            </div>
                         </div>
-                        <div class="info-item">
-                            <div class="info-label"><i class="fas fa-clock"></i>Duration:</div>
-                            <span class="module-duration">${module.duration_hours || 'N/A'} hours</span>
+
+                        <button class="content-toggle-btn" data-module-id="${module.id}">
+                            <i class="fas fa-chevron-down"></i> Voir le contenu
+                        </button>
+
+                        <div class="module-content-collapsible" id="content-${module.id}">
+                            <div class="content-list-modern">
+                                ${contentHTML}
+                            </div>
                         </div>
-                        <div class="info-item">
-                            <div class="info-label"><i class="fas fa-calendar-alt"></i>Sessions:</div>
-                            <span class="module-sessions">${module.number_seance || 'N/A'}</span>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label"><i class="fas fa-list-ul"></i>Content:</div>
-                            <ul class="content-list module-content">${contentHTML}</ul>
-                        </div>
-                        <div class="progress-section">
-                            <div class="info-label"><i class="fas fa-chart-line"></i>Module Progress:</div>
+
+                        <div class="progress-section-modern">
+                            <div class="progress-label">
+                                <span class="progress-label-text">
+                                    <i class="fas fa-chart-line"></i> Progression
+                                </span>
+                                <span class="progress-percentage">${module.progress}%</span>
+                            </div>
                             <div class="custom-progress">
-                                <div class="custom-progress-bar" style="width: ${module.progress}%;">
-                                    <div class="progress-text">${module.progress}%</div>
-                                </div>
+                                <div class="custom-progress-bar" style="width: ${module.progress}%;"></div>
                             </div>
                         </div>
                     </div>
@@ -945,14 +1081,14 @@
                         moduleCard.style.animation = 'fadeOutUp 0.5s ease';
                         setTimeout(() => {
                             moduleCard.remove();
-                            showAlert('Module deleted successfully!', 'success');
+                            showAlert('Module supprimé avec succès!', 'success');
                             
-                            if (document.querySelectorAll('.module-card').length === 0) {
+                            if (document.querySelectorAll('.module-card-modern').length === 0) {
                                 document.getElementById('modules-list').innerHTML = `
                                 <div class="no-modules">
                                     <i class="fas fa-inbox"></i>
-                                    <h5>No modules have been added to this formation yet.</h5>
-                                    <p class="text-muted">Start building your formation by adding the first module!</p>
+                                    <h5>Aucun module n'a encore été ajouté à cette formation.</h5>
+                                    <p class="text-muted">Commencez à construire votre formation en ajoutant le premier module!</p>
                                 </div>`;
                             }
                         }, 500);
@@ -960,19 +1096,19 @@
                 })
                 .catch(error => {
                     console.error('Deletion error:', error);
-                    showAlert('Failed to delete module.', 'danger');
+                    showAlert('Échec de la suppression du module.', 'danger');
                 });
         }
 
         // Handle form errors
         function handleFormError(error) {
             console.error('Form error:', error);
-            let errorMessage = 'An error occurred. Please try again.';
+            let errorMessage = 'Une erreur s\'est produite. Veuillez réessayer.';
             
             if (error.response && error.response.data) {
                 if (error.response.data.errors) {
                     const errors = error.response.data.errors;
-                    errorMessage = 'Please fix the following errors:<br>';
+                    errorMessage = 'Veuillez corriger les erreurs suivantes:<br>';
                     for (const key in errors) {
                         errorMessage += `- ${errors[key][0]}<br>`;
                     }
@@ -1013,4 +1149,4 @@
         });
     });
 </script>
-@endsection>
+@endsection
