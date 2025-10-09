@@ -88,7 +88,7 @@ public function index(Request $request)
     // Tri par date et heure
     $query->orderBy('course_date', 'asc')->orderBy('start_time', 'asc');
 
-    // 🔥 Mode Planning
+ 
     // 🔥 Mode Planning
         if ($viewMode === 'planning') {
             $courses = $query->get();
