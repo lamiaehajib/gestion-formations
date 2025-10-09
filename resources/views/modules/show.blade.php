@@ -495,12 +495,12 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h4 class="section-title mb-0">
                         <i class="fas fa-cubes"></i>
-                        Modules for this Formation ({{ $formation->modules->count() }})
+                        Modules pour cette Formation ({{ $formation->modules->count() }})
                     </h4>
                     @can('module-create')
                     <div class="d-flex gap-2">
                         <button type="button" class="add-module-btn" data-bs-toggle="modal" data-bs-target="#createModuleModal">
-                            <i class="fas fa-plus-circle"></i> Add New Module
+                            <i class="fas fa-plus-circle"></i> Ajouter un nouveau module
                         </button>
                         <a href="{{ route('modules.corbeille') }}" class="btn btn-danger" style="border-radius: 15px;">
                             <i class="fa fa-trash"></i> Corbeille
