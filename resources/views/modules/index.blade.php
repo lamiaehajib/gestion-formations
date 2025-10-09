@@ -170,7 +170,7 @@
                     </h2>
                     @can('module-create')
                     <a href="{{ route('modules.create') }}" class="create-btn">
-                        ✨ Create New Module
+                        ✨ Créer un nouveau Module
                     </a>
                     @endcan
                 </div>
@@ -188,7 +188,7 @@
                     <table class="table table-modern">
                         <thead>
                             <tr>
-                                <th>Module Title</th>
+                                <th>Titre du Module</th>
                                 
                                 <th>Actions</th>
                             </tr>
@@ -215,8 +215,8 @@
                     <table class="table table-modern">
                         <thead>
                             <tr>
-                                <th>Formation Title</th>
-                                <th>Number of Modules</th>
+                                <th>Titre de la Formation</th>
+                                <th>Nombre de Modules</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -231,7 +231,7 @@
                                 </td>
                                 <td>
                                     <a href="{{ route('modules.show', ['formation' => $formation->id]) }}" class="view-btn">
-                                        View Modules
+                                        Voir les Modules
                                     </a>
                                 </td>
                             </tr>
