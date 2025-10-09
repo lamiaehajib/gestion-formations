@@ -33,10 +33,10 @@ class PromotionController extends Controller
     /**
      * Show the form for creating  new promotion.
      */
-    public function create()
+   public function create()
     {
-        $eligibleCategories = Category::whereIn('name', ['Licence Professionnelle', 'Master Professionnelle','LICENCE PROFESSIONNELLE RECONNU'])
-            ->pluck('id');
+        // Now you can use the short name
+        $eligibleCategories = Category::pluck('id');
 
         $formations = Formation::whereIn('category_id', $eligibleCategories)
             ->with('category', 'inscriptions')
@@ -417,8 +417,7 @@ class PromotionController extends Controller
      */
     public function getEligibleFormations()
     {
-        $eligibleCategories = Category::whereIn('name', ['Licence Professionnelle', 'Master Professionnelle','LICENCE PROFESSIONNELLE RECONNU'])
-            ->pluck('id');
+        $eligibleCategories = Category::pluck('id');
 
         $formations = Formation::whereIn('category_id', $eligibleCategories)
             ->with(['category', 'inscriptions.user'])
