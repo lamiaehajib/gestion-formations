@@ -89,7 +89,7 @@ public function index(Request $request)
     $query->orderBy('course_date', 'asc')->orderBy('start_time', 'asc');
 
  
-    // 🔥 Mong
+ 
         if ($viewMode === 'planning') {
             $courses = $query->get();
 
