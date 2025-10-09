@@ -399,6 +399,168 @@
         margin-bottom: 1.5rem;
     }
 }
+
+
+
+
+.formations-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background-color: #f8f9fa;
+    border-radius: 15px;
+    border: 1px solid #e2e8f0;
+}
+
+.formations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.formation-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 1.2rem;
+    border: 2px solid #e2e8f0;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.formation-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e0;
+}
+
+.formation-card.active {
+    border-color: #e53e3e;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+    box-shadow: 0 5px 15px rgba(229, 62, 62, 0.2);
+}
+
+.formation-card-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    position: relative;
+}
+
+.formation-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.formation-card.active .formation-icon {
+    background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.formation-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.formation-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.formation-consultant {
+    font-size: 0.9rem;
+    color: #718096;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.formation-consultant i {
+    color: #e53e3e;
+    font-size: 0.8rem;
+}
+
+.current-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 3px 10px rgba(56, 161, 105, 0.3);
+    animation: slideInRight 0.5s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.single-formation-display {
+    padding: 1rem 0;
+}
+
+.single-formation-display .badge {
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .formations-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .formation-card-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .formation-info {
+        width: 100%;
+    }
+    
+    .current-badge {
+        position: static;
+        margin-top: 10px;
+        display: inline-flex;
+    }
+}
 </style>
 @endpush
 
@@ -420,21 +582,51 @@
                 <div class="course-header-section">
                     <div>
                         <h1>{{ $course->title }}</h1>
-                    @if($course->formation)
-                        <p class="course-formation">
-                            {{-- Afficher la Formation UNIQUEMENT si l'utilisateur n'est PAS un Consultant --}}
-                            @if (!auth()->user()->hasRole('Consultant'))
-                                <span class="badge bg-secondary">{{ $course->formation->title }}</span>
-                            @endif
-
-                            {{-- Le Module reste affiché pour tout le monde (Consultant inclus) --}}
-                            @if($course->module)
-                                <span class="badge bg-info ms-2">{{ $course->module->title }}</span>
-                            @endif
-                        </p>
-                    @else
-                        <p class="course-formation">Aucune formation associée</p>
-                    @endif
+                   @if($relatedCourses->count() > 1)
+    <div class="formations-section mb-4">
+        <h2 class="section-title">
+            <i class="fas fa-graduation-cap"></i> Formations concernées par cette séance
+        </h2>
+        
+        <div class="formations-grid">
+            @foreach($relatedCourses as $relatedCourse)
+                <div class="formation-card {{ $relatedCourse->id === $course->id ? 'active' : '' }}">
+                    <div class="formation-card-content">
+                        <div class="formation-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="formation-info">
+                            <h4 class="formation-title">{{ $relatedCourse->formation->title ?? 'N/A' }}</h4>
+                            <p class="formation-consultant">
+                                <i class="fas fa-user-tie"></i> 
+                                {{ $relatedCourse->consultant->name ?? 'N/A' }}
+                            </p>
+                        </div>
+                        @if($relatedCourse->id === $course->id)
+                            <div class="current-badge">
+                                <i class="fas fa-check-circle"></i> Actuelle
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+@else
+    {{-- Si une seule formation, affichage classique --}}
+    @if($course->formation)
+        <div class="single-formation-display mb-3">
+            <span class="badge bg-secondary">
+                <i class="fas fa-graduation-cap me-1"></i> {{ $course->formation->title }}
+            </span>
+            @if($course->module)
+                <span class="badge bg-info ms-2">
+                    <i class="fas fa-book me-1"></i> {{ $course->module->title }}
+                </span>
+            @endif
+        </div>
+    @endif
+@endif
                         <div class="consultant-info">
 
                             {{-- Changed to display $course->consultant->name directly --}}
@@ -447,9 +639,9 @@
                 </div>
 
                 {{-- Course Details --}}
-                <h2 class="section-title"><i class="fas fa-info-circle"></i> Détails de la Séance
+                <h2 class="section-title"><i class="fas fa-info-circle"></i> Détails de la Séance</h2>
 
-</h2>
+                
                 <div class="card-info">
                     <ul>
                         <li><i class="fas fa-clock"></i> Heure: <strong>{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}</strong></li>

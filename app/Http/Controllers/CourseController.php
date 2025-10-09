@@ -36,21 +36,19 @@ public function index(Request $request)
     $viewMode = $request->get('view_mode', 'list');
 
     if ($user->hasRole('Etudiant') && $weekOffset > 0) {
-        // Ramener l'offset à 0 pour empêcher l'accès aux semaines futures
         $weekOffset = 0;
     }
 
-    // 🗓️ Calcul de la semaine (utilise le weekOffset potentiellement ajusté)
+    // 🗓️ Calcul de la semaine
     $weekStart = Carbon::now()->startOfWeek()->addWeeks($weekOffset);
     $weekEnd = Carbon::now()->startOfWeek()->addWeeks($weekOffset)->endOfWeek();
 
-    // Load relations 'consultant' and 'formation'
+    // Load relations
     $query = Course::with(['consultant', 'formation', 'module']);
 
     if ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance')) {
         // Admins see all courses
     } elseif ($user->hasRole('Consultant')) {
-        // 🔥 Consultant ichof courses dyalo
         $query->where('consultant_id', $user->id);
     } elseif ($user->hasRole('Etudiant')) {
         $enrolledFormationIds = $user->inscriptions()
@@ -67,14 +65,10 @@ public function index(Request $request)
         $query->whereRaw('1 = 0');
     }
 
-    // 🔥 MODIFICATION 2 : Filtrage par semaine
-    // S'applique pour le mode 'planning' (pour les non-étudiants) OU pour l'Étudiant (dans tous les cas)
-    
+    // 🔥 Filtrage par semaine
     if ($user->hasRole('Etudiant')) {
-        // L'étudiant voit toujours uniquement les cours de la semaine en cours
         $query->whereBetween('course_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')]);
     } elseif ($viewMode === 'planning') {
-        // Les autres rôles voient par semaine seulement en mode 'planning'
         $query->whereBetween('course_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')]);
     }
     
@@ -94,14 +88,12 @@ public function index(Request $request)
     // Tri par date et heure
     $query->orderBy('course_date', 'asc')->orderBy('start_time', 'asc');
 
-    // 🔥 Selon le mode d'affichage
+    // 🔥 Mode Planning
     if ($viewMode === 'planning') {
         $courses = $query->get();
         
-        // 🚨 MODIFICATION ICI: Filtration des doublons pour le mode 'planning' du Consultant
         if ($user->hasRole('Consultant')) {
             $courses = $courses->unique(function($course) {
-                // Grouper par: Module + Date + Heure + Titre
                 return $course->module_id . '-' .
                        $course->course_date . '-' .
                        $course->start_time . '-' .
@@ -114,33 +106,30 @@ public function index(Request $request)
         });
         
     } else {
-        // 🔥 Pour Consultant: Filtrer les duplicates (pour le mode liste/pagination)
-        if ($user->hasRole('Consultant')) {
-            $allCourses = $query->get();
-            
-            // Remove duplicate courses (même module + date + time + title)
-            $uniqueCourses = $allCourses->unique(function($course) {
-                return $course->module_id . '-' . 
-                       $course->course_date . '-' . 
-                       $course->start_time . '-' . 
-                       $course->title;
-            });
-            
-            // Manual pagination
-            $perPage = 15;
-            $currentPage = Paginator::resolveCurrentPage();
-            $currentPageItems = $uniqueCourses->slice(($currentPage - 1) * $perPage, $perPage)->values();
-            
-            $courses = new LengthAwarePaginator(
-                $currentPageItems,
-                $uniqueCourses->count(),
-                $perPage,
-                $currentPage,
-                ['path' => Paginator::resolveCurrentPath()]
-            );
-        } else {
-            $courses = $query->paginate(15);
-        }
+        // 🔥 Mode Liste: Filtrer les duplicates POUR TOUS (Admin, Consultant, etc.)
+        $allCourses = $query->get();
+        
+        // 🚨 NOUVELLE LOGIQUE: Grouper par module_id + date + time + title
+        // et ne garder qu'un seul représentant par groupe
+        $uniqueCourses = $allCourses->unique(function($course) {
+            return $course->module_id . '-' . 
+                   $course->course_date . '-' . 
+                   $course->start_time . '-' . 
+                   $course->title;
+        });
+        
+        // Manual pagination
+        $perPage = 15;
+        $currentPage = Paginator::resolveCurrentPage();
+        $currentPageItems = $uniqueCourses->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        
+        $courses = new LengthAwarePaginator(
+            $currentPageItems,
+            $uniqueCourses->count(),
+            $perPage,
+            $currentPage,
+            ['path' => Paginator::resolveCurrentPath()]
+        );
         
         $coursesByDay = null;
     }
@@ -169,7 +158,7 @@ public function index(Request $request)
         'viewMode', 
         'weekStart', 
         'weekEnd', 
-        'weekOffset', // L'offset ajusté est renvoyé à la vue
+        'weekOffset',
         'formationsForModals', 
         'formationsForFilter', 
         'consultants',
@@ -266,17 +255,42 @@ public function index(Request $request)
     /**
      * Display the specified resource.
      */
-    public function show(Course $course)
+public function show(Course $course)
 {
-    // Load relations 'formation', 'module', 'consultant', 'evaluations'
-    // 🔥 Jdida: Load aussi l'utilisateurs li daro join
+    $user = Auth::user();
+    
+    // Load relations de base
     $course->load(['formation', 'module', 'consultant', 'evaluations', 'usersJoined']); 
     
-    // N9adro nzidou l'compteur w l'list f l'view b7al haka:
+    // Compteur et liste des utilisateurs qui ont joint
     $joinCount = $course->usersJoined->count();
-    $joinedUsers = $course->usersJoined->pluck('name')->all(); // N9adro n'assuméw belli l'User model 3andou champ 'name'
+    $joinedUsers = $course->usersJoined->pluck('name')->all();
 
-    return view('courses.show', compact('course', 'joinCount', 'joinedUsers'));
+    // 🔥 NOUVELLE LOGIQUE: Récupérer TOUS les cours du même module avec la même date/heure/titre
+    $relatedCourses = Course::with(['formation', 'consultant'])
+        ->where('module_id', $course->module_id)
+        ->where('course_date', $course->course_date)
+        ->where('start_time', $course->start_time)
+        ->where('title', $course->title)
+        ->orderBy('formation_id')
+        ->get();
+
+    // Filtrer selon le rôle de l'utilisateur
+    if ($user->hasRole('Consultant')) {
+        // Le consultant ne voit que ses cours
+        $relatedCourses = $relatedCourses->where('consultant_id', $user->id);
+    } elseif ($user->hasRole('Etudiant')) {
+        // L'étudiant ne voit que les cours des formations auxquelles il est inscrit
+        $enrolledFormationIds = $user->inscriptions()
+            ->whereIn('status', ['active', 'completed'])
+            ->where('access_restricted', false)
+            ->pluck('formation_id');
+        
+        $relatedCourses = $relatedCourses->whereIn('formation_id', $enrolledFormationIds);
+    }
+    // Admin/Super Admin/Finance voient tous les cours (pas de filtre)
+
+    return view('courses.show', compact('course', 'joinCount', 'joinedUsers', 'relatedCourses'));
 }
 
     /**
