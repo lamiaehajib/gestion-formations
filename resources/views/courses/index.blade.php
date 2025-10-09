@@ -731,7 +731,7 @@
                 <div class="col-md-6">
                     <h1><i class="fas fa-graduation-cap me-3"></i>
                         @if($viewMode === 'planning')
-                            Mon Planning de la semaine
+                            Mon Planning de la semainess
                         @else
                             Gestion des Séances 
                         @endif
