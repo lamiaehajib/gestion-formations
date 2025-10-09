@@ -329,29 +329,7 @@ class CourseRescheduleController extends Controller
     /**
      * Remove the specified course reschedule
      */
-    public function destroy($id)
-    {
-        $reschedule = CourseReschedule::findOrFail($id);
-
-        // Check permissions
-        if (Auth::user()->hasRole('Consultant') && !Auth::user()->can('course-manage-all')) {
-            // بما أن `Course` الآن يحتوي على `consultant_id`، تحقق من تطابق معرف المستشار
-            if ($reschedule->course->consultant_id !== Auth::id()) { // <-- التغيير هنا (الوصول عبر course)
-                abort(403, 'Unauthorized to delete this reschedule.');
-            }
-        }
-
-        try {
-            $reschedule->delete();
-
-            return redirect()->route('course_reschedules.index')
-                ->with('success', 'Course reschedule has been deleted successfully.');
-
-        } catch (\Exception $e) {
-            return back()
-                ->with('error', 'An error occurred while deleting the reschedule: ' . $e->getMessage());
-        }
-    }
+   
 
     /**
      * Get course reschedule history for a specific course
@@ -579,4 +557,42 @@ class CourseRescheduleController extends Controller
         Mail::to($student->email)->send(new CourseRescheduledMail($course, $reschedule));
     }
 }
+
+
+    public function destroy($id)
+    {
+        $reschedule = CourseReschedule::with('course')->findOrFail($id);
+        $user = Auth::user();
+
+        // 1. Check permissions (Authorization)
+        // L'utilisateur khasso ikon 3ando 'course-delete' wla 'course-manage-own'
+        if (!$user->can('course-delete') && !$user->can('course-manage-own')) {
+            abort(403, 'Unauthorized to delete this reschedule.');
+        }
+
+        // 2. Row-level security: 
+        // If the user is a Consultant and doesn't have 'course-delete' (e.g., only 'course-manage-own'), 
+        // ghadi n'aكدou belli l'course kayn l'consultant_id dyalou m3a l'ID dyal l'utilisateur.
+        // N'aكدou 'course-manage-own' 3la l'reschedule dyal les cours dyalo
+        if ($user->hasRole('Consultant') && !$user->can('course-delete')) {
+            if ($reschedule->course->consultant_id !== $user->id) {
+                abort(403, 'Unauthorized to delete this specific course reschedule.');
+            }
+        }
+
+        // Note: L'étudiant ma3andouch l'7a9 y'supprimi, hitach ma3andouch 'course-delete' wla 'course-manage-own' (kayban lina ghir f l'middleware)
+
+        try {
+            // 3. Delete the reschedule record
+            $reschedule->delete();
+
+            return redirect()->route('course_reschedules.index')
+                ->with('success', 'Course reschedule has been deleted successfully. The associated course date remains unchanged.');
+
+        } catch (\Exception $e) {
+            Log::error("Error deleting course reschedule {$id}: " . $e->getMessage());
+            return back()
+                ->with('error', 'An error occurred while deleting the reschedule: ' . $e->getMessage());
+        }
+    }
 }

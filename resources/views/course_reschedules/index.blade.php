@@ -535,17 +535,7 @@ a.btn.btn-outline-secondary.btn-modern {
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stats-card variant-2">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-user-tie fa-3x me-3"></i>
-                        <div>
-                            <h3 class="mb-0">{{ $consultants->count() }}</h3>
-                            <small class="opacity-75">Consultants Actifs</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
+           
             <div class="col-md-3">
                 <div class="stats-card variant-3">
                     <div class="d-flex align-items-center">
@@ -712,13 +702,21 @@ a.btn.btn-outline-secondary.btn-modern {
 
 
 
-                                                @if(Auth::user()->can('course-manage-all') || $reschedule->consultant_id == Auth::id())
-                                                <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                        onclick="confirmDelete({{ $reschedule->id }})" 
-                                                        data-bs-toggle="tooltip" title="Supprimer">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                                @endif
+                                               {{-- زر الحذف لن يظهر إلا لمن يملك صلاحية 'course-manage-all' --}}
+@if(Auth::user()->can('course-manage-all'))
+    <form action="{{ route('course_reschedules.destroy', $reschedule->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this course reschedule? Note: Deleting the reschedule record will NOT revert the course date to the original date.');">
+    {{-- Blade directive bach t'généri l'CSRF token --}}
+    @csrf
+    
+    {{-- Méthode HTTP li khasstha tkoun 'DELETE' 7itach l'formulaire kay supporti ghir GET w POST --}}
+    @method('DELETE')
+
+    {{-- L'bouton li kay triggéri l'suppression --}}
+    <button type="submit" class="btn btn-danger btn-sm" title="Delete Reschedule">
+        <i class="fa fa-trash"></i> 
+    </button>
+</form>
+@endif
 
                                         </div>
                                     </td>
