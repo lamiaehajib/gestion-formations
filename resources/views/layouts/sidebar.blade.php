@@ -525,7 +525,7 @@
                     <li class="sidebar-menu__item">
                         <a href="{{ route('etudiant.choose_formation') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-file-plus"></i></span>
-                            <span class="text">S'inscrire à une Formation</span>
+                            <span class="text">Je m'inscris</span>
                         </a>
                     </li>
                     @endcan
@@ -554,14 +554,20 @@
                         </a>
                     </li>
                     @endcan
-                    @can('inscription-list')
-                    <li class="sidebar-menu__item">
-                        <a href="{{ route('inscriptions.index') }}" class="sidebar-menu__link">
-                            <span class="icon"><i class="ph ph-list-checks"></i></span>
-                            <span class="text">Inscriptions</span>
-                        </a>
-                    </li>
-                    @endcan
+                   @if (Auth::check() && (Auth::user()->hasRole('Etudiant') || Auth::user()->can('inscription-list')))
+    <li class="sidebar-menu__item">
+        <a href="{{ route('inscriptions.index') }}" class="sidebar-menu__link">
+            <span class="icon"><i class="ph ph-list-checks"></i></span>
+            <span class="text">
+                @if (Auth::user()->hasRole('Etudiant'))
+                    Mes Formations
+                @else
+                    Inscriptions
+                @endif
+            </span>
+        </a>
+    </li>
+@endif
                       @can('payment-list')
                     <li class="sidebar-menu__item">
                         <a href="{{ route('payments.index') }}" class="sidebar-menu__link">
