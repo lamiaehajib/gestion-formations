@@ -582,51 +582,45 @@
                 <div class="course-header-section">
                     <div>
                         <h1>{{ $course->title }}</h1>
-                   @if($relatedCourses->count() > 1)
-    <div class="formations-section mb-4">
-        <h2 class="section-title">
-            <i class="fas fa-graduation-cap"></i> Formations concernées par cette séance
-        </h2>
-        
-        <div class="formations-grid">
-            @foreach($relatedCourses as $relatedCourse)
-                <div class="formation-card {{ $relatedCourse->id === $course->id ? 'active' : '' }}">
-                    <div class="formation-card-content">
-                        <div class="formation-icon">
-                            <i class="fas fa-book"></i>
-                        </div>
-                        <div class="formation-info">
-                            <h4 class="formation-title">{{ $relatedCourse->formation->title ?? 'N/A' }}</h4>
-                            <p class="formation-consultant">
-                                <i class="fas fa-user-tie"></i> 
-                                {{ $relatedCourse->consultant->name ?? 'N/A' }}
-                            </p>
-                        </div>
-                        @if($relatedCourse->id === $course->id)
-                            <div class="current-badge">
-                                <i class="fas fa-check-circle"></i> Actuelle
+                   @can('course-create')
+    @if($relatedCourses->count() > 1)
+        <div class="formations-section mb-4">
+            <h2 class="section-title">
+                <i class="fas fa-graduation-cap"></i> Formations concernées par cette séance
+            </h2>
+            
+            <div class="formations-grid">
+                @foreach($relatedCourses as $relatedCourse)
+                    <div class="formation-card">
+                        <div class="formation-card-content">
+                            <div class="formation-icon">
+                                <i class="fas fa-book"></i>
                             </div>
-                        @endif
+                            <div class="formation-info">
+                                <h4 class="formation-title">{{ $relatedCourse->formation->title ?? 'N/A' }}</h4>
+                                <p class="formation-consultant">
+                                    <i class="fas fa-user-tie"></i> 
+                                    {{ $relatedCourse->consultant->name ?? 'N/A' }}
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            @endforeach
-        </div>
-    </div>
-@else
-    {{-- Si une seule formation, affichage classique --}}
-    @if($course->formation)
-        <div class="single-formation-display mb-3">
-            <span class="badge bg-secondary">
-                <i class="fas fa-graduation-cap me-1"></i> {{ $course->formation->title }}
-            </span>
-            @if($course->module)
-                <span class="badge bg-info ms-2">
-                    <i class="fas fa-book me-1"></i> {{ $course->module->title }}
-                </span>
-            @endif
+                @endforeach
+            </div>
         </div>
     @endif
-@endif
+@endcan
+
+{{-- Affichage Module seul pour Consultant/Etudiant --}}
+@cannot('course-create')
+    @if($course->module)
+        <div class="single-formation-display mb-3">
+            <span class="badge bg-info">
+                <i class="fas fa-book me-1"></i> {{ $course->module->title }}
+            </span>
+        </div>
+    @endif
+@endcan
                         <div class="consultant-info">
 
                             {{-- Changed to display $course->consultant->name directly --}}
