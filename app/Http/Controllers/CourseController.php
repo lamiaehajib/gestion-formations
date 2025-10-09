@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\NewCourseNotification;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 
 class CourseController extends Controller
 {
@@ -29,8 +31,16 @@ public function index(Request $request)
 {
     $user = Auth::user();
 
-    // 🗓️ Calcul de la semaine (pour navigation)
+    // ⚠️ MODIFICATION 1 : Si l'utilisateur est un étudiant, on bloque la navigation vers les semaines futures.
     $weekOffset = $request->get('week_offset', 0);
+    $viewMode = $request->get('view_mode', 'list');
+
+    if ($user->hasRole('Etudiant') && $weekOffset > 0) {
+        // Ramener l'offset à 0 pour empêcher l'accès aux semaines futures
+        $weekOffset = 0;
+    }
+
+    // 🗓️ Calcul de la semaine (utilise le weekOffset potentiellement ajusté)
     $weekStart = Carbon::now()->startOfWeek()->addWeeks($weekOffset);
     $weekEnd = Carbon::now()->startOfWeek()->addWeeks($weekOffset)->endOfWeek();
 
@@ -57,13 +67,17 @@ public function index(Request $request)
         $query->whereRaw('1 = 0');
     }
 
-    // 🔥 NOUVEAU: Filtrage par semaine (si view_mode = 'planning')
-    $viewMode = $request->get('view_mode', 'list');
+    // 🔥 MODIFICATION 2 : Filtrage par semaine
+    // S'applique pour le mode 'planning' (pour les non-étudiants) OU pour l'Étudiant (dans tous les cas)
     
-    if ($viewMode === 'planning') {
+    if ($user->hasRole('Etudiant')) {
+        // L'étudiant voit toujours uniquement les cours de la semaine en cours
+        $query->whereBetween('course_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')]);
+    } elseif ($viewMode === 'planning') {
+        // Les autres rôles voient par semaine seulement en mode 'planning'
         $query->whereBetween('course_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')]);
     }
-
+    
     // Filters based on request parameters
     if ($request->has('filter_formation_id') && $request->filter_formation_id) {
         $query->where('formation_id', $request->filter_formation_id);
@@ -114,15 +128,15 @@ public function index(Request $request)
             
             // Manual pagination
             $perPage = 15;
-            $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage();
+            $currentPage = Paginator::resolveCurrentPage();
             $currentPageItems = $uniqueCourses->slice(($currentPage - 1) * $perPage, $perPage)->values();
             
-            $courses = new \Illuminate\Pagination\LengthAwarePaginator(
+            $courses = new LengthAwarePaginator(
                 $currentPageItems,
                 $uniqueCourses->count(),
                 $perPage,
                 $currentPage,
-                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+                ['path' => Paginator::resolveCurrentPath()]
             );
         } else {
             $courses = $query->paginate(15);
@@ -155,7 +169,7 @@ public function index(Request $request)
         'viewMode', 
         'weekStart', 
         'weekEnd', 
-        'weekOffset',
+        'weekOffset', // L'offset ajusté est renvoyé à la vue
         'formationsForModals', 
         'formationsForFilter', 
         'consultants',
