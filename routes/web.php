@@ -343,6 +343,7 @@ Route::get('/download-backup', [BackupController::class, 'download'])->name('dow
 
  Route::get('/api/notification-banner/recent', [NotificationBannerController::class, 'getRecentNotifications']);
 
+
 });
 
 require __DIR__.'/auth.php';

@@ -45,7 +45,7 @@ class NotificationBannerController extends Controller
         $today = Carbon::today();
         
         $query = Course::with(['module', 'formation', 'consultant'])
-            ->whereDate('created_at', $today); // 🔥 Juste aujourd'hui
+            ->whereDate('course_date', $today); // 🔥 Juste aujourd'hui
 
         // Filtrer selon le rôle
         if ($user->hasRole('Etudiant')) {
