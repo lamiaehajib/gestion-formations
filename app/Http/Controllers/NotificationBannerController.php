@@ -120,7 +120,7 @@ class NotificationBannerController extends Controller
                 'icon' => '🔄',
                 'color' => 'bg-orange-100 text-orange-800',
                 'message' => "Cours reporté: {$course->title} - " .
-                            "Du {$originalDate} au {$newDate}",
+                            "Du {$originalDate} reporté au {$newDate}",
                 'link' => route('courses.show', $course->id),
                 'created_at' => $reschedule->created_at
             ];
