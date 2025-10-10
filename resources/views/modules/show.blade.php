@@ -1072,33 +1072,39 @@
         }
 
         // Delete module
-        function deleteModule(moduleId) {
-            const url = `/modules/${moduleId}`;
-            axios.delete(url)
-                .then(response => {
-                    const moduleCard = document.getElementById('module-card-' + moduleId);
-                    if (moduleCard) {
-                        moduleCard.style.animation = 'fadeOutUp 0.5s ease';
-                        setTimeout(() => {
-                            moduleCard.remove();
-                            showAlert('Module supprimé avec succès!', 'success');
-                            
-                            if (document.querySelectorAll('.module-card-modern').length === 0) {
-                                document.getElementById('modules-list').innerHTML = `
-                                <div class="no-modules">
-                                    <i class="fas fa-inbox"></i>
-                                    <h5>Aucun module n'a encore été ajouté à cette formation.</h5>
-                                    <p class="text-muted">Commencez à construire votre formation en ajoutant le premier module!</p>
-                                </div>`;
-                            }
-                        }, 500);
-                    }
-                })
-                .catch(error => {
-                    console.error('Deletion error:', error);
-                    showAlert('Échec de la suppression du module.', 'danger');
-                });
+       function deleteModule(moduleId) {
+    axios.post(`/modules/${moduleId}/destroy-ajax`, {
+        _method: 'DELETE',
+        _token: '{{ csrf_token() }}'
+    })
+    .then(response => {
+        const moduleCard = document.getElementById('module-card-' + moduleId);
+        if (moduleCard) {
+            moduleCard.style.animation = 'fadeOutUp 0.5s ease';
+            setTimeout(() => {
+                moduleCard.remove();
+                showAlert(response.data.message || 'Module supprimé avec succès!', 'success');
+                
+                if (document.querySelectorAll('.module-card-modern').length === 0) {
+                    document.getElementById('modules-list').innerHTML = `
+                    <div class="no-modules">
+                        <i class="fas fa-inbox"></i>
+                        <h5>Aucun module n'a encore été ajouté à cette formation.</h5>
+                        <p class="text-muted">Commencez à construire votre formation en ajoutant le premier module!</p>
+                    </div>`;
+                }
+            }, 500);
         }
+    })
+    .catch(error => {
+        console.error('Deletion error:', error);
+        let errorMsg = 'Échec de la suppression du module.';
+        if (error.response && error.response.data && error.response.data.message) {
+            errorMsg = error.response.data.message;
+        }
+        showAlert(errorMsg, 'danger');
+    });
+}
 
         // Handle form errors
         function handleFormError(error) {

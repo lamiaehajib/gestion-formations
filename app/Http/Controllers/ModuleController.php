@@ -471,8 +471,26 @@ public function update(Request $request, Module $module)
      */
     public function destroyAjax(Module $module)
     {
-        $module->delete();
-        return response()->json(['success' => 'Module deleted successfully!']);
+        try {
+            // Check permissions (ila bghiti)
+            // $this->authorize('module-delete', $module);
+
+            // Soft delete (ymchi l corbeille)
+            $module->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Module supprimé avec succès!'
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('Module deletion error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la suppression: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function corbeille()
