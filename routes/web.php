@@ -10,6 +10,7 @@ use App\Http\Controllers\EtudiantController; // تأكد من استيراد Etu
 use App\Http\Controllers\FormationController;
 use App\Http\Controllers\InscriptionController;
 use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\NotificationBannerController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
@@ -340,7 +341,7 @@ Route::get('/get-modules/{formationId}', [AjaxController::class, 'getModules']);
 
 Route::get('/download-backup', [BackupController::class, 'download'])->name('download.backup');
 
-
+ Route::get('/api/notification-banner/recent', [NotificationBannerController::class, 'getRecentNotifications']);
 
 });
 

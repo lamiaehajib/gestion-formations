@@ -242,6 +242,7 @@ public function index(Request $request)
             ]);
             $createdCoursesCount++;
         }
+        
 
         // Update module progress
         $this->updateModuleProgress($request->module_id);

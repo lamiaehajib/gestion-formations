@@ -371,7 +371,9 @@
 
     <div class="side-overlay" id="mobileSidebarOverlay"></div>
 
-   
+@auth
+    @include('components.notification-banner')
+@endauth
     
             @include('layouts.sidebar')
      
