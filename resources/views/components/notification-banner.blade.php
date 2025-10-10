@@ -95,7 +95,7 @@ let currentNotifications = [];
 document.addEventListener('DOMContentLoaded', function() {
     // Check if banner was closed recently
     const closedTime = localStorage.getItem('bannerClosed');
-    if (!closedTime || (Date.now() - closedTime > 600000)) { // 10 min
+    if (!closedTime || (Date.now() - closedTime > 60000)) { // 10 min
         loadNotifications();
     }
     
