@@ -128,7 +128,7 @@ function displayNotifications() {
         return;
     }
     
-    // Créer le HTML des notifications
+    
     const messages = currentNotifications.map(notif => {
         // Ghnst3mlo l'icon li jay f data b'<i> w nzidoha chi style dyal taille (text-xl)
         const iconHtml = notif.icon ? `<i class="${notif.icon} text-xl text-red-500" aria-hidden="true"></i>` : ''; 
