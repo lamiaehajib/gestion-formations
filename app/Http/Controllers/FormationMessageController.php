@@ -291,7 +291,7 @@ class FormationMessageController extends Controller
         $studentFormation = $message->formations()
             ->whereHas('inscriptions', function($query) use ($user) {
                 $query->where('user_id', $user->id)
-                      ->whereIn('status', ['active', 'completed']);
+                      ->whereIn('status', ['active', 'completed','pending']);
             })
             ->first();
 
@@ -331,7 +331,7 @@ class FormationMessageController extends Controller
         }
 
         $count = \App\Models\Inscription::whereIn('formation_id', $formationIds)
-            ->whereIn('status', ['active', 'pending'])
+            ->whereIn('status', ['active', 'pending', 'completed'])
             ->distinct('user_id')
             ->count('user_id');
 
@@ -369,7 +369,7 @@ class FormationMessageController extends Controller
     $studentFormation = $message->formations()
         ->whereHas('inscriptions', function($query) use ($user) {
             $query->where('user_id', $user->id)
-                  ->whereIn('status', ['active', 'completed']);
+                  ->whereIn('status', ['active', 'completed','pending']);
         })
         ->first();
 
