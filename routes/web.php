@@ -8,6 +8,7 @@ use App\Http\Controllers\CourseRescheduleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EtudiantController; // تأكد من استيراد EtudiantController
 use App\Http\Controllers\FormationController;
+use App\Http\Controllers\FormationMessageController;
 use App\Http\Controllers\InscriptionController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationBannerController;
@@ -342,8 +343,35 @@ Route::get('/get-modules/{formationId}', [AjaxController::class, 'getModules']);
 Route::get('/download-backup', [BackupController::class, 'download'])->name('download.backup');
 
  Route::get('/api/notification-banner/recent', [NotificationBannerController::class, 'getRecentNotifications']);
+ 
+Route::prefix('messages')->name('messages.')->middleware(['auth', 'can:message-list-all'])->group(function () {
+    Route::get('/', [FormationMessageController::class, 'index'])->name('index');
+    Route::get('/create', [FormationMessageController::class, 'create'])->name('create')->withoutMiddleware(['can:message-list-all'])->middleware('can:message-create');
+    Route::post('/', [FormationMessageController::class, 'store'])->name('store')->withoutMiddleware(['can:message-list-all'])->middleware('can:message-create');
+    
+    // ✨ NOUVELLE ROUTE: API pour récupérer les détails en JSON
+    Route::get('/{id}/details', [FormationMessageController::class, 'getMessageDetails'])->name('details')->withoutMiddleware(['can:message-list-all'])->middleware('can:message-view-all');
+    
+    Route::get('/{id}', [FormationMessageController::class, 'show'])->name('show')->withoutMiddleware(['can:message-list-all'])->middleware('can:message-view-all');
+    Route::delete('/{id}', [FormationMessageController::class, 'destroy'])->name('destroy')->withoutMiddleware(['can:message-list-all'])->middleware('can:message-delete');
+    Route::post('/get-students-count', [FormationMessageController::class, 'getFormationStudentsCount'])
+        ->name('students-count')
+        ->withoutMiddleware(['can:message-list-all'])->middleware('can:message-get-students-count');
+    Route::get('/{id}/edit', [FormationMessageController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [FormationMessageController::class, 'update'])->name('update');
+});
 
 
+// Routes pour les Students (vues publiques des messages de l'étudiant)
+// Ces routes doivent utiliser une permission différente pour leur accès.
+Route::prefix('message')->name('message.')->middleware(['auth', 'can:message-view-own'])->group(function () {
+    Route::get('/', [FormationMessageController::class, 'studentMessages'])->name('index');
+    
+    // ✨ IMPORTANT: Content route AVANT la route dynamique {id}
+    Route::get('{id}/content', [FormationMessageController::class, 'studentShowContent'])->name('content');
+    
+    Route::get('{id}', [FormationMessageController::class, 'studentShow'])->name('showa');
+});
 });
 
 require __DIR__.'/auth.php';

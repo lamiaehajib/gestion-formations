@@ -118,4 +118,35 @@ class Formation extends Model
     {
         return $this->hasMany(Promotion::class);
     }
+
+     /**
+     * ✨ جديد: الرسائل المرسلة لهذا التكوين
+     */
+    public function messages()
+    {
+        return $this->belongsToMany(FormationMessage::class, 'formation_message_formations');
+    }
+
+    /**
+     * ✨ جديد: جلب الطلاب النشطين في هذا التكوين
+     */
+    public function activeStudents()
+    {
+        return $this->hasManyThrough(
+            User::class,
+            Inscription::class,
+            'formation_id', // Foreign key on inscriptions table
+            'id', // Foreign key on users table
+            'id', // Local key on formations table
+            'user_id' // Local key on inscriptions table
+        )->whereIn('inscriptions.status', ['active', 'pending']);
+    }
+
+    /**
+     * ✨ جديد: عدد الطلاب المسجلين النشطين
+     */
+    public function getActiveStudentsCountAttribute()
+    {
+        return $this->inscriptions()->whereIn('status', ['active', 'pending'])->count();
+    }
 }

@@ -103,7 +103,7 @@ class PermissionseSeeder extends Seeder
 
             'teskmlt',
 
-             'module-list',              // Permet de voir la liste des formations avec leurs modules
+             'module-list',      // Permet de voir la liste des formations avec leurs modules
     'module-create',            // Permet d'ajouter de nouveaux modules à une formation
     'module-edit',              // Permet de modifier un module existant
     'module-delete',            // Permet de supprimer un module
@@ -112,6 +112,17 @@ class PermissionseSeeder extends Seeder
     'module-manage-all',        // Pour un rôle admin, permet de gérer tous les modules
     'module-swap-order',        // Pour gérer le changement de l'ordre des modules
             
+
+
+    // NEW: Message Permissions (Admin only)
+'message-list-all',
+'message-create',
+'message-view-all',
+'message-delete',
+'message-get-students-count', 
+
+// NEW: Message Permissions (Student only)
+'message-view-own',
 
         ];
 
@@ -154,6 +165,7 @@ class PermissionseSeeder extends Seeder
                 'course-view',       // Students need to view course details
                 'course-join',       // Students need to join courses
                 'course-download-document', // Students might need to download documents
+                 'message-view-own', 
             ]);
         }
 

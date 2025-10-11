@@ -1,5 +1,6 @@
 {{-- resources/views/components/notification-banner.blade.php (Version B'lbyad w Icons zwinin) --}}
-<div id="notification-banner" class="bg-white text-red-600 shadow-2xl relative overflow-hidden border-b-4 border-red-500" style="display: none;">
+{{-- AJUSTEMENT: Ajout des classes Tailwind pour positionnement fixe en haut (fixed top-0 left-0 right-0 z-50) --}}
+<div id="notification-banner" class="**fixed top-0 left-0 right-0 z-50** bg-white text-red-600 shadow-2xl relative overflow-hidden border-b-4 border-red-500" style="display: none;">
     <div class="container mx-auto px-4 py-3 flex items-center justify-between">
         
         {{-- Icône animée b'<i> --}}
@@ -95,7 +96,8 @@ let currentNotifications = [];
 document.addEventListener('DOMContentLoaded', function() {
     // Check if banner was closed recently
     const closedTime = localStorage.getItem('bannerClosed');
-    if (!closedTime || (Date.now() - closedTime > 60000)) { // 10 min
+    // AJUSTEMENT: Pour le test, on peut réduire la durée: 60000 millisecondes = 1 minute
+    if (!closedTime || (Date.now() - closedTime > 60000)) { 
         loadNotifications();
     }
     
@@ -105,6 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function loadNotifications() {
     try {
+        // NOTE: Hada ghir un exemple, khassek tkoun mt'akd men had l'API route
         const response = await fetch('/api/notification-banner/recent');
         const data = await response.json();
         

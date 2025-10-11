@@ -474,6 +474,287 @@
     position: relative;
     backdrop-filter: blur(10px);
         }
+
+
+
+        .messages-dropdown {
+    position: absolute;
+    right: 20px;
+    top: 70px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    width: 420px;
+    max-height: 600px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 9999;
+    overflow: hidden;
+    border: 1px solid #3a3a3a;
+}
+
+.messages-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.messages-dropdown-header {
+    background: linear-gradient(135deg, #D32F2F 0%, #C2185B 100%);
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.messages-dropdown-title {
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.messages-count-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    backdrop-filter: blur(10px);
+}
+
+.messages-dropdown-body {
+    max-height: 450px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.messages-dropdown-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.messages-dropdown-body::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+.messages-dropdown-body::-webkit-scrollbar-thumb {
+    background: #3a3a3a;
+    border-radius: 3px;
+}
+
+.messages-dropdown-body::-webkit-scrollbar-thumb:hover {
+    background: #4a4a4a;
+}
+
+.message-dropdown-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    margin-bottom: 4px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+}
+
+.message-dropdown-item:hover {
+    background: rgba(194, 24, 91, 0.1);
+    border-color: rgba(194, 24, 91, 0.3);
+    transform: translateX(4px);
+}
+
+.message-dropdown-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.message-dropdown-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.message-dropdown-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.message-dropdown-subject {
+    color: #e9e9e9;
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    margin-right: 8px;
+}
+
+.message-dropdown-time {
+    color: #8696a0;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.message-dropdown-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.priority-tag {
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.priority-tag.priority-urgent {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+}
+
+.priority-tag.priority-important {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+}
+
+.priority-tag.priority-normal {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+.message-dropdown-recipients {
+    color: #8696a0;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.audio-indicator {
+    color: #C2185B;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.message-dropdown-preview {
+    color: #8696a0;
+    font-size: 13px;
+    margin: 0;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.empty-messages {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.empty-messages i {
+    font-size: 60px;
+    color: #3a3a3a;
+    margin-bottom: 16px;
+}
+
+.empty-messages p {
+    color: #8696a0;
+    font-size: 15px;
+    margin: 0;
+}
+
+.messages-dropdown-footer {
+    background: rgba(194, 24, 91, 0.1);
+    padding: 12px;
+    border-top: 1px solid #3a3a3a;
+}
+
+.view-all-messages {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #C2185B;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.view-all-messages:hover {
+    background: rgba(194, 24, 91, 0.1);
+    color: #D32F2F;
+}
+
+.view-all-messages i {
+    transition: transform 0.3s ease;
+}
+
+.view-all-messages:hover i {
+    transform: translateX(4px);
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .messages-dropdown {
+        width: calc(100vw - 40px);
+        right: 20px;
+        left: 20px;
+    }
+}
+
+/* Animation pour les nouveaux messages */
+@keyframes slideInMessage {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.message-dropdown-item {
+    animation: slideInMessage 0.3s ease-out;
+}
+
+.message-dropdown-item:nth-child(1) { animation-delay: 0.05s; }
+.message-dropdown-item:nth-child(2) { animation-delay: 0.1s; }
+.message-dropdown-item:nth-child(3) { animation-delay: 0.15s; }
+.message-dropdown-item:nth-child(4) { animation-delay: 0.2s; }
+.message-dropdown-item:nth-child(5) { animation-delay: 0.25s; }
     </style>
 </head>
 <body>
@@ -502,39 +783,152 @@
 
     <div class="header-right">
         <div class="nav-icons">
-            {{-- Notification Dropdown --}}
-            @if(Auth::user()->hasRole('Admin') || Auth::user()->hasRole('Super Admin'))
-                @php
-                    $notifications = $notifications ?? collect();
-                    $unreadCount = $unreadNotificationsCount ?? 0;
-                @endphp
-                {{-- <div class="dropdown">
-                    <button class="nav-icon" type="button" id="notificationDropdownToggle" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
-                        <span class="position-relative">
-                            <i class="ph ph-bell"></i>
-                            @if ($unreadCount > 0)
-                                <span class="notification-badge">{{ $unreadCount }}</span>
-                            @endif
-                        </span>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu--lg border-0 bg-transparent p-0" aria-labelledby="notificationDropdownToggle">
-                        <div class="card border border-gray-100 rounded-12 box-shadow-custom p-0 overflow-hidden w-350">
-                            <div class="card-body p-0">
-                                <div class="py-8 px-24 bg-main-600">l
-                                    <div class="flex-between">
-                                        <h5 class="text-xl fw-semibold text-white mb-0">Notifications</h5>
-                                        <button id="markAllAsRead" class="bg-white rounded-6 text-sm px-8 py-2 hover-text-primary-600 border-0">Tout lire</button>
-                                        <button type="button" class="close-dropdown hover-scale-1 text-xl text-white border-0 bg-transparent" aria-label="Fermer"><i class="ph ph-x"></i></button>
-                                    </div>
-                                </div>
-                                
-                                <a href="{{ route('admin.notifications.index') }}" class="py-13 px-24 fw-bold text-center d-block text-primary-600 border-top border-gray-100 hover-text-decoration-underline">Voir tout</a>
-                            </div>
-                        </div>
-                    </div>
-                </div> --}}
-            @endif
+           
 
+
+       {{-- Messages Dropdown Menu - VERSION CORRIGÉE --}}
+<div class="nav-icon" id="messagesDropdownToggle" role="button" aria-haspopup="true" aria-expanded="false" aria-label="Messages">
+    <span class="position-relative">
+        <i class="fas fa-envelope"></i>
+        @php
+            // Si l'utilisateur est étudiant, filtrer par ses inscriptions
+            if (auth()->user()->hasRole('Etudiant')) {
+                // Récupérer les IDs des formations où l'étudiant est inscrit (actif ou terminé)
+                $userFormationIds = \App\Models\Inscription::where('user_id', auth()->id())
+                    ->whereIn('status', ['active', 'completed', 'pending'])
+                    ->pluck('formation_id')
+                    ->toArray();
+                
+                // Compter les messages d'aujourd'hui pour ces formations uniquement
+                $todayMessages = \App\Models\FormationMessage::whereDate('created_at', today())
+                    ->whereHas('formations', function($query) use ($userFormationIds) {
+                        $query->whereIn('formations.id', $userFormationIds);
+                    })
+                    ->count();
+            } else {
+                // Pour admin/formateur, afficher tous les messages
+                $todayMessages = \App\Models\FormationMessage::whereDate('created_at', today())->count();
+            }
+        @endphp
+        @if($todayMessages > 0)
+            <span class="notification-badge">{{ $todayMessages }}</span>
+        @endif
+    </span>
+    <div class="tooltip">Messages ({{ $todayMessages }})</div>
+</div>
+
+{{-- Messages Dropdown Menu --}}
+<div class="dropdown-menu messages-dropdown" id="messagesDropdownMenu">
+    <div class="messages-dropdown-header">
+        <div class="flex-between w-100">
+            <h5 class="messages-dropdown-title">
+                <i class="fas fa-envelope-open-text"></i>
+                Messages d'aujourd'hui
+            </h5>
+            <span class="messages-count-badge">{{ $todayMessages }}</span>
+        </div>
+    </div>
+
+    <div class="messages-dropdown-body">
+        @php
+            // Construction de la requête selon le rôle
+            $messagesQuery = \App\Models\FormationMessage::with(['sender', 'formations'])
+                ->whereDate('created_at', today());
+            
+            // Si étudiant, filtrer par ses formations
+            if (auth()->user()->hasRole('Etudiant')) {
+                $userFormationIds = \App\Models\Inscription::where('user_id', auth()->id())
+                    ->whereIn('status', ['active', 'completed', 'pending'])
+                    ->pluck('formation_id')
+                    ->toArray();
+                
+                $messagesQuery->whereHas('formations', function($query) use ($userFormationIds) {
+                    $query->whereIn('formations.id', $userFormationIds);
+                });
+            }
+            
+            $messages = $messagesQuery
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
+        @endphp
+
+        @forelse($messages as $message)
+            <a href="{{ auth()->user()->hasRole('Etudiant') ? route('message.showa', $message->id) : route('messages.show', $message->id) }}" 
+               class="message-dropdown-item">
+                <div class="message-dropdown-avatar">
+                    @php
+                        $senderName = $message->sender->name ?? 'Admin';
+                        $initial = strtoupper(substr($senderName, 0, 1));
+                    @endphp
+                    {{ $initial }}
+                </div>
+                <div class="message-dropdown-content">
+                    <div class="message-dropdown-header-row">
+                        <span class="message-dropdown-subject">{{ $message->subject }}</span>
+                        <span class="message-dropdown-time">{{ $message->created_at->format('H:i') }}</span>
+                    </div>
+                    <div class="message-dropdown-meta">
+                        <span class="priority-tag priority-{{ $message->priority }}">
+                            @if($message->priority === 'urgent')
+                                <i class="fas fa-bolt"></i>
+                            @elseif($message->priority === 'important')
+                                <i class="fas fa-star"></i>
+                            @endif
+                            {{ ucfirst($message->priority) }}
+                        </span>
+                        
+                        @if(auth()->user()->hasRole('Etudiant'))
+                            {{-- Pour l'étudiant, afficher ses formations concernées --}}
+                            @php
+                                $studentFormations = $message->formations
+                                    ->whereIn('id', $userFormationIds ?? [])
+                                    ->pluck('title')
+                                    ->take(2);
+                            @endphp
+                            @if($studentFormations->isNotEmpty())
+                                <span class="message-dropdown-recipients">
+                                    <i class="fas fa-graduation-cap"></i>
+                                    {{ $studentFormations->join(', ') }}
+                                </span>
+                            @endif
+                        @else
+                            {{-- Pour admin, afficher le nombre de destinataires --}}
+                            <span class="message-dropdown-recipients">
+                                <i class="fas fa-users"></i>
+                                {{ $message->recipients_count }} destinataires
+                            </span>
+                        @endif
+                        
+                        @if($message->audio_path)
+                            <span class="audio-indicator">
+                                <i class="fas fa-microphone"></i>
+                            </span>
+                        @endif
+                    </div>
+                    @if($message->message)
+                        <p class="message-dropdown-preview">{{ Str::limit($message->message, 60) }}</p>
+                    @endif
+                </div>
+            </a>
+        @empty
+            <div class="empty-messages">
+                <i class="fas fa-inbox"></i>
+                <p>Aucun message aujourd'hui</p>
+            </div>
+        @endforelse
+    </div>
+
+    @if($todayMessages > 0)
+        <div class="messages-dropdown-footer">
+            <a href="{{ auth()->user()->hasRole('Etudiant') ? route('message.index') : route('messages.index') }}" 
+               class="view-all-messages">
+                Voir tous les messages
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    @endif
+</div>
             {{-- Other Nav Icons --}}
             <div class="nav-icon theme-toggle" onclick="handleIconClick('theme')" role="button" aria-label="Mode sombre">
                 <i class="fas fa-moon"></i>
@@ -598,7 +992,45 @@
     </div>
 </div>
 
+<script>
+// JavaScript pour gérer le dropdown des messages
+document.addEventListener('DOMContentLoaded', function() {
+    const messagesToggle = document.getElementById('messagesDropdownToggle');
+    const messagesDropdown = document.getElementById('messagesDropdownMenu');
+    const profileToggle = document.getElementById('profileDropdownToggle');
+    const profileDropdown = document.getElementById('profileDropdownMenu');
 
+    // Toggle Messages Dropdown
+    if (messagesToggle && messagesDropdown) {
+        messagesToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            messagesDropdown.classList.toggle('show');
+            
+            // Fermer le dropdown profile si ouvert
+            if (profileDropdown) {
+                profileDropdown.classList.remove('show');
+            }
+        });
+    }
+
+    // Fermer les dropdowns en cliquant ailleurs
+    document.addEventListener('click', function(e) {
+        if (messagesDropdown && !messagesDropdown.contains(e.target) && !messagesToggle.contains(e.target)) {
+            messagesDropdown.classList.remove('show');
+        }
+        if (profileDropdown && !profileDropdown.contains(e.target) && !profileToggle.contains(e.target)) {
+            profileDropdown.classList.remove('show');
+        }
+    });
+
+    // Empêcher la fermeture en cliquant à l'intérieur du dropdown
+    if (messagesDropdown) {
+        messagesDropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+});
+</script>
 
 </body>
 </html>

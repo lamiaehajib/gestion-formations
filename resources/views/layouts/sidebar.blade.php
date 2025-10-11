@@ -529,6 +529,22 @@
                         </a>
                     </li>
                     @endcan
+@can('message-view-own')
+                     <li class="sidebar-menu__item">
+    <a href="{{ route('message.index') }}" class="sidebar-menu__link">
+        <span class="icon"><i class="ph ph-chat-circle"></i></span>
+        <span class="text">Mes Messages</span>
+    </a>
+</li>
+@endcan
+@can('message-list-all')
+<li class="sidebar-menu__item">
+                        <a href="{{ route('messages.index') }}" class="sidebar-menu__link">
+                            <span class="icon"><i class="ph ph-chat-circle"></i></span>
+                            <span class="text">les Messages</span>
+                        </a>
+                    </li>
+                    @endcan
                     @can('user-list')
                     <li class="sidebar-menu__item">
                         <a href="{{ route('users.index') }}" class="sidebar-menu__link">
@@ -604,6 +620,10 @@
                             <span class="text">Réclamations</span>
                         </a>
                     </li>
+
+                     
+
+                   
 
                     @can('promotions')
                     <li class="sidebar-menu__item">

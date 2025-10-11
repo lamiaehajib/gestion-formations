@@ -141,4 +141,55 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Promotion::class);
     }
+
+    // ========================================
+    // ✨ NOUVELLES RELATIONS - Formation Messages
+    // ========================================
+    
+    /**
+     * الرسائل المستلمة من التكوينات
+     */
+    public function formationMessages()
+    {
+        return $this->belongsToMany(FormationMessage::class, 'formation_message_recipients')
+            ->withPivot(['inscription_id', 'is_read', 'read_at'])
+            ->withTimestamps()
+            ->orderBy('formation_messages.created_at', 'desc');
+    }
+
+    /**
+     * الرسائل غير المقروءة
+     */
+    public function unreadFormationMessages()
+    {
+        return $this->belongsToMany(FormationMessage::class, 'formation_message_recipients')
+            ->withPivot(['inscription_id', 'is_read', 'read_at'])
+            ->wherePivot('is_read', false)
+            ->withTimestamps()
+            ->orderBy('formation_messages.created_at', 'desc');
+    }
+
+    /**
+     * عدد الرسائل غير المقروءة
+     */
+    public function getUnreadMessagesCountAttribute()
+    {
+        return $this->unreadFormationMessages()->count();
+    }
+
+    /**
+     * سجلات استلام الرسائل
+     */
+    public function messageReceipts()
+    {
+        return $this->hasMany(FormationMessageRecipient::class);
+    }
+
+    /**
+     * الرسائل التي أرسلها (إذا كان admin/consultant)
+     */
+    public function sentFormationMessages()
+    {
+        return $this->hasMany(FormationMessage::class, 'sent_by');
+    }
 }
