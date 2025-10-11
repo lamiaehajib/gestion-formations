@@ -521,7 +521,7 @@
                             <span class="text">Tableau de bord</span>
                         </a>
                     </li>
-                    @can('inscription-create-own')
+                    {{-- @can('inscription-create-own')
                     <li class="sidebar-menu__item">
                         <a href="{{ route('etudiant.choose_formation') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-file-plus"></i></span>
@@ -536,7 +536,7 @@
         <span class="text">Mes Messages</span>
     </a>
 </li>
-@endcan
+@endcan --}}
 @can('message-list-all')
 <li class="sidebar-menu__item">
                         <a href="{{ route('messages.index') }}" class="sidebar-menu__link">
