@@ -416,7 +416,7 @@ public function getMessageDetails($id)
         ];
     });
 
-    // Format recipients
+   
     $recipients = $message->recipientRecords->map(function ($recipient) {
         return [
             'name' => $recipient->user->name,
