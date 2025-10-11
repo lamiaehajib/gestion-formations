@@ -392,9 +392,7 @@ class FormationMessageController extends Controller
 }
 
 
-/**
- * Get message details as JSON for AJAX requests
- */
+
 public function getMessageDetails($id)
 {
     $message = FormationMessage::with([

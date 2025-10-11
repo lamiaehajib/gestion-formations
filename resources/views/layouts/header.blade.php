@@ -929,7 +929,7 @@
         </div>
     @endif
 </div>
-            {{-- Other Nav Icons --}}
+           
             <div class="nav-icon theme-toggle" onclick="handleIconClick('theme')" role="button" aria-label="Mode sombre">
                 <i class="fas fa-moon"></i>
                 <div class="tooltip">Mode sombre</div>
