@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
+// 💡 AJOUTER CES DEUX USES :
+use Illuminate\Support\Facades\Mail; 
+use App\Mail\NewFormationMessage;    
+use App\Models\Inscription; // Assurez-vous d'importer le modèle Inscription
 
 class FormationMessage extends Model
 {
@@ -79,12 +83,13 @@ class FormationMessage extends Model
 
             // جلب جميع الطلاب المسجلين في هذه التكوينات
             $inscriptions = Inscription::whereIn('formation_id', $formationIds)
-                ->whereIn('status', ['active', 'pending']) // فقط المسجلين النشطين
-                ->with('user')
+                ->whereIn('status', ['active', 'pending', 'completed']) 
+                ->with('user:id,email') // 💡 Optimisation: charger seulement l'email
                 ->get();
 
             $recipientsData = [];
             $uniqueUsers = [];
+            $studentEmails = []; // 💡 Tableau pour stocker les emails uniques
 
             foreach ($inscriptions as $inscription) {
                 $userId = $inscription->user_id;
@@ -101,6 +106,11 @@ class FormationMessage extends Model
                         'created_at' => now(),
                         'updated_at' => now(),
                     ];
+                    
+                    // 💡 Stocker l'email de l'étudiant
+                    if ($inscription->user && $inscription->user->email) {
+                        $studentEmails[] = $inscription->user->email;
+                    }
                 }
             }
 
@@ -117,6 +127,15 @@ class FormationMessage extends Model
             ]);
 
             DB::commit();
+
+            // 💡 ÉTAPE CRUCIALE : ENVOI DU MAIL
+            if (!empty($studentEmails)) {
+                 // Utiliser Mail::bcc pour envoyer à tous en une seule fois (meilleur pour les listes)
+                 // Assurez-vous d'avoir créé le Mailable 'NewFormationMessage' (voir les étapes ci-dessous)
+                 Mail::bcc($studentEmails)
+                      ->send(new NewFormationMessage($this));
+            }
+
             return true;
 
         } catch (\Exception $e) {
@@ -125,6 +144,7 @@ class FormationMessage extends Model
             throw $e;
         }
     }
+
 
     /**
      * عدد الرسائل المقروءة
