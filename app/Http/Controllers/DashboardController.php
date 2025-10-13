@@ -49,164 +49,216 @@ class DashboardController extends Controller
     }
 
       private function getAdminDashboardData(Request $request): array
-    {
-        // Get the selected month from the request, default to null
-        $selectedMonth = $request->input('selected_month');
-        $selectedYear = $request->input('selected_year', Carbon::now()->year); // Default to current year
+{
+    // Get the selected month from the request, default to null
+    $selectedMonth = $request->input('selected_month');
+    $selectedYear = $request->input('selected_year', Carbon::now()->year);
 
-        $startDate = null;
-        $endDate = null;
+    $startDate = null;
+    $endDate = null;
 
-        if ($selectedMonth) {
-            // If a month is selected, set startDate to the first day of that month/year
-            // and endDate to the last day of that month/year.
-            $startDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfDay();
-            $endDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth()->endOfDay();
-        } else {
-            // Fallback to default date range if no month is selected
-            $startDate = $request->input('start_date') ? Carbon::parse($request->input('start_date')) : Carbon::now()->subDays(30)->startOfDay();
-            $endDate = $request->input('end_date') ? Carbon::parse($request->input('end_date')) : Carbon::now()->endOfDay();
-        }
-
-        // Prepare the list of months for the dropdown
-        $months = [];
-        for ($i = 1; $i <= 12; $i++) {
-            $months[$i] = Carbon::create()->month($i)->translatedFormat('F'); // Full month name in current locale
-        }
-
-        // --- Apply date filters to your queries ---
-        $totalUsersQuery = User::query();
-        if ($startDate && $endDate) {
-            $totalUsersQuery->whereBetween('created_at', [$startDate, $endDate]);
-        }
-        $totalUsers = $totalUsersQuery->count();
-
-        $newRegistrationsLast30Days = User::whereBetween('created_at', [$startDate, $endDate])->count();
-        $totalFormations = Formation::whereBetween('created_at', [$startDate, $endDate])->count();
-        $totalInscriptions = Inscription::whereBetween('created_at', [$startDate, $endDate])->count();
-        $openReclamations = Reclamation::where('status', 'ouverte')->whereBetween('created_at', [$startDate, $endDate])->count();
-        $pendingPaymentsCount = Payment::where('status', 'pending')->whereBetween('created_at', [$startDate, $endDate])->count();
-
-        // NEW: Récupérer les notifications de l'utilisateur admin
-        $notifications = Notification::where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->take(10) // On affiche les 10 dernières notifications
-            ->get();
-
-        // NEW: Compter le nombre de notifications non lues
-        $unreadNotificationsCount = Notification::where('user_id', Auth::id())
-            ->where('is_read', false)
-            ->count();
-
-        return [
-            'totalUsers' => $totalUsers,
-            'usersByRole' => User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
-                ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
-                ->select('roles.name as role', DB::raw('count(*) as count'))
-                ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('users.created_at', [$startDate, $endDate]);
-                })
-                ->groupBy('roles.name')
-                ->get()
-                ->pluck('count', 'role'),
-            'usersByStatus' => User::select('status', DB::raw('count(*) as count'))
-                ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
-                })
-                ->groupBy('status')
-                ->get()
-                ->pluck('count', 'status'),
-            'totalFormations' => $totalFormations, // Already filtered above
-            'formationsByStatus' => Formation::select('status', DB::raw('count(*) as count'))
-                ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
-                })
-                ->groupBy('status')
-                ->get()
-                ->pluck('count', 'status'),
-            'totalInscriptions' => $totalInscriptions, // Already filtered above
-            'inscriptionsByStatus' => Inscription::select('status', DB::raw('count(*) as count'))
-                ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
-                })
-                ->groupBy('status')
-                ->get()
-                ->pluck('count', 'status'),
-            'openReclamations' => $openReclamations, // Already filtered above
-            'pendingPaymentsCount' => $pendingPaymentsCount, // Already filtered above
-            'totalRevenue' => Payment::where('status', 'paid')
-                ->whereBetween('paid_date', [$startDate, $endDate])
-                ->sum('amount'),
-            'outstandingAmount' => Payment::whereIn('status', ['pending', 'late'])
-                ->whereBetween('due_date', [$startDate, $endDate])
-                ->sum('amount'),
-            'paymentsByMethod' => Payment::whereBetween('created_at', [$startDate, $endDate])
-                ->select('payment_method', DB::raw('count(*) as count'), DB::raw('sum(amount) as total'))
-                ->groupBy('payment_method')
-                ->get(),
-            'monthlyRevenueTrend' => Payment::where('status', 'paid')
-                ->whereBetween('paid_date', [$startDate, $endDate])
-                ->select(DB::raw('DATE_FORMAT(paid_date, "%Y-%m") as month'), DB::raw('SUM(amount) as total_amount'))
-                ->groupBy('month')
-                ->orderBy('month')
-                ->get(),
-            'overduePaymentsList' => Payment::with(['inscription.user', 'inscription.formation'])
-                ->where('status', 'pending')
-                ->where('due_date', '<', Carbon::now())
-                ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                    // If filtering by month, only show overdue payments for that month's due dates
-                    $query->whereBetween('due_date', [$startDate, $endDate]);
-                })
-                ->orderBy('due_date', 'asc')
-                ->take(10)
-                ->get(),
-            'topFormationsByEnrollment' => Formation::withCount(['inscriptions' => function($q) use ($startDate, $endDate) {
-                    $q->whereIn('status', ['active', 'completed']);
-                    if ($startDate && $endDate) {
-                        $q->whereBetween('created_at', [$startDate, $endDate]);
-                    }
-                }])
-                ->orderByDesc('inscriptions_count')
-                ->take(10)
-                ->get(),
-            'upcomingFormations' => Formation::where('start_date', '>=', Carbon::now())
-    // Remove the `when` block that filters by $startDate and $endDate
-    ->orderBy('start_date', 'asc')
-    ->take(10)
-    ->get(),
-            'newRegistrationsLast30Days' => $newRegistrationsLast30Days, // Already filtered above
-            'reclamationsByStatus' => Reclamation::select('status', DB::raw('count(*) as count'))
-                ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
-                })
-                ->groupBy('status')
-                ->get()
-                ->pluck('count', 'status'),
-            'recentReclamations' => Reclamation::with('user')
-                ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
-                })
-                ->orderBy('created_at', 'desc')
-                ->take(5)
-                ->get(),
-
-            'completionRate' => Inscription::where('status', 'completed')
-                ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
-                })->count() / (Inscription::when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
-                })->count() ?: 1) * 100, // Avoid division by zero
-            'startDate' => $startDate ? $startDate->toDateString() : null,
-            'endDate' => $endDate ? $endDate->toDateString() : null,
-            'months' => $months, // Pass months to the view
-            'selectedMonth' => $selectedMonth, // Pass selected month back to the view
-            'selectedYear' => $selectedYear, // Pass selected year back to the view
-            
-            // NEW: Add notification data to the returned array
-            'notifications' => $notifications,
-            'unreadNotificationsCount' => $unreadNotificationsCount,
-        ];
+    // ✨ التعديل الرئيسي: فقط إذا تم اختيار شهر محدد، نطبق الفلتر
+    if ($selectedMonth && $selectedMonth !== 'all') {
+        // If a month is selected, set startDate to the first day of that month/year
+        // and endDate to the last day of that month/year.
+        $startDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfDay();
+        $endDate = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth()->endOfDay();
     }
+    // ✨ إذا لم يتم اختيار شهر أو تم اختيار "الكل"، نترك $startDate و $endDate كـ null
+    // هذا يعني أنه لن يتم تطبيق أي فلتر تاريخ
+
+    // Prepare the list of months for the dropdown
+    $months = [
+        'all' => 'Tous les mois' // ✨ إضافة خيار "الكل"
+    ];
+    for ($i = 1; $i <= 12; $i++) {
+        $months[$i] = Carbon::create()->month($i)->translatedFormat('F');
+    }
+
+    // --- Apply date filters to your queries ONLY IF dates are set ---
+    $totalUsersQuery = User::query();
+    if ($startDate && $endDate) {
+        $totalUsersQuery->whereBetween('created_at', [$startDate, $endDate]);
+    }
+    $totalUsers = $totalUsersQuery->count();
+
+    // ✨ تصحيح: استخدام نفس المنطق لجميع الاستعلامات
+    $newRegistrationsQuery = User::query();
+    if ($startDate && $endDate) {
+        $newRegistrationsQuery->whereBetween('created_at', [$startDate, $endDate]);
+    }
+    $newRegistrationsLast30Days = $newRegistrationsQuery->count();
+
+    $totalFormationsQuery = Formation::query();
+    if ($startDate && $endDate) {
+        $totalFormationsQuery->whereBetween('created_at', [$startDate, $endDate]);
+    }
+    $totalFormations = $totalFormationsQuery->count();
+
+    $totalInscriptionsQuery = Inscription::query();
+    if ($startDate && $endDate) {
+        $totalInscriptionsQuery->whereBetween('created_at', [$startDate, $endDate]);
+    }
+    $totalInscriptions = $totalInscriptionsQuery->count();
+
+    $openReclamationsQuery = Reclamation::where('status', 'ouverte');
+    if ($startDate && $endDate) {
+        $openReclamationsQuery->whereBetween('created_at', [$startDate, $endDate]);
+    }
+    $openReclamations = $openReclamationsQuery->count();
+
+    $pendingPaymentsQuery = Payment::where('status', 'pending');
+    if ($startDate && $endDate) {
+        $pendingPaymentsQuery->whereBetween('created_at', [$startDate, $endDate]);
+    }
+    $pendingPaymentsCount = $pendingPaymentsQuery->count();
+
+    // Notifications (لا تتأثر بالفلتر الزمني)
+    $notifications = Notification::where('user_id', Auth::id())
+        ->orderBy('created_at', 'desc')
+        ->take(10)
+        ->get();
+
+    $unreadNotificationsCount = Notification::where('user_id', Auth::id())
+        ->where('is_read', false)
+        ->count();
+
+    return [
+        'totalUsers' => $totalUsers,
+        'usersByRole' => User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+            ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+            ->select('roles.name as role', DB::raw('count(*) as count'))
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('users.created_at', [$startDate, $endDate]);
+            })
+            ->groupBy('roles.name')
+            ->get()
+            ->pluck('count', 'role'),
+        'usersByStatus' => User::select('status', DB::raw('count(*) as count'))
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            })
+            ->groupBy('status')
+            ->get()
+            ->pluck('count', 'status'),
+        'totalFormations' => $totalFormations,
+        'formationsByStatus' => Formation::select('status', DB::raw('count(*) as count'))
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            })
+            ->groupBy('status')
+            ->get()
+            ->pluck('count', 'status'),
+        'totalInscriptions' => $totalInscriptions,
+        'inscriptionsByStatus' => Inscription::select('status', DB::raw('count(*) as count'))
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            })
+            ->groupBy('status')
+            ->get()
+            ->pluck('count', 'status'),
+        'openReclamations' => $openReclamations,
+        'pendingPaymentsCount' => $pendingPaymentsCount,
+        
+        // ✨ تصحيح حساب الإيرادات
+        'totalRevenue' => Payment::where('status', 'paid')
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('paid_date', [$startDate, $endDate]);
+            })
+            ->sum('amount'),
+        
+        'outstandingAmount' => Payment::whereIn('status', ['pending', 'late'])
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('due_date', [$startDate, $endDate]);
+            })
+            ->sum('amount'),
+        
+        'paymentsByMethod' => Payment::query()
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            })
+            ->select('payment_method', DB::raw('count(*) as count'), DB::raw('sum(amount) as total'))
+            ->groupBy('payment_method')
+            ->get(),
+        
+        'monthlyRevenueTrend' => Payment::where('status', 'paid')
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('paid_date', [$startDate, $endDate]);
+            })
+            ->select(DB::raw('DATE_FORMAT(paid_date, "%Y-%m") as month'), DB::raw('SUM(amount) as total_amount'))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get(),
+        
+        'overduePaymentsList' => Payment::with(['inscription.user', 'inscription.formation'])
+            ->where('status', 'pending')
+            ->where('due_date', '<', Carbon::now())
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('due_date', [$startDate, $endDate]);
+            })
+            ->orderBy('due_date', 'asc')
+            ->take(10)
+            ->get(),
+        
+        'topFormationsByEnrollment' => Formation::withCount(['inscriptions' => function($q) use ($startDate, $endDate) {
+                $q->whereIn('status', ['active', 'completed']);
+                if ($startDate && $endDate) {
+                    $q->whereBetween('created_at', [$startDate, $endDate]);
+                }
+            }])
+            ->orderByDesc('inscriptions_count')
+            ->take(10)
+            ->get(),
+        
+        // ✨ Upcoming formations لا تتأثر بالفلتر (نعرض الـ formations القادمة بغض النظر عن الشهر المختار)
+        'upcomingFormations' => Formation::where('start_date', '>=', Carbon::now())
+            ->orderBy('start_date', 'asc')
+            ->take(10)
+            ->get(),
+        
+        'newRegistrationsLast30Days' => $newRegistrationsLast30Days,
+        
+        'reclamationsByStatus' => Reclamation::select('status', DB::raw('count(*) as count'))
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            })
+            ->groupBy('status')
+            ->get()
+            ->pluck('count', 'status'),
+        
+        'recentReclamations' => Reclamation::with('user')
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            })
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get(),
+
+        // ✨ تصحيح حساب معدل الإكمال
+        'completionRate' => function() use ($startDate, $endDate) {
+            $completedQuery = Inscription::where('status', 'completed');
+            $totalQuery = Inscription::query();
+            
+            if ($startDate && $endDate) {
+                $completedQuery->whereBetween('created_at', [$startDate, $endDate]);
+                $totalQuery->whereBetween('created_at', [$startDate, $endDate]);
+            }
+            
+            $completed = $completedQuery->count();
+            $total = $totalQuery->count();
+            
+            return $total > 0 ? ($completed / $total) * 100 : 0;
+        }(),
+        
+        'startDate' => $startDate ? $startDate->toDateString() : null,
+        'endDate' => $endDate ? $endDate->toDateString() : null,
+        'months' => $months,
+        'selectedMonth' => $selectedMonth ?: 'all', // ✨ القيمة الافتراضية هي "all"
+        'selectedYear' => $selectedYear,
+        'notifications' => $notifications,
+        'unreadNotificationsCount' => $unreadNotificationsCount,
+    ];
+}
 
     // ... (all the other code in your controller remains the same)
 
