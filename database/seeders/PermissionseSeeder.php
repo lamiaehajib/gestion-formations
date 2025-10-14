@@ -124,6 +124,21 @@ class PermissionseSeeder extends Seeder
 // NEW: Message Permissions (Student only)
 'message-view-own',
 
+
+
+// Documentation Permissions
+'documentation-list',              // Voir la liste de toutes les documentations (Admin)
+'documentation-create',            // Créer une documentation (Consultant)
+'documentation-edit',              // Modifier une documentation (Consultant - seulement pending)
+'documentation-delete',            // Supprimer une documentation (Consultant - seulement pending)
+'documentation-view',              // Voir les détails d'une documentation (Admin/Consultant propriétaire)
+'documentation-view-own',          // Voir ses propres documentations (Consultant)
+'documentation-download',          // Télécharger les fichiers (Admin/Consultant propriétaire)
+'documentation-approve',           // Approuver une documentation (Admin)
+'documentation-reject',            // Rejeter une documentation (Admin)
+'documentation-view-stats',        // Voir les statistiques (Admin)
+'documentation-pending-count',     // Voir le nombre de documentations en attente (Admin)
+
         ];
 
         foreach ($permissions as $permission) {
@@ -183,6 +198,12 @@ class PermissionseSeeder extends Seeder
                 'course-join',           // Consultants join their own courses
                 'course-download-document', // Consultants download their own documents
                 'course-manage-own',     // Grants a general permission for their own courses
+                'documentation-create', 
+                'documentation-edit', 
+                'documentation-delete', 
+                'documentation-view',
+                'documentation-view-own',
+
             ]);
         }
 

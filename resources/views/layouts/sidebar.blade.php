@@ -600,6 +600,25 @@
                         </a>
                     </li>
 
+                    @can('documentation-create')
+                      <li class="sidebar-menu__item">
+                        <a href="{{ route('consultant.documentations.index') }}" class="sidebar-menu__link">
+                            <span class="icon"><i class="ph ph-file-text"></i></span>
+                            <span class="text">Livrable Final</span>
+                        </a>
+                    </li>
+                    @endcan
+
+
+@can('documentation-list')
+                     <li class="sidebar-menu__item">
+                        <a href="{{ route('documentations.adminIndex') }}" class="sidebar-menu__link">
+                            <span class="icon"><i class="ph ph-file-text"></i></span>
+                            <span class="text">Archives Modules</span>
+                        </a>
+                    </li>
+
+                    @endcan
                     <li class="sidebar-menu__item">
                         <a href="{{ route('courses.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-book"></i></span>
@@ -652,6 +671,7 @@
                     </li>
                     @endcan
 
+                 
                    
 
                     <li class="sidebar-menu__item">

@@ -192,4 +192,52 @@ class User extends Authenticatable
     {
         return $this->hasMany(FormationMessage::class, 'sent_by');
     }
+
+
+    // ========================================
+    // ✨ RELATIONS - Documentation (JDIDA)
+    // ========================================
+
+    /**
+     * Documentation li dar had consultant
+     */
+    public function documentations()
+    {
+        return $this->hasMany(Documentation::class, 'consultant_id');
+    }
+
+    /**
+     * Documentation li verified had admin
+     */
+    public function verifiedDocumentations()
+    {
+        return $this->hasMany(Documentation::class, 'verified_by');
+    }
+
+    /**
+     * Documentation pending li khass had consultant
+     */
+    public function pendingDocumentations()
+    {
+        return $this->hasMany(Documentation::class, 'consultant_id')
+            ->where('status', 'pending');
+    }
+
+    /**
+     * Documentation approved li 3and had consultant
+     */
+    public function approvedDocumentations()
+    {
+        return $this->hasMany(Documentation::class, 'consultant_id')
+            ->where('status', 'approved');
+    }
+
+    /**
+     * Documentation rejected li 3and had consultant
+     */
+    public function rejectedDocumentations()
+    {
+        return $this->hasMany(Documentation::class, 'consultant_id')
+            ->where('status', 'rejected');
+    }
 }

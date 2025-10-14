@@ -56,4 +56,41 @@ class Module extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+
+    // ========================================
+    // ✨ NOUVELLE RELATION - Documentation
+    // ========================================
+
+    /**
+     * Documentation dyal had module
+     */
+    public function documentations()
+    {
+        return $this->hasMany(Documentation::class);
+    }
+
+    /**
+     * Documentation pending dyal had module
+     */
+    public function pendingDocumentations()
+    {
+        return $this->hasMany(Documentation::class)->where('status', 'pending');
+    }
+
+    /**
+     * Documentation approved dyal had module
+     */
+    public function approvedDocumentations()
+    {
+        return $this->hasMany(Documentation::class)->where('status', 'approved');
+    }
+
+    /**
+     * Get documentation dyal consultant m3ayen
+     */
+    public function getConsultantDocumentation($consultantId)
+    {
+        return $this->documentations()->where('consultant_id', $consultantId)->first();
+    }
 }

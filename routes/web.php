@@ -6,6 +6,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseRescheduleController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentationController;
 use App\Http\Controllers\EtudiantController; // تأكد من استيراد EtudiantController
 use App\Http\Controllers\FormationController;
 use App\Http\Controllers\FormationMessageController;
@@ -371,6 +372,47 @@ Route::prefix('message')->name('message.')->middleware(['auth', 'can:message-vie
     Route::get('{id}/content', [FormationMessageController::class, 'studentShowContent'])->name('content');
     
     Route::get('{id}', [FormationMessageController::class, 'studentShow'])->name('showa');
+});
+
+
+// Consultant Routes
+
+// Consultant Routes
+Route::prefix('consultant')->name('consultant.')->group(function () {
+    // 1. Define the custom 'create' route with the required parameter
+    Route::get('documentations/create/{moduleId}', [DocumentationController::class, 'create'])->name('documentations.create');
+
+    // 2. Use the resource route, excluding the default 'create'
+    Route::resource('documentations', DocumentationController::class)->except(['create']);
+    
+    // Other routes
+    Route::get('documentations/module/{moduleId}', [DocumentationController::class, 'getByModule'])->name('documentations.by-module');
+    Route::get('documentations/stats', [DocumentationController::class, 'consultantStats'])->name('documentations.stats');
+});
+
+// Admin Routes
+Route::prefix('admin')->group(function () {
+    // 🛑 بدلي هادي: Route::get('documentations', ...
+    Route::get('/', [DocumentationController::class, 'adminIndex'])->name('documentations.adminIndex');
+    
+    // و هادي: Route::get('documentations/{id}', ...
+    Route::get('{id}', [DocumentationController::class, 'adminShow'])->name('documentations.adminShow');
+    
+    // و هادي: Route::post('documentations/{id}/approve', ...
+    Route::post('{id}/approve', [DocumentationController::class, 'approve'])->name('documentations.approve');
+    
+    // و هادي: Route::post('documentations/{id}/reject', ...
+    Route::post('{id}/reject', [DocumentationController::class, 'reject'])->name('documentations.reject');
+    
+    // و هادي: Route::get('documentations/stats', ...
+    Route::get('stats', [DocumentationController::class, 'adminStats'])->name('documentations.adminStats');
+    
+    // و هادي: Route::get('documentations/pending-count', ...
+    Route::get('pending-count', [DocumentationController::class, 'pendingCount'])->name('documentations.pendingCount');
+});
+// Shared Route (Consultant or Admin)
+Route::middleware(['auth'])->group(function () {
+    Route::get('documentations/{id}/download/{fileIndex?}', [DocumentationController::class, 'download'])->name('documentations.download');
 });
 });
 
