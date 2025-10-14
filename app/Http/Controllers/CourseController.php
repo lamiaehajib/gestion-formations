@@ -79,11 +79,19 @@ public function index(Request $request)
         }
 
         // 🔥 Filtrage par semaine
-        if ($user->hasRole('Etudiant')) {
-            $query->whereBetween('course_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')]);
-        } elseif ($viewMode === 'planning') {
-            $query->whereBetween('course_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')]);
-        }
+       if ($user->hasRole('Etudiant')) {
+    if ($viewMode === 'planning') {
+        // En mode planning, l'étudiant voit uniquement la semaine en cours
+        $query->whereBetween('course_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')]);
+    } else {
+        // En mode liste, l'étudiant voit tous les cours jusqu'à la fin de la semaine en cours
+        // (cours passés + cours de la semaine actuelle)
+        $query->where('course_date', '<=', $weekEnd->format('Y-m-d'));
+    }
+} elseif ($viewMode === 'planning') {
+    // En mode planning pour les autres rôles, filtrer par semaine
+    $query->whereBetween('course_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')]);
+}
         
         // Filters based on request parameters
         if ($request->has('filter_formation_id') && $request->filter_formation_id) {
