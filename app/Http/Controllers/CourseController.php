@@ -39,6 +39,18 @@ public function index(Request $request)
             $weekOffset = 0;
         }
 
+
+        if ($user->hasRole('Etudiant')) {
+        $viewMode = $request->get('view_mode', 'planning'); // Planning par défaut pour les étudiants
+        
+        // Bloquer les semaines futures pour les étudiants
+        if ($weekOffset > 0) {
+            $weekOffset = 0;
+        }
+    } else {
+        $viewMode = $request->get('view_mode', 'list'); // Liste par défaut pour les autres rôles
+    }
+
         // 🗓️ Calcul de la semaine
         $weekStart = Carbon::now()->startOfWeek()->addWeeks($weekOffset);
         $weekEnd = Carbon::now()->startOfWeek()->addWeeks($weekOffset)->endOfWeek();
