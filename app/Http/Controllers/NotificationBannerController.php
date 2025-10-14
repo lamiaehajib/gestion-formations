@@ -75,8 +75,8 @@ class NotificationBannerController extends Controller
                 'type' => 'new_course',
                 'icon' => '📚',
                 'color' => 'bg-green-100 text-green-800',
-                'message' => "Nouveau cours ajouté: {$course->title} - " . 
-                            Carbon::parse($course->course_date)->format('d/m/Y') . 
+                'message' => "N'oubliez pas la séance {$course->title} que vous avez aujourd'hui  " . 
+                           
                             " à {$course->start_time}",
                 'link' => route('courses.show', $course->id),
                 'created_at' => $course->created_at

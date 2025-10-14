@@ -40,9 +40,10 @@
 }
 
 /* Force red color for all text in banner */
-#notification-banner,
-#notification-banner * {
-    color: #dc2626 !important;
+#notification-banner, #notification-banner * {
+    color: #9b9700 !important;
+    font-size: 18px;
+    text-transform: uppercase;
 }
 
 /* Exceptions for icons that need specific red shades */
