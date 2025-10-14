@@ -884,17 +884,9 @@
             </div>
 @else
     {{-- Grouping courses by Module Title --}}
-    @php
-        // Group the courses by module title for the folder view
-        $groupedCourses = $courses->groupBy(function ($course) {
-            return optional($course->module)->title ?? 'Module Non Classé';
-        });
-        
-    @endphp
-
     <div class="row">
-        @forelse($groupedCourses as $moduleTitle => $moduleCourses)
-            <div class="col-lg-12 mb-4"> {{-- Changed to col-lg-12 for full-width folder view --}}
+        @forelse($courses->items() as $moduleTitle => $moduleCourses)
+            <div class="col-lg-12 mb-4">
                 {{-- Main Module Folder Card (Accordion Header) --}}
                 <div class="course-card module-folder">
                     {{-- Header (Clickable to Toggle) --}}
@@ -909,14 +901,12 @@
 
                             <div>
                                 <h5 class="course-title" style="margin-bottom: 0;">{{ $moduleTitle }}</h5>
-                                {{-- Display Formation Title if available --}}
-                                
                             </div>
                         </div>
 
                         {{-- Total Courses and Toggle Icon --}}
                         <div class="d-flex align-items-center">
-                            <span class="course-count me-3 btn btn-sm btn-outline-secondary">{{ $moduleCourses->count() }} Séances </span>
+                            <span class="course-count me-3 btn btn-sm btn-outline-secondary">{{ count($moduleCourses) }} Séances</span>
                             <i class="fas fa-chevron-down module-toggle-icon"></i>
                         </div>
                     </div>
@@ -924,7 +914,7 @@
                     {{-- Course list for the module (initially hidden) --}}
                     <div class="module-content" style="display: none; padding: 1rem;">
                         @foreach($moduleCourses as $course)
-                            {{-- START: Individual Course Card (The requested style) --}}
+                            {{-- START: Individual Course Card --}}
                             <div class="course-item-detail mb-3 p-3 rounded shadow-sm d-flex justify-content-between align-items-center">
 
                                 <div class="course-details-left">
@@ -954,121 +944,103 @@
                                 </div>
 
                                 {{-- Action Buttons --}}
-                          <div class="d-flex align-items-center gap-2 course-actions-buttons">
-    @php
-        // Convertir la date du cours en un objet Carbon au début du jour
-        $courseDate = \Carbon\Carbon::parse($course->course_date)->startOfDay();
-        
-        // Obtenir la date et l'heure actuelles
-        $now = \Carbon\Carbon::now();
-        
-        // Si la date du cours est dans le futur (date > aujourd'hui)
-        $isUpcoming = $courseDate->greaterThan($now->startOfDay());
-        
-        // Si la date du cours est aujourd'hui
-        $isToday = $courseDate->isSameDay($now);
-        
-        // Calculer le statut d'action
-        $actionStatus = 'Terminé'; // Par défaut : passé
-        
-        if ($isUpcoming) {
-            $actionStatus = 'À Venir';
-        } elseif ($isToday) {
-            // Le cours est aujourd'hui. On regarde si l'heure de fin n'est pas passée.
-            $courseEndTime = \Carbon\Carbon::parse($course->course_date)->setTimeFromTimeString($course->end_time);
-            
-            // On peut étendre le temps de "Rejoindre" pour qu'il soit cliquable 5 min avant l'heure de début, par exemple.
-            // Pour l'instant, on se base juste sur l'heure de fin pour savoir s'il est encore "en cours".
-            if ($courseEndTime->greaterThan($now)) {
-                $actionStatus = 'Rejoindre';
-            } else {
-                $actionStatus = 'Terminé';
-            }
-        }
-    @endphp
+                                <div class="d-flex align-items-center gap-2 course-actions-buttons">
+                                    @php
+                                        $courseDate = \Carbon\Carbon::parse($course->course_date)->startOfDay();
+                                        $now = \Carbon\Carbon::now();
+                                        $isUpcoming = $courseDate->greaterThan($now->startOfDay());
+                                        $isToday = $courseDate->isSameDay($now);
+                                        $actionStatus = 'Terminé';
+                                        
+                                        if ($isUpcoming) {
+                                            $actionStatus = 'À Venir';
+                                        } elseif ($isToday) {
+                                            $courseEndTime = \Carbon\Carbon::parse($course->course_date)->setTimeFromTimeString($course->end_time);
+                                            if ($courseEndTime->greaterThan($now)) {
+                                                $actionStatus = 'Rejoindre';
+                                            } else {
+                                                $actionStatus = 'Terminé';
+                                            }
+                                        }
+                                    @endphp
 
-    {{-- Affichage du bouton/badge basé sur le statut --}}
-    @if($course->zoom_link)
-        {{-- Cas 1: Le lien existe --}}
-        @if($actionStatus === 'Rejoindre')
-            <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline flex-grow-1">
-                @csrf
-                <button type="submit" class="btn-join-card">
-                    <i class="fas fa-door-open"></i> Rejoindre
-                </button>
-            </form>
-        @elseif($actionStatus === 'À Venir')
-            <span class="badge bg-info p-2 flex-grow-1 text-center text-white" style="font-weight: 500;">
-                <i class="fas fa-clock me-1"></i> À Venir
-            </span>
-        @elseif($actionStatus === 'Terminé')
-            <span class="badge bg-secondary p-2 flex-grow-1 text-center" style="font-weight: 500;">
-                Terminé
-            </span>
-        @endif
-    @else
-        {{-- Cas 2: Pas de lien Zoom --}}
-        @if($actionStatus === 'Terminé')
-            <span class="badge bg-secondary p-2 flex-grow-1 text-center" style="font-weight: 500;">
-                Terminé
-            </span>
-        @elseif($actionStatus === 'À Venir')
-            <span class="badge bg-info p-2 flex-grow-1 text-center text-white" style="font-weight: 500;">
-                <i class="fas fa-clock me-1"></i> À Venir
-            </span>
-        @else 
-            {{-- Cours d'aujourd'hui sans lien --}}
-            <span class="badge bg-warning p-2 flex-grow-1 text-center" style="font-weight: 500;">
-                Non lié
-            </span>
-        @endif
-    @endif
-    
-    {{-- Les boutons d'action (Voir, Modifier, Dupliquer, Supprimer) restent inchangés --}}
+                                    {{-- Affichage du bouton/badge basé sur le statut --}}
+                                    @if($course->zoom_link)
+                                        @if($actionStatus === 'Rejoindre')
+                                            <form action="{{ route('courses.join', $course) }}" method="POST" class="d-inline flex-grow-1">
+                                                @csrf
+                                                <button type="submit" class="btn-join-card">
+                                                    <i class="fas fa-door-open"></i> Rejoindre
+                                                </button>
+                                            </form>
+                                        @elseif($actionStatus === 'À Venir')
+                                            <span class="badge bg-info p-2 flex-grow-1 text-center text-white" style="font-weight: 500;">
+                                                <i class="fas fa-clock me-1"></i> À Venir
+                                            </span>
+                                        @else
+                                            <span class="badge bg-secondary p-2 flex-grow-1 text-center" style="font-weight: 500;">
+                                                Terminé
+                                            </span>
+                                        @endif
+                                    @else
+                                        @if($actionStatus === 'Terminé')
+                                            <span class="badge bg-secondary p-2 flex-grow-1 text-center" style="font-weight: 500;">
+                                                Terminé
+                                            </span>
+                                        @elseif($actionStatus === 'À Venir')
+                                            <span class="badge bg-info p-2 flex-grow-1 text-center text-white" style="font-weight: 500;">
+                                                <i class="fas fa-clock me-1"></i> À Venir
+                                            </span>
+                                        @else
+                                            <span class="badge bg-warning p-2 flex-grow-1 text-center" style="font-weight: 500;">
+                                                Non lié
+                                            </span>
+                                        @endif
+                                    @endif
+                                    
+                                    {{-- View Button --}}
+                                    <a href="{{ route('courses.show', $course) }}" class="btn-action-mini btn-view" title="Voir les détails">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
 
-    {{-- 1. View/Join Button --}}
-    <a href="{{ route('courses.show', $course) }}" class="btn-action-mini btn-view" title="Voir les détails">
-        <i class="fas fa-eye"></i>
-    </a>
+                                    {{-- Edit Button --}}
+                                    @can('course-edit')
+                                        <button type="button" class="btn-action-mini btn-edit"
+                                            data-bs-toggle="modal" data-bs-target="#editCourseModal"
+                                            data-course-id="{{ $course->id }}"
+                                            data-formation-id="{{ $course->formation->id ?? '' }}"
+                                            data-module-id="{{ $course->module->id ?? '' }}"
+                                            data-consultant-id="{{ $course->consultant_id ?? '' }}"
+                                            data-title="{{ $course->title }}"
+                                            data-description="{{ $course->description }}"
+                                            data-course-date="{{ \Carbon\Carbon::parse($course->course_date)->format('Y-m-d') }}"
+                                            data-start-time="{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }}"
+                                            data-end-time="{{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}"
+                                            data-zoom-link="{{ $course->zoom_link ?? '' }}"
+                                            data-recording-url="{{ $course->recording_url ?? '' }}"
+                                            data-documents="{{ json_encode($course->documents ?? []) }}"
+                                            title="Modifier">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    @endcan
 
-    {{-- 2. Edit Button (Opens Modal) --}}
-    @can('course-edit')
-        <button type="button" class="btn-action-mini btn-edit"
-            data-bs-toggle="modal" data-bs-target="#editCourseModal"
-            data-course-id="{{ $course->id }}"
-            data-formation-id="{{ $course->formation->id ?? '' }}"
-            data-module-id="{{ $course->module->id ?? '' }}"
-            data-consultant-id="{{ $course->consultant_id ?? '' }}"
-            data-title="{{ $course->title }}"
-            data-description="{{ $course->description }}"
-            data-course-date="{{ \Carbon\Carbon::parse($course->course_date)->format('Y-m-d') }}"
-            data-start-time="{{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }}"
-            data-end-time="{{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}"
-            data-zoom-link="{{ $course->zoom_link ?? '' }}"
-            data-recording-url="{{ $course->recording_url ?? '' }}"
-            data-documents="{{ json_encode($course->documents ?? []) }}"
-            title="Modifier">
-            <i class="fas fa-edit"></i>
-        </button>
-    @endcan
+                                    {{-- Duplicate Button --}}
+                                    @can('course-create')
+                                        <form action="{{ route('courses.duplicate', $course) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn-action-mini btn-duplicate" title="Dupliquer">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </form>
+                                    @endcan
 
-    {{-- 3. Duplicate Button --}}
-    @can('course-create')
-        <form action="{{ route('courses.duplicate', $course) }}" method="POST" class="d-inline">
-            @csrf
-            <button type="submit" class="btn-action-mini btn-duplicate" title="Dupliquer">
-                <i class="fas fa-copy"></i>
-            </button>
-        </form>
-    @endcan
-
-    {{-- 4. Delete Button --}}
-    @can('course-delete')
-        <button onclick="confirmDelete({{ $course->id }})" class="btn-action-mini btn-delete" title="Supprimer">
-            <i class="fas fa-trash"></i>
-        </button>
-    @endcan
-</div>
+                                    {{-- Delete Button --}}
+                                    @can('course-delete')
+                                        <button onclick="confirmDelete({{ $course->id }})" class="btn-action-mini btn-delete" title="Supprimer">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    @endcan
+                                </div>
                             </div>
                             {{-- END: Individual Course Card --}}
                         @endforeach
@@ -1076,16 +1048,17 @@
                 </div>
             </div>
         @empty
-            {{-- Your existing empty state remains here --}}
             <div class="col-12">
                 <div class="empty-state">
-                    {{-- ... (Empty state code) ... --}}
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5>Aucun module trouvé</h5>
+                    <p class="text-muted">Il n'y a aucun cours disponible pour le moment.</p>
                 </div>
             </div>
         @endforelse
     </div>
 
-    {{-- Pagination Links --}}
+    {{-- Pagination Links pour les Modules --}}
     @if($courses->hasPages())
         <div class="d-flex justify-content-center mt-4">
             <div class="bg-white rounded-3 shadow-sm p-3">

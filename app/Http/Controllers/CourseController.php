@@ -132,34 +132,52 @@ public function index(Request $request)
                     return Carbon::parse($course->course_date)->format('Y-m-d');
                 });
             
-        } else {
-            // 🔥 Mode Liste: Filtrer les duplicates POUR TOUS (Admin, Consultant, etc.)
-            $allCourses = $query->get();
-            
-            // 🚨 NOUVELLE LOGIQUE: Grouper par module_id + date + time + title
-            // et ne garder qu'un seul représentant par groupe
-            $uniqueCourses = $allCourses->unique(function($course) {
-                return $course->module_id . '-' . 
-                            $course->course_date . '-' . 
-                            $course->start_time . '-' . 
-                            $course->title;
-            });
-            
-            // Manual pagination
-            $perPage = 15;
-            $currentPage = Paginator::resolveCurrentPage();
-            $currentPageItems = $uniqueCourses->slice(($currentPage - 1) * $perPage, $perPage)->values();
-            
-            $courses = new LengthAwarePaginator(
-                $currentPageItems,
-                $uniqueCourses->count(),
-                $perPage,
-                $currentPage,
-                ['path' => Paginator::resolveCurrentPath()]
-            );
-            
-            $coursesByDay = null;
-        }
+       } else {
+    // 🔥 Mode Liste: Filtrer les duplicates POUR TOUS (Admin, Consultant, etc.)
+    $allCourses = $query->get();
+    
+    // 🚨 NOUVELLE LOGIQUE: Grouper par module_id + date + time + title
+    // et ne garder qu'un seul représentant par groupe
+    $uniqueCourses = $allCourses->unique(function($course) {
+        return $course->module_id . '-' . 
+                    $course->course_date . '-' . 
+                    $course->start_time . '-' . 
+                    $course->title;
+    });
+    
+    // 📁 Grouper les cours par module AVANT la pagination
+    $groupedByModule = $uniqueCourses->groupBy(function ($course) {
+        return optional($course->module)->title ?? 'Module Non Classé';
+    });
+    
+    // 🔢 Paginer les MODULES (pas les cours)
+    $perPage = 5; // 5 modules par page
+    $currentPage = Paginator::resolveCurrentPage();
+    
+    // Récupérer les clés des modules
+    $moduleKeys = $groupedByModule->keys()->toArray();
+    $totalModules = count($moduleKeys);
+    
+    // Slice les clés des modules pour la page actuelle
+    $currentPageModuleKeys = array_slice($moduleKeys, ($currentPage - 1) * $perPage, $perPage);
+    
+    // Récupérer uniquement les modules de la page actuelle avec leurs cours
+    $currentPageModules = collect();
+    foreach ($currentPageModuleKeys as $key) {
+        $currentPageModules->put($key, $groupedByModule->get($key));
+    }
+    
+    // Créer le paginator pour les modules
+    $courses = new LengthAwarePaginator(
+        $currentPageModules,
+        $totalModules, // Total de modules
+        $perPage,
+        $currentPage,
+        ['path' => Paginator::resolveCurrentPath()]
+    );
+    
+    $coursesByDay = null;
+}
 
         // ... (Formations for Modals and Filter - inchangé)
         $formationsForModals = Formation::where('status', 'published')->get();
