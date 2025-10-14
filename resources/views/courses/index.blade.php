@@ -788,44 +788,59 @@
             </div>
         @endif
 
-        <div class="filter-section">
-            <form method="GET" action="{{ route('courses.index') }}">
-                <input type="hidden" name="view_mode" value="{{ $viewMode }}">
-                @if($viewMode === 'planning')
-                    <input type="hidden" name="week_offset" value="{{ $weekOffset ?? 0 }}">
-                @endif
+       <div class="filter-section">
+    <form method="GET" action="{{ route('courses.index') }}">
+        <input type="hidden" name="view_mode" value="{{ $viewMode }}">
+        @if($viewMode === 'planning')
+            <input type="hidden" name="week_offset" value="{{ $weekOffset ?? 0 }}">
+        @endif
 
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label fw-semibold">Recherche</label>
-                        <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Titre du Séance...">
-                    </div>
-                    @if($viewMode === 'list')
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label fw-semibold">Date début</label>
-                            <input type="date" name="start_date" value="{{ request('start_date') }}" class="form-control">
-                        </div>
-                    @endif
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label fw-semibold">Formation</label>
-                        <select name="filter_formation_id" class="form-control">
-                            <option value="">Toutes</option>
-                            @foreach($formationsForFilter as $formation)
-                                <option value="{{ $formation->id }}" {{ request('filter_formation_id') == $formation->id ? 'selected' : '' }}>
-                                    {{ $formation->title }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2 mb-3">
-                        <label class="form-label"> </label>
-                        <button type="submit" class="btn btn-filter w-100">
-                            <i class="fas fa-search me-2"></i>Filtrer
-                        </button>
-                    </div>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label fw-semibold">Recherche</label>
+                <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Titre du Séance...">
+            </div>
+            @if($viewMode === 'list')
+                <div class="col-md-3 mb-3">
+                    <label class="form-label fw-semibold">Date début</label>
+                    <input type="date" name="start_date" value="{{ request('start_date') }}" class="form-control">
                 </div>
-            </form>
+            @endif
+            {{-- ➡️ NOUVEAU FILTRE MODULE --}}
+            <div class="col-md-3 mb-3">
+                <label class="form-label fw-semibold">Module</label>
+                {{-- Kansta3mlo l'variable $modules li jibnaha men l'Controller --}}
+                <select name="filter_module_id" class="form-control">
+                    <option value="">Tous les modules</option>
+                    @foreach($modules as $module)
+                        <option value="{{ $module->id }}" {{ request('filter_module_id') == $module->id ? 'selected' : '' }}>
+                            {{ $module->title }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            {{-- ⬅️ FIN NOUVEAU FILTRE MODULE --}}
+            <div class="col-md-3 mb-3">
+                <label class="form-label fw-semibold">Formation</label>
+                <select name="filter_formation_id" class="form-control">
+                    <option value="">Toutes</option>
+                    @foreach($formationsForFilter as $formation)
+                        <option value="{{ $formation->id }}" {{ request('filter_formation_id') == $formation->id ? 'selected' : '' }}>
+                            {{ $formation->title }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            
+            {{-- Baddelna l'col-md-2 l'col-md-1 bach y9ad m3a l'ajout dyal filtre module --}}
+            <div class="col-md-2 mb-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-filter w-100">
+                    <i class="fas fa-search me-2"></i>Filtrer
+                </button>
+            </div>
         </div>
+    </form>
+</div>
 
         @if($viewMode === 'planning')
             <div class="planning-grid">
