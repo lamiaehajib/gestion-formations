@@ -177,6 +177,18 @@
                             <span class="info-value">{{ number_format($inscription->paid_amount, 2) }} DH</span>
                             <span class="info-sub-value">(Reste: {{ number_format($inscription->total_amount - $inscription->paid_amount, 2) }} DH)</span>
                         </div>
+                       <div class="info-item">
+    {{-- Utiliser l'icône de téléphone --}}
+    <i class="fas fa-phone info-icon"></i> 
+    <span class="info-label">Téléphone:</span>
+    
+    @if($inscription->user && $inscription->user->phone)
+        {{-- Afficher la valeur du téléphone directement depuis l'utilisateur --}}
+        <span class="info-value">{{ $inscription->user->phone }}</span>
+    @else
+        <span class="info-value">N/A</span>
+    @endif
+</div>
                     </div>
 
                     <div class="card-actions-collapsed">
