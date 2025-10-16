@@ -211,7 +211,7 @@ class UserController extends Controller
      */
     public function create()
     {
-        // Permission is already checked by the middleware
+        
         $roles = Role::all(); // Get all roles for the dropdown
         return view('users.create', compact('roles'));
     }
