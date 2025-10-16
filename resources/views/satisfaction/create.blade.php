@@ -163,6 +163,11 @@
         box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
     }
     
+    .rating-item-custom.error {
+        border: 2px solid #ef4444 !important;
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
+    }
+    
     .rating-label-custom {
         display: flex;
         align-items: center;
@@ -210,6 +215,7 @@
         color: #d1d5db;
         transition: all 0.2s ease;
         user-select: none;
+        cursor: pointer;
     }
     
     .star-custom:hover,
@@ -228,6 +234,7 @@
         background: white;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        display: none;
     }
     
     .form-group-custom {
@@ -402,6 +409,14 @@
             width: 100%;
             justify-content: center;
         }
+        
+        .star-custom {
+            font-size: 2rem;
+        }
+        
+        .stars-custom.large .star-custom {
+            font-size: 2.5rem;
+        }
     }
 </style>
 
@@ -426,7 +441,7 @@
             </p>
         </div>
 
-        <form action="{{ route('satisfaction.store') }}" method="POST" class="evaluation-form-custom">
+        <form action="{{ route('satisfaction.store') }}" method="POST" class="evaluation-form-custom" id="satisfactionForm">
             @csrf
             <input type="hidden" name="inscription_id" value="{{ $inscription->id }}">
             <input type="hidden" name="formation_id" value="{{ $inscription->formation_id }}">
@@ -440,7 +455,7 @@
 
                 <div class="rating-items-custom">
                     <!-- Qualité du contenu -->
-                    <div class="rating-item-custom">
+                    <div class="rating-item-custom" data-rating="content_quality">
                         <div class="rating-label-custom">
                             <label>Qualité du contenu</label>
                             <span class="required-custom">*</span>
@@ -454,16 +469,16 @@
                                 <span class="star-custom" data-value="4">★</span>
                                 <span class="star-custom" data-value="5">★</span>
                             </div>
-                            <span class="rating-text-custom"></span>
+                            <span class="rating-text-custom" data-rating-text="content_quality"></span>
                         </div>
-                        <input type="hidden" name="content_quality" required>
+                        <input type="hidden" name="content_quality" id="content_quality" required>
                         @error('content_quality')
                             <span class="error-message-custom">{{ $message }}</span>
                         @enderror
                     </div>
 
                     <!-- Évaluation du formateur -->
-                    <div class="rating-item-custom">
+                    <div class="rating-item-custom" data-rating="instructor_rating">
                         <div class="rating-label-custom">
                             <label>Évaluation du formateur</label>
                             <span class="required-custom">*</span>
@@ -477,16 +492,16 @@
                                 <span class="star-custom" data-value="4">★</span>
                                 <span class="star-custom" data-value="5">★</span>
                             </div>
-                            <span class="rating-text-custom"></span>
+                            <span class="rating-text-custom" data-rating-text="instructor_rating"></span>
                         </div>
-                        <input type="hidden" name="instructor_rating" required>
+                        <input type="hidden" name="instructor_rating" id="instructor_rating" required>
                         @error('instructor_rating')
                             <span class="error-message-custom">{{ $message }}</span>
                         @enderror
                     </div>
 
                     <!-- Organisation -->
-                    <div class="rating-item-custom">
+                    <div class="rating-item-custom" data-rating="organization_rating">
                         <div class="rating-label-custom">
                             <label>Organisation</label>
                             <span class="required-custom">*</span>
@@ -500,16 +515,16 @@
                                 <span class="star-custom" data-value="4">★</span>
                                 <span class="star-custom" data-value="5">★</span>
                             </div>
-                            <span class="rating-text-custom"></span>
+                            <span class="rating-text-custom" data-rating-text="organization_rating"></span>
                         </div>
-                        <input type="hidden" name="organization_rating" required>
+                        <input type="hidden" name="organization_rating" id="organization_rating" required>
                         @error('organization_rating')
                             <span class="error-message-custom">{{ $message }}</span>
                         @enderror
                     </div>
 
                     <!-- Support et assistance -->
-                    <div class="rating-item-custom">
+                    <div class="rating-item-custom" data-rating="support_rating">
                         <div class="rating-label-custom">
                             <label>Support et assistance</label>
                             <span class="required-custom">*</span>
@@ -523,16 +538,16 @@
                                 <span class="star-custom" data-value="4">★</span>
                                 <span class="star-custom" data-value="5">★</span>
                             </div>
-                            <span class="rating-text-custom"></span>
+                            <span class="rating-text-custom" data-rating-text="support_rating"></span>
                         </div>
-                        <input type="hidden" name="support_rating" required>
+                        <input type="hidden" name="support_rating" id="support_rating" required>
                         @error('support_rating')
                             <span class="error-message-custom">{{ $message }}</span>
                         @enderror
                     </div>
 
                     <!-- Satisfaction générale -->
-                    <div class="rating-item-custom highlight">
+                    <div class="rating-item-custom highlight" data-rating="overall_satisfaction">
                         <div class="rating-label-custom">
                             <label>Satisfaction générale</label>
                             <span class="required-custom">*</span>
@@ -546,9 +561,9 @@
                                 <span class="star-custom" data-value="4">★</span>
                                 <span class="star-custom" data-value="5">★</span>
                             </div>
-                            <span class="rating-text-custom"></span>
+                            <span class="rating-text-custom" data-rating-text="overall_satisfaction"></span>
                         </div>
-                        <input type="hidden" name="overall_satisfaction" required>
+                        <input type="hidden" name="overall_satisfaction" id="overall_satisfaction" required>
                         @error('overall_satisfaction')
                             <span class="error-message-custom">{{ $message }}</span>
                         @enderror
@@ -574,7 +589,7 @@
                         placeholder="Qu'avez-vous particulièrement apprécié dans cette formation ?"
                         maxlength="1000"
                     >{{ old('positive_feedback') }}</textarea>
-                    <span class="char-count-custom">0 / 1000</span>
+                    <span class="char-count-custom" data-counter="positive_feedback">0 / 1000</span>
                     @error('positive_feedback')
                         <span class="error-message-custom">{{ $message }}</span>
                     @enderror
@@ -591,7 +606,7 @@
                         placeholder="Comment pouvons-nous améliorer cette formation ?"
                         maxlength="1000"
                     >{{ old('improvement_suggestions') }}</textarea>
-                    <span class="char-count-custom">0 / 1000</span>
+                    <span class="char-count-custom" data-counter="improvement_suggestions">0 / 1000</span>
                     @error('improvement_suggestions')
                         <span class="error-message-custom">{{ $message }}</span>
                     @enderror
@@ -608,7 +623,7 @@
                         placeholder="Autres remarques ou suggestions..."
                         maxlength="1000"
                     >{{ old('additional_comments') }}</textarea>
-                    <span class="char-count-custom">0 / 1000</span>
+                    <span class="char-count-custom" data-counter="additional_comments">0 / 1000</span>
                     @error('additional_comments')
                         <span class="error-message-custom">{{ $message }}</span>
                     @enderror
@@ -629,14 +644,14 @@
                     </p>
                     <div class="radio-buttons-custom">
                         <label class="radio-card-custom">
-                            <input type="radio" name="would_recommend" value="1" required>
+                            <input type="radio" name="would_recommend" value="1" {{ old('would_recommend') == '1' ? 'checked' : '' }} required>
                             <div class="radio-content-custom">
                                 <span class="radio-icon-custom">👍</span>
                                 <span class="radio-label-custom">Oui, je recommande</span>
                             </div>
                         </label>
                         <label class="radio-card-custom">
-                            <input type="radio" name="would_recommend" value="0" required>
+                            <input type="radio" name="would_recommend" value="0" {{ old('would_recommend') == '0' ? 'checked' : '' }} required>
                             <div class="radio-content-custom">
                                 <span class="radio-icon-custom">👎</span>
                                 <span class="radio-label-custom">Non, je ne recommande pas</span>
@@ -666,7 +681,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Gestion des étoiles avec texte descriptif
+    console.log('Script de notation initialisé');
+    
+    // Textes descriptifs pour les notes
     const ratingTexts = {
         1: 'Très insatisfait',
         2: 'Insatisfait',
@@ -675,99 +692,118 @@ document.addEventListener('DOMContentLoaded', function() {
         5: 'Très satisfait'
     };
 
+    // Initialiser tous les groupes d'étoiles
     const starGroups = document.querySelectorAll('.stars-custom');
+    console.log('Nombre de groupes d\'étoiles trouvés:', starGroups.length);
     
     starGroups.forEach(group => {
-        const stars = group.querySelectorAll('.star-custom');
         const ratingName = group.getAttribute('data-rating-name');
-        const input = document.querySelector(`input[name="${ratingName}"]`);
-        const ratingTextEl = group.parentElement.querySelector('.rating-text-custom');
+        const stars = group.querySelectorAll('.star-custom');
+        const input = document.getElementById(ratingName);
+        const ratingTextEl = document.querySelector(`[data-rating-text="${ratingName}"]`);
         
-        // Vérifier que l'input existe
+        console.log(`Initialisation du groupe: ${ratingName}`, {
+            stars: stars.length,
+            inputFound: !!input,
+            textElementFound: !!ratingTextEl
+        });
+        
         if (!input) {
-            console.error(`Input not found for rating: ${ratingName}`);
+            console.error(`Input non trouvé pour: ${ratingName}`);
             return;
         }
         
+        // Gestion du clic sur les étoiles
         stars.forEach(star => {
             star.addEventListener('click', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
+                
                 const value = this.getAttribute('data-value');
+                console.log(`Étoile cliquée - ${ratingName}: ${value}`);
                 
                 // Définir la valeur dans l'input caché
                 input.value = value;
                 
-                // Afficher le texte de notation
+                // Afficher le texte descriptif
                 if (ratingTextEl) {
                     ratingTextEl.textContent = ratingTexts[value];
                     ratingTextEl.style.display = 'block';
                 }
                 
-                // Mettre à jour l'affichage des étoiles
-                stars.forEach(s => {
-                    if (parseInt(s.getAttribute('data-value')) <= parseInt(value)) {
-                        s.classList.add('active');
-                    } else {
-                        s.classList.remove('active');
-                    }
-                });
+                // Supprimer la bordure d'erreur si présente
+                const ratingItem = input.closest('.rating-item-custom');
+                if (ratingItem) {
+                    ratingItem.classList.remove('error');
+                }
                 
-                console.log(`Rating set for ${ratingName}: ${value}`);
+                // Mettre à jour l'affichage des étoiles
+                updateStars(stars, value);
             });
             
+            // Effet au survol
             star.addEventListener('mouseenter', function() {
                 const value = this.getAttribute('data-value');
-                stars.forEach(s => {
-                    if (parseInt(s.getAttribute('data-value')) <= parseInt(value)) {
-                        s.style.color = '#fbbf24';
-                        s.style.transform = 'scale(1.15) rotate(-10deg)';
-                    } else {
-                        s.style.color = '#d1d5db';
-                        s.style.transform = 'scale(1)';
-                    }
-                });
+                updateStars(stars, value);
             });
         });
         
+        // Restaurer l'affichage quand la souris quitte le groupe
         group.addEventListener('mouseleave', function() {
             const currentValue = input.value;
-            stars.forEach(s => {
-                const starValue = s.getAttribute('data-value');
-                if (currentValue && parseInt(starValue) <= parseInt(currentValue)) {
-                    s.style.color = '#fbbf24';
-                    s.style.transform = 'scale(1.15) rotate(-10deg)';
-                } else {
-                    s.style.color = '#d1d5db';
-                    s.style.transform = 'scale(1)';
-                }
-            });
-        });
-    });
-
-    // Compteur de caractères
-    const textareas = document.querySelectorAll('textarea[maxlength]');
-    textareas.forEach(textarea => {
-        const charCount = textarea.parentElement.querySelector('.char-count-custom');
-        
-        textarea.addEventListener('input', function() {
-            if (charCount) {
-                charCount.textContent = `${this.value.length} / ${this.maxLength}`;
+            if (currentValue) {
+                updateStars(stars, currentValue);
+            } else {
+                resetStars(stars);
             }
         });
+    });
+    
+    // Fonction pour mettre à jour l'affichage des étoiles
+    function updateStars(stars, value) {
+        stars.forEach(star => {
+            const starValue = parseInt(star.getAttribute('data-value'));
+            if (starValue <= parseInt(value)) {
+                star.classList.add('active');
+            } else {
+                star.classList.remove('active');
+            }
+        });
+    }
+    
+    // Fonction pour réinitialiser les étoiles
+    function resetStars(stars) {
+        stars.forEach(star => {
+            star.classList.remove('active');
+        });
+    }
+    
+    // Compteur de caractères pour les textareas
+    const textareas = document.querySelectorAll('textarea[maxlength]');
+    textareas.forEach(textarea => {
+        const counterId = textarea.id;
+        const counter = document.querySelector(`[data-counter="${counterId}"]`);
         
-        // Initialiser le compteur
-        if (charCount && textarea.value) {
-            charCount.textContent = `${textarea.value.length} / ${textarea.maxLength}`;
+        if (counter) {
+            // Initialiser le compteur avec la valeur existante
+            counter.textContent = `${textarea.value.length} / ${textarea.maxLength}`;
+            
+            // Mettre à jour le compteur lors de la saisie
+            textarea.addEventListener('input', function() {
+                counter.textContent = `${this.value.length} / ${this.maxLength}`;
+            });
         }
     });
-
+    
     // Validation du formulaire avant soumission
-    const form = document.querySelector('.evaluation-form-custom');
+    const form = document.getElementById('satisfactionForm');
     if (form) {
         form.addEventListener('submit', function(e) {
+            console.log('Soumission du formulaire...');
+            
             const requiredRatings = [
                 'content_quality',
-                'instructor_rating', 
+                'instructor_rating',
                 'organization_rating',
                 'support_rating',
                 'overall_satisfaction'
@@ -776,51 +812,143 @@ document.addEventListener('DOMContentLoaded', function() {
             let hasErrors = false;
             const missingRatings = [];
             
+            // Vérifier toutes les notes obligatoires
             requiredRatings.forEach(ratingName => {
-                const input = document.querySelector(`input[name="${ratingName}"]`);
-                if (!input || !input.value) {
+                const input = document.getElementById(ratingName);
+                const value = input ? input.value : '';
+                
+                console.log(`Vérification ${ratingName}:`, value);
+                
+                if (!value) {
                     hasErrors = true;
                     missingRatings.push(ratingName);
                     
-                    // Mettre en évidence le champ manquant
-                    const ratingItem = input?.closest('.rating-item-custom');
+                    // Ajouter la classe d'erreur
+                    const ratingItem = document.querySelector(`[data-rating="${ratingName}"]`);
                     if (ratingItem) {
-                        ratingItem.style.border = '2px solid #ef4444';
-                        ratingItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        ratingItem.classList.add('error');
+                        
+                        // Faire défiler jusqu'au premier champ manquant
+                        if (missingRatings.length === 1) {
+                            ratingItem.scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'center' 
+                            });
+                        }
                     }
                 }
             });
             
-            if (hasErrors) {
-                e.preventDefault();
-                alert('Veuillez évaluer tous les critères obligatoires (marqués avec *)');
-                console.error('Missing ratings:', missingRatings);
-                return false;
-            }
-            
             // Vérifier la recommandation
             const recommendInput = document.querySelector('input[name="would_recommend"]:checked');
             if (!recommendInput) {
+                hasErrors = true;
+                console.error('Recommandation non sélectionnée');
+            }
+            
+            if (hasErrors) {
                 e.preventDefault();
-                alert('Veuillez indiquer si vous recommandez cette formation');
-                document.querySelector('.recommendation-box-custom').scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center' 
-                });
+                console.error('Erreurs de validation:', missingRatings);
+                
+                let errorMsg = 'Veuillez compléter tous les champs obligatoires:\n';
+                if (missingRatings.length > 0) {
+                    errorMsg += '\n• Évaluations manquantes:\n';
+                    missingRatings.forEach(rating => {
+                        const labels = {
+                            'content_quality': 'Qualité du contenu',
+                            'instructor_rating': 'Évaluation du formateur',
+                            'organization_rating': 'Organisation',
+                            'support_rating': 'Support et assistance',
+                            'overall_satisfaction': 'Satisfaction générale'
+                        };
+                        errorMsg += `  - ${labels[rating]}\n`;
+                    });
+                }
+                if (!recommendInput) {
+                    errorMsg += '\n• Veuillez indiquer si vous recommandez cette formation';
+                }
+                
+                alert(errorMsg);
                 return false;
             }
+            
+            console.log('Validation réussie, soumission du formulaire...');
+            return true;
         });
     }
     
-    // Retirer la bordure rouge lors du clic sur une étoile
-    document.querySelectorAll('.star-custom').forEach(star => {
-        star.addEventListener('click', function() {
-            const ratingItem = this.closest('.rating-item-custom');
-            if (ratingItem) {
-                ratingItem.style.border = '2px solid transparent';
+    // Restaurer les valeurs old() si elles existent (après erreur de validation)
+    @if(old('content_quality'))
+        const contentQualityInput = document.getElementById('content_quality');
+        if (contentQualityInput) {
+            contentQualityInput.value = '{{ old('content_quality') }}';
+            const stars = document.querySelector('[data-rating-name="content_quality"]').querySelectorAll('.star-custom');
+            const textEl = document.querySelector('[data-rating-text="content_quality"]');
+            updateStars(stars, '{{ old('content_quality') }}');
+            if (textEl) {
+                textEl.textContent = ratingTexts['{{ old('content_quality') }}'];
+                textEl.style.display = 'block';
             }
-        });
-    });
+        }
+    @endif
+    
+    @if(old('instructor_rating'))
+        const instructorRatingInput = document.getElementById('instructor_rating');
+        if (instructorRatingInput) {
+            instructorRatingInput.value = '{{ old('instructor_rating') }}';
+            const stars = document.querySelector('[data-rating-name="instructor_rating"]').querySelectorAll('.star-custom');
+            const textEl = document.querySelector('[data-rating-text="instructor_rating"]');
+            updateStars(stars, '{{ old('instructor_rating') }}');
+            if (textEl) {
+                textEl.textContent = ratingTexts['{{ old('instructor_rating') }}'];
+                textEl.style.display = 'block';
+            }
+        }
+    @endif
+    
+    @if(old('organization_rating'))
+        const organizationRatingInput = document.getElementById('organization_rating');
+        if (organizationRatingInput) {
+            organizationRatingInput.value = '{{ old('organization_rating') }}';
+            const stars = document.querySelector('[data-rating-name="organization_rating"]').querySelectorAll('.star-custom');
+            const textEl = document.querySelector('[data-rating-text="organization_rating"]');
+            updateStars(stars, '{{ old('organization_rating') }}');
+            if (textEl) {
+                textEl.textContent = ratingTexts['{{ old('organization_rating') }}'];
+                textEl.style.display = 'block';
+            }
+        }
+    @endif
+    
+    @if(old('support_rating'))
+        const supportRatingInput = document.getElementById('support_rating');
+        if (supportRatingInput) {
+            supportRatingInput.value = '{{ old('support_rating') }}';
+            const stars = document.querySelector('[data-rating-name="support_rating"]').querySelectorAll('.star-custom');
+            const textEl = document.querySelector('[data-rating-text="support_rating"]');
+            updateStars(stars, '{{ old('support_rating') }}');
+            if (textEl) {
+                textEl.textContent = ratingTexts['{{ old('support_rating') }}'];
+                textEl.style.display = 'block';
+            }
+        }
+    @endif
+    
+    @if(old('overall_satisfaction'))
+        const overallSatisfactionInput = document.getElementById('overall_satisfaction');
+        if (overallSatisfactionInput) {
+            overallSatisfactionInput.value = '{{ old('overall_satisfaction') }}';
+            const stars = document.querySelector('[data-rating-name="overall_satisfaction"]').querySelectorAll('.star-custom');
+            const textEl = document.querySelector('[data-rating-text="overall_satisfaction"]');
+            updateStars(stars, '{{ old('overall_satisfaction') }}');
+            if (textEl) {
+                textEl.textContent = ratingTexts['{{ old('overall_satisfaction') }}'];
+                textEl.style.display = 'block';
+            }
+        }
+    @endif
+    
+    console.log('Initialisation terminée');
 });
 </script>
 @endsection
