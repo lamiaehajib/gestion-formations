@@ -3,167 +3,570 @@
 @section('title', 'Évaluer la formation')
 
 @section('content')
-<div class="container">
-    <div class="breadcrumb">
-        <a href="{{ route('satisfaction.index') }}">Évaluations</a>
+<style>
+    .gradient-primary {
+        background: linear-gradient(135deg, #C2185B 0%, #D32F2F 50%, #ef4444 100%);
+    }
+    
+    .gradient-light {
+        background: linear-gradient(135deg, rgba(194, 24, 91, 0.05), rgba(239, 68, 68, 0.05));
+    }
+    
+    .breadcrumb-custom {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.875rem;
+        color: #6b7280;
+        padding: 0.75rem 1rem;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .breadcrumb-custom a {
+        color: #C2185B;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+    
+    .breadcrumb-custom a:hover {
+        color: #D32F2F;
+        text-decoration: underline;
+    }
+    
+    .evaluation-wrapper-custom {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 8px 25px rgba(194, 24, 91, 0.15);
+        overflow: hidden;
+    }
+    
+    .evaluation-header-custom {
+        background: linear-gradient(135deg, #C2185B 0%, #D32F2F 50%, #ef4444 100%);
+        color: white;
+        padding: 3rem 2rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .evaluation-header-custom::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: pulse 4s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.1); opacity: 0.3; }
+    }
+    
+    .formation-badge-custom {
+        width: 80px;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.25);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        position: relative;
+        z-index: 1;
+    }
+    
+    .evaluation-header-custom h1 {
+        margin: 0 0 0.5rem 0;
+        font-size: 2rem;
+        font-weight: 700;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .evaluation-header-custom h2 {
+        margin: 0 0 1rem 0;
+        font-size: 1.5rem;
+        font-weight: 500;
+        opacity: 0.95;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .evaluation-subtitle-custom {
+        margin: 0;
+        font-size: 1rem;
+        opacity: 0.9;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .evaluation-form-custom {
+        padding: 2.5rem;
+    }
+    
+    .form-section-custom {
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 3px solid #f3f4f6;
+    }
+    
+    .form-section-custom:last-of-type {
+        border-bottom: none;
+    }
+    
+    .section-title-custom {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0 0 2rem 0;
+        font-size: 1.5rem;
+        color: #1f2937;
+        font-weight: 700;
+    }
+    
+    .section-icon-custom {
+        font-size: 2rem;
+        filter: drop-shadow(0 2px 4px rgba(194, 24, 91, 0.2));
+    }
+    
+    .rating-items-custom {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    .rating-item-custom {
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #f9fafb, #f3f4f6);
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .rating-item-custom:hover {
+        background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+        transform: translateX(5px);
+        border-color: rgba(194, 24, 91, 0.2);
+    }
+    
+    .rating-item-custom.highlight {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border: 3px solid #f59e0b;
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+    }
+    
+    .rating-label-custom {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .rating-label-custom label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 1.1rem;
+    }
+    
+    .required-custom {
+        color: #ef4444;
+        font-size: 1.2rem;
+    }
+    
+    .rating-help-custom {
+        margin: 0 0 1rem 0;
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-style: italic;
+    }
+    
+    .stars-wrapper-custom {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .stars-custom {
+        display: flex;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+    
+    .stars-custom.large .star-custom {
+        font-size: 3rem;
+    }
+    
+    .star-custom {
+        font-size: 2.5rem;
+        color: #d1d5db;
+        transition: all 0.2s ease;
+        user-select: none;
+    }
+    
+    .star-custom:hover,
+    .star-custom.active {
+        color: #fbbf24;
+        transform: scale(1.15) rotate(-10deg);
+        filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.5));
+    }
+    
+    .rating-text-custom {
+        font-size: 1rem;
+        color: #C2185B;
+        font-weight: 600;
+        min-width: 140px;
+        padding: 0.5rem 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-group-custom {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group-custom label {
+        display: block;
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+        color: #374151;
+        font-size: 1.05rem;
+    }
+    
+    .form-group-custom textarea {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-family: inherit;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        resize: vertical;
+        transition: all 0.3s ease;
+        background: #f9fafb;
+    }
+    
+    .form-group-custom textarea:focus {
+        outline: none;
+        border-color: #C2185B;
+        box-shadow: 0 0 0 4px rgba(194, 24, 91, 0.1);
+        background: white;
+    }
+    
+    .char-count-custom {
+        display: block;
+        margin-top: 0.5rem;
+        font-size: 0.75rem;
+        color: #9ca3af;
+        text-align: right;
+        font-weight: 500;
+    }
+    
+    .error-message-custom {
+        display: block;
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+        color: #ef4444;
+        font-weight: 500;
+    }
+    
+    .recommendation-box-custom {
+        background: linear-gradient(135deg, #f9fafb, #f3f4f6);
+        padding: 2rem;
+        border-radius: 15px;
+        border: 2px solid rgba(194, 24, 91, 0.1);
+    }
+    
+    .recommendation-question-custom {
+        margin: 0 0 1.5rem 0;
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #374151;
+    }
+    
+    .radio-buttons-custom {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    
+    .radio-card-custom {
+        position: relative;
+        cursor: pointer;
+    }
+    
+    .radio-card-custom input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+    }
+    
+    .radio-content-custom {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.5rem;
+        background: white;
+        border: 3px solid #e5e7eb;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+    
+    .radio-card-custom input[type="radio"]:checked + .radio-content-custom {
+        border-color: #C2185B;
+        background: linear-gradient(135deg, rgba(194, 24, 91, 0.05), rgba(239, 68, 68, 0.05));
+        box-shadow: 0 4px 15px rgba(194, 24, 91, 0.2);
+        transform: scale(1.05);
+    }
+    
+    .radio-icon-custom {
+        font-size: 3rem;
+    }
+    
+    .radio-label-custom {
+        font-weight: 600;
+        color: #374151;
+        text-align: center;
+        font-size: 1rem;
+    }
+    
+    .form-actions-custom {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 3px solid #f3f4f6;
+    }
+    
+    .btn-cancel-custom,
+    .btn-submit-custom {
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-cancel-custom {
+        background: white;
+        color: #374151;
+        border: 2px solid #d1d5db;
+    }
+    
+    .btn-cancel-custom:hover {
+        background: #f9fafb;
+        border-color: #9ca3af;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-submit-custom {
+        background: linear-gradient(135deg, #C2185B, #D32F2F);
+        color: white;
+        box-shadow: 0 4px 15px rgba(194, 24, 91, 0.3);
+    }
+    
+    .btn-submit-custom:hover {
+        background: linear-gradient(135deg, #D32F2F, #ef4444);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(194, 24, 91, 0.4);
+    }
+    
+    @media (max-width: 768px) {
+        .evaluation-form-custom {
+            padding: 1.5rem;
+        }
+        
+        .form-actions-custom {
+            flex-direction: column;
+        }
+        
+        .btn-cancel-custom,
+        .btn-submit-custom {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<div class="container-fluid px-4 py-5" style="max-width: 900px;">
+    <div class="breadcrumb-custom">
+        <a href="{{ route('satisfaction.index') }}">
+            <i class="fas fa-arrow-left me-1"></i> Évaluations
+        </a>
         <span>/</span>
-        <span>{{ $inscription->formation->name ?? 'Formation' }}</span>
+        <span class="fw-semibold">{{ $inscription->formation->name ?? 'Formation' }}</span>
     </div>
 
-    <div class="evaluation-wrapper">
-        <div class="evaluation-header">
-            <div class="formation-badge">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                </svg>
+    <div class="evaluation-wrapper-custom">
+        <div class="evaluation-header-custom">
+            <div class="formation-badge-custom">
+                <i class="fas fa-book-open fa-2x text-white"></i>
             </div>
             <h1>Évaluer votre formation</h1>
             <h2>{{ $inscription->formation->name ?? 'Formation' }}</h2>
-            <p class="evaluation-subtitle">
+            <p class="evaluation-subtitle-custom">
                 Votre avis est précieux et nous aide à améliorer la qualité de nos formations
             </p>
         </div>
 
-        <form action="{{ route('satisfaction.store') }}" method="POST" class="evaluation-form">
+        <form action="{{ route('satisfaction.store') }}" method="POST" class="evaluation-form-custom">
             @csrf
             <input type="hidden" name="inscription_id" value="{{ $inscription->id }}">
             <input type="hidden" name="formation_id" value="{{ $inscription->formation_id }}">
 
             <!-- Section Évaluations -->
-            <div class="form-section">
-                <h3 class="section-title">
-                    <span class="section-icon">⭐</span>
+            <div class="form-section-custom">
+                <h3 class="section-title-custom">
+                    <span class="section-icon-custom">⭐</span>
                     Évaluez votre expérience
                 </h3>
 
-                <div class="rating-items">
+                <div class="rating-items-custom">
                     <!-- Qualité du contenu -->
-                    <div class="rating-item">
-                        <div class="rating-label">
+                    <div class="rating-item-custom">
+                        <div class="rating-label-custom">
                             <label>Qualité du contenu</label>
-                            <span class="required">*</span>
+                            <span class="required-custom">*</span>
                         </div>
-                        <p class="rating-help">Le contenu était-il pertinent et bien structuré ?</p>
-                        <div class="stars-wrapper">
-                            <div class="stars" data-rating-name="content_quality">
-                                <span class="star" data-value="1">★</span>
-                                <span class="star" data-value="2">★</span>
-                                <span class="star" data-value="3">★</span>
-                                <span class="star" data-value="4">★</span>
-                                <span class="star" data-value="5">★</span>
+                        <p class="rating-help-custom">Le contenu était-il pertinent et bien structuré ?</p>
+                        <div class="stars-wrapper-custom">
+                            <div class="stars-custom" data-rating-name="content_quality">
+                                <span class="star-custom" data-value="1">★</span>
+                                <span class="star-custom" data-value="2">★</span>
+                                <span class="star-custom" data-value="3">★</span>
+                                <span class="star-custom" data-value="4">★</span>
+                                <span class="star-custom" data-value="5">★</span>
                             </div>
-                            <span class="rating-text"></span>
+                            <span class="rating-text-custom"></span>
                         </div>
                         <input type="hidden" name="content_quality" required>
                         @error('content_quality')
-                            <span class="error-message">{{ $message }}</span>
+                            <span class="error-message-custom">{{ $message }}</span>
                         @enderror
                     </div>
 
                     <!-- Évaluation du formateur -->
-                    <div class="rating-item">
-                        <div class="rating-label">
+                    <div class="rating-item-custom">
+                        <div class="rating-label-custom">
                             <label>Évaluation du formateur</label>
-                            <span class="required">*</span>
+                            <span class="required-custom">*</span>
                         </div>
-                        <p class="rating-help">Le formateur était-il compétent et pédagogue ?</p>
-                        <div class="stars-wrapper">
-                            <div class="stars" data-rating-name="instructor_rating">
-                                <span class="star" data-value="1">★</span>
-                                <span class="star" data-value="2">★</span>
-                                <span class="star" data-value="3">★</span>
-                                <span class="star" data-value="4">★</span>
-                                <span class="star" data-value="5">★</span>
+                        <p class="rating-help-custom">Le formateur était-il compétent et pédagogue ?</p>
+                        <div class="stars-wrapper-custom">
+                            <div class="stars-custom" data-rating-name="instructor_rating">
+                                <span class="star-custom" data-value="1">★</span>
+                                <span class="star-custom" data-value="2">★</span>
+                                <span class="star-custom" data-value="3">★</span>
+                                <span class="star-custom" data-value="4">★</span>
+                                <span class="star-custom" data-value="5">★</span>
                             </div>
-                            <span class="rating-text"></span>
+                            <span class="rating-text-custom"></span>
                         </div>
                         <input type="hidden" name="instructor_rating" required>
                         @error('instructor_rating')
-                            <span class="error-message">{{ $message }}</span>
+                            <span class="error-message-custom">{{ $message }}</span>
                         @enderror
                     </div>
 
                     <!-- Organisation -->
-                    <div class="rating-item">
-                        <div class="rating-label">
+                    <div class="rating-item-custom">
+                        <div class="rating-label-custom">
                             <label>Organisation</label>
-                            <span class="required">*</span>
+                            <span class="required-custom">*</span>
                         </div>
-                        <p class="rating-help">La formation était-elle bien organisée ?</p>
-                        <div class="stars-wrapper">
-                            <div class="stars" data-rating-name="organization_rating">
-                                <span class="star" data-value="1">★</span>
-                                <span class="star" data-value="2">★</span>
-                                <span class="star" data-value="3">★</span>
-                                <span class="star" data-value="4">★</span>
-                                <span class="star" data-value="5">★</span>
+                        <p class="rating-help-custom">La formation était-elle bien organisée ?</p>
+                        <div class="stars-wrapper-custom">
+                            <div class="stars-custom" data-rating-name="organization_rating">
+                                <span class="star-custom" data-value="1">★</span>
+                                <span class="star-custom" data-value="2">★</span>
+                                <span class="star-custom" data-value="3">★</span>
+                                <span class="star-custom" data-value="4">★</span>
+                                <span class="star-custom" data-value="5">★</span>
                             </div>
-                            <span class="rating-text"></span>
+                            <span class="rating-text-custom"></span>
                         </div>
                         <input type="hidden" name="organization_rating" required>
                         @error('organization_rating')
-                            <span class="error-message">{{ $message }}</span>
+                            <span class="error-message-custom">{{ $message }}</span>
                         @enderror
                     </div>
 
                     <!-- Support et assistance -->
-                    <div class="rating-item">
-                        <div class="rating-label">
+                    <div class="rating-item-custom">
+                        <div class="rating-label-custom">
                             <label>Support et assistance</label>
-                            <span class="required">*</span>
+                            <span class="required-custom">*</span>
                         </div>
-                        <p class="rating-help">Avez-vous reçu l'aide nécessaire en cas de besoin ?</p>
-                        <div class="stars-wrapper">
-                            <div class="stars" data-rating-name="support_rating">
-                                <span class="star" data-value="1">★</span>
-                                <span class="star" data-value="2">★</span>
-                                <span class="star" data-value="3">★</span>
-                                <span class="star" data-value="4">★</span>
-                                <span class="star" data-value="5">★</span>
+                        <p class="rating-help-custom">Avez-vous reçu l'aide nécessaire en cas de besoin ?</p>
+                        <div class="stars-wrapper-custom">
+                            <div class="stars-custom" data-rating-name="support_rating">
+                                <span class="star-custom" data-value="1">★</span>
+                                <span class="star-custom" data-value="2">★</span>
+                                <span class="star-custom" data-value="3">★</span>
+                                <span class="star-custom" data-value="4">★</span>
+                                <span class="star-custom" data-value="5">★</span>
                             </div>
-                            <span class="rating-text"></span>
+                            <span class="rating-text-custom"></span>
                         </div>
                         <input type="hidden" name="support_rating" required>
                         @error('support_rating')
-                            <span class="error-message">{{ $message }}</span>
+                            <span class="error-message-custom">{{ $message }}</span>
                         @enderror
                     </div>
 
                     <!-- Satisfaction générale -->
-                    <div class="rating-item highlight">
-                        <div class="rating-label">
+                    <div class="rating-item-custom highlight">
+                        <div class="rating-label-custom">
                             <label>Satisfaction générale</label>
-                            <span class="required">*</span>
+                            <span class="required-custom">*</span>
                         </div>
-                        <p class="rating-help">Globalement, êtes-vous satisfait de cette formation ?</p>
-                        <div class="stars-wrapper">
-                            <div class="stars large" data-rating-name="overall_satisfaction">
-                                <span class="star" data-value="1">★</span>
-                                <span class="star" data-value="2">★</span>
-                                <span class="star" data-value="3">★</span>
-                                <span class="star" data-value="4">★</span>
-                                <span class="star" data-value="5">★</span>
+                        <p class="rating-help-custom">Globalement, êtes-vous satisfait de cette formation ?</p>
+                        <div class="stars-wrapper-custom">
+                            <div class="stars-custom large" data-rating-name="overall_satisfaction">
+                                <span class="star-custom" data-value="1">★</span>
+                                <span class="star-custom" data-value="2">★</span>
+                                <span class="star-custom" data-value="3">★</span>
+                                <span class="star-custom" data-value="4">★</span>
+                                <span class="star-custom" data-value="5">★</span>
                             </div>
-                            <span class="rating-text"></span>
+                            <span class="rating-text-custom"></span>
                         </div>
                         <input type="hidden" name="overall_satisfaction" required>
                         @error('overall_satisfaction')
-                            <span class="error-message">{{ $message }}</span>
+                            <span class="error-message-custom">{{ $message }}</span>
                         @enderror
                     </div>
                 </div>
             </div>
 
             <!-- Section Feedback -->
-            <div class="form-section">
-                <h3 class="section-title">
-                    <span class="section-icon">💭</span>
+            <div class="form-section-custom">
+                <h3 class="section-title-custom">
+                    <span class="section-icon-custom">💭</span>
                     Partagez votre expérience
                 </h3>
 
-                <div class="form-group">
-                    <label for="positive_feedback">Ce qui vous a le plus plu</label>
+                <div class="form-group-custom">
+                    <label for="positive_feedback">
+                        <i class="fas fa-thumbs-up me-2" style="color: #10b981;"></i>Ce qui vous a le plus plu
+                    </label>
                     <textarea 
                         name="positive_feedback" 
                         id="positive_feedback" 
@@ -171,14 +574,16 @@
                         placeholder="Qu'avez-vous particulièrement apprécié dans cette formation ?"
                         maxlength="1000"
                     >{{ old('positive_feedback') }}</textarea>
-                    <span class="char-count">0 / 1000</span>
+                    <span class="char-count-custom">0 / 1000</span>
                     @error('positive_feedback')
-                        <span class="error-message">{{ $message }}</span>
+                        <span class="error-message-custom">{{ $message }}</span>
                     @enderror
                 </div>
 
-                <div class="form-group">
-                    <label for="improvement_suggestions">Suggestions d'amélioration</label>
+                <div class="form-group-custom">
+                    <label for="improvement_suggestions">
+                        <i class="fas fa-lightbulb me-2" style="color: #f59e0b;"></i>Suggestions d'amélioration
+                    </label>
                     <textarea 
                         name="improvement_suggestions" 
                         id="improvement_suggestions" 
@@ -186,14 +591,16 @@
                         placeholder="Comment pouvons-nous améliorer cette formation ?"
                         maxlength="1000"
                     >{{ old('improvement_suggestions') }}</textarea>
-                    <span class="char-count">0 / 1000</span>
+                    <span class="char-count-custom">0 / 1000</span>
                     @error('improvement_suggestions')
-                        <span class="error-message">{{ $message }}</span>
+                        <span class="error-message-custom">{{ $message }}</span>
                     @enderror
                 </div>
 
-                <div class="form-group">
-                    <label for="additional_comments">Commentaires additionnels</label>
+                <div class="form-group-custom">
+                    <label for="additional_comments">
+                        <i class="fas fa-comment-dots me-2" style="color: #3b82f6;"></i>Commentaires additionnels
+                    </label>
                     <textarea 
                         name="additional_comments" 
                         id="additional_comments" 
@@ -201,385 +608,61 @@
                         placeholder="Autres remarques ou suggestions..."
                         maxlength="1000"
                     >{{ old('additional_comments') }}</textarea>
-                    <span class="char-count">0 / 1000</span>
+                    <span class="char-count-custom">0 / 1000</span>
                     @error('additional_comments')
-                        <span class="error-message">{{ $message }}</span>
+                        <span class="error-message-custom">{{ $message }}</span>
                     @enderror
                 </div>
             </div>
 
             <!-- Section Recommandation -->
-            <div class="form-section recommendation">
-                <h3 class="section-title">
-                    <span class="section-icon">👍</span>
+            <div class="form-section-custom">
+                <h3 class="section-title-custom">
+                    <span class="section-icon-custom">👍</span>
                     Recommandation
                 </h3>
 
-                <div class="recommendation-box">
-                    <p class="recommendation-question">
+                <div class="recommendation-box-custom">
+                    <p class="recommendation-question-custom">
                         Recommanderiez-vous cette formation à d'autres étudiants ?
-                        <span class="required">*</span>
+                        <span class="required-custom">*</span>
                     </p>
-                    <div class="radio-buttons">
-                        <label class="radio-card">
+                    <div class="radio-buttons-custom">
+                        <label class="radio-card-custom">
                             <input type="radio" name="would_recommend" value="1" required>
-                            <div class="radio-content">
-                                <span class="radio-icon">👍</span>
-                                <span class="radio-label">Oui, je recommande</span>
+                            <div class="radio-content-custom">
+                                <span class="radio-icon-custom">👍</span>
+                                <span class="radio-label-custom">Oui, je recommande</span>
                             </div>
                         </label>
-                        <label class="radio-card">
+                        <label class="radio-card-custom">
                             <input type="radio" name="would_recommend" value="0" required>
-                            <div class="radio-content">
-                                <span class="radio-icon">👎</span>
-                                <span class="radio-label">Non, je ne recommande pas</span>
+                            <div class="radio-content-custom">
+                                <span class="radio-icon-custom">👎</span>
+                                <span class="radio-label-custom">Non, je ne recommande pas</span>
                             </div>
                         </label>
                     </div>
                     @error('would_recommend')
-                        <span class="error-message">{{ $message }}</span>
+                        <span class="error-message-custom">{{ $message }}</span>
                     @enderror
                 </div>
             </div>
 
             <!-- Boutons d'action -->
-            <div class="form-actions">
-                <a href="{{ route('satisfaction.index') }}" class="btn-cancel">
+            <div class="form-actions-custom">
+                <a href="{{ route('satisfaction.index') }}" class="btn-cancel-custom">
+                    <i class="fas fa-times"></i>
                     Annuler
                 </a>
-                <button type="submit" class="btn-submit">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
+                <button type="submit" class="btn-submit-custom">
+                    <i class="fas fa-paper-plane"></i>
                     Soumettre l'évaluation
                 </button>
             </div>
         </form>
     </div>
 </div>
-
-<style>
-.container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 40px 20px;
-}
-
-.breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 24px;
-    font-size: 14px;
-    color: #6b7280;
-}
-
-.breadcrumb a {
-    color: #3b82f6;
-    text-decoration: none;
-}
-
-.breadcrumb a:hover {
-    text-decoration: underline;
-}
-
-.evaluation-wrapper {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
-}
-
-.evaluation-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 48px 32px;
-    text-align: center;
-}
-
-.formation-badge {
-    width: 64px;
-    height: 64px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 16px;
-}
-
-.evaluation-header h1 {
-    margin: 0 0 8px 0;
-    font-size: 28px;
-    font-weight: 600;
-}
-
-.evaluation-header h2 {
-    margin: 0 0 12px 0;
-    font-size: 20px;
-    font-weight: 500;
-    opacity: 0.95;
-}
-
-.evaluation-subtitle {
-    margin: 0;
-    font-size: 14px;
-    opacity: 0.9;
-}
-
-.evaluation-form {
-    padding: 32px;
-}
-
-.form-section {
-    margin-bottom: 40px;
-    padding-bottom: 32px;
-    border-bottom: 2px solid #f3f4f6;
-}
-
-.form-section:last-of-type {
-    border-bottom: none;
-}
-
-.section-title {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 0 0 24px 0;
-    font-size: 20px;
-    color: #1f2937;
-}
-
-.section-icon {
-    font-size: 24px;
-}
-
-.rating-items {
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-}
-
-.rating-item {
-    padding: 20px;
-    background: #f9fafb;
-    border-radius: 12px;
-    transition: all 0.2s;
-}
-
-.rating-item:hover {
-    background: #f3f4f6;
-}
-
-.rating-item.highlight {
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    border: 2px solid #f59e0b;
-}
-
-.rating-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 6px;
-}
-
-.rating-label label {
-    font-weight: 600;
-    color: #374151;
-    font-size: 16px;
-}
-
-.required {
-    color: #ef4444;
-}
-
-.rating-help {
-    margin: 0 0 12px 0;
-    font-size: 14px;
-    color: #6b7280;
-}
-
-.stars-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.stars {
-    display: flex;
-    gap: 6px;
-    cursor: pointer;
-}
-
-.stars.large .star {
-    font-size: 40px;
-}
-
-.star {
-    font-size: 36px;
-    color: #d1d5db;
-    transition: all 0.2s;
-    user-select: none;
-}
-
-.star:hover,
-.star.active {
-    color: #fbbf24;
-    transform: scale(1.1);
-}
-
-.rating-text {
-    font-size: 14px;
-    color: #6b7280;
-    font-weight: 500;
-    min-width: 100px;
-}
-
-.form-group {
-    margin-bottom: 24px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: #374151;
-}
-
-.form-group textarea {
-    width: 100%;
-    padding: 14px;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    font-family: inherit;
-    font-size: 14px;
-    line-height: 1.6;
-    resize: vertical;
-    transition: all 0.2s;
-}
-
-.form-group textarea:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.char-count {
-    display: block;
-    margin-top: 6px;
-    font-size: 12px;
-    color: #9ca3af;
-    text-align: right;
-}
-
-.error-message {
-    display: block;
-    margin-top: 6px;
-    font-size: 13px;
-    color: #ef4444;
-}
-
-.recommendation-box {
-    background: #f9fafb;
-    padding: 24px;
-    border-radius: 12px;
-}
-
-.recommendation-question {
-    margin: 0 0 16px 0;
-    font-size: 16px;
-    font-weight: 500;
-    color: #374151;
-}
-
-.radio-buttons {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-}
-
-.radio-card {
-    position: relative;
-    cursor: pointer;
-}
-
-.radio-card input[type="radio"] {
-    position: absolute;
-    opacity: 0;
-}
-
-.radio-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 20px;
-    background: white;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    transition: all 0.2s;
-}
-
-.radio-card input[type="radio"]:checked + .radio-content {
-    border-color: #3b82f6;
-    background: #eff6ff;
-}
-
-.radio-icon {
-    font-size: 32px;
-}
-
-.radio-label {
-    font-weight: 500;
-    color: #374151;
-    text-align: center;
-}
-
-.form-actions {
-    display: flex;
-    gap: 16px;
-    justify-content: flex-end;
-    margin-top: 32px;
-    padding-top: 24px;
-    border-top: 2px solid #f3f4f6;
-}
-
-.btn-cancel,
-.btn-submit {
-    padding: 14px 28px;
-    border-radius: 10px;
-    font-weight: 500;
-    font-size: 15px;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-cancel {
-    background: white;
-    color: #374151;
-    border: 2px solid #d1d5db;
-}
-
-.btn-cancel:hover {
-    background: #f9fafb;
-    border-color: #9ca3af;
-}
-
-.btn-submit {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-
-.btn-submit:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-}
-</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -592,13 +675,13 @@ document.addEventListener('DOMContentLoaded', function() {
         5: 'Très satisfait'
     };
 
-    const starGroups = document.querySelectorAll('.stars');
+    const starGroups = document.querySelectorAll('.stars-custom');
     
     starGroups.forEach(group => {
-        const stars = group.querySelectorAll('.star');
+        const stars = group.querySelectorAll('.star-custom');
         const ratingName = group.getAttribute('data-rating-name');
         const input = document.querySelector(`input[name="${ratingName}"]`);
-        const ratingTextEl = group.parentElement.querySelector('.rating-text');
+        const ratingTextEl = group.parentElement.querySelector('.rating-text-custom');
         
         stars.forEach(star => {
             star.addEventListener('click', function() {
@@ -645,7 +728,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Compteur de caractères
     const textareas = document.querySelectorAll('textarea[maxlength]');
     textareas.forEach(textarea => {
-        const charCount = textarea.parentElement.querySelector('.char-count');
+        const charCount = textarea.parentElement.querySelector('.char-count-custom');
         
         textarea.addEventListener('input', function() {
             if (charCount) {

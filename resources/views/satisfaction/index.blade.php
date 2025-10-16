@@ -3,68 +3,259 @@
 @section('title', 'Mes Évaluations')
 
 @section('content')
-<div class="container">
-    <div class="page-header">
-        <h1>Évaluations de formations</h1>
-        <p class="subtitle">Donnez votre avis sur les formations que vous avez terminées</p>
+<style>
+    .gradient-bg-main {
+        background: linear-gradient(135deg, #C2185B 0%, #D32F2F 50%, #ef4444 100%);
+    }
+    
+    .gradient-bg-1 {
+        background: linear-gradient(135deg, #C2185B, #D32F2F);
+    }
+    
+    .gradient-bg-2 {
+        background: linear-gradient(135deg, #D32F2F, #ef4444);
+    }
+    
+    .gradient-bg-3 {
+        background: linear-gradient(135deg, #ef4444, #C2185B);
+    }
+    
+    .page-header-custom {
+        background: linear-gradient(135deg, #C2185B 0%, #D32F2F 50%, #ef4444 100%);
+        border-radius: 15px;
+        padding: 2.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(194, 24, 91, 0.3);
+    }
+    
+    .alert-custom {
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .alert-success-custom {
+        background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+        color: #065f46;
+        border-left: 4px solid #10b981;
+    }
+    
+    .alert-error-custom {
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
+        color: #991b1b;
+        border-left: 4px solid #ef4444;
+    }
+    
+    .empty-state-custom {
+        text-align: center;
+        padding: 5rem 2rem;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+    
+    .empty-icon-wrapper {
+        width: 120px;
+        height: 120px;
+        background: linear-gradient(135deg, #C2185B, #D32F2F);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 8px 20px rgba(194, 24, 91, 0.3);
+    }
+    
+    .formation-card-custom {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid #C2185B;
+    }
+    
+    .formation-card-custom:hover {
+        box-shadow: 0 12px 35px rgba(194, 24, 91, 0.25);
+        transform: translateY(-8px);
+        border-left-color: #ef4444;
+    }
+    
+    .card-header-custom {
+        padding: 1.5rem;
+        background: linear-gradient(135deg, rgba(194, 24, 91, 0.05), rgba(239, 68, 68, 0.05));
+        border-bottom: 2px solid rgba(194, 24, 91, 0.1);
+    }
+    
+    .badge-pending-custom {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        color: #92400e;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        white-space: nowrap;
+        border: 2px solid #f59e0b;
+    }
+    
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+    
+    .formation-description-custom {
+        color: #6b7280;
+        line-height: 1.7;
+        margin-bottom: 1rem;
+    }
+    
+    .meta-item-custom {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: #6b7280;
+        background: #f9fafb;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+    }
+    
+    .meta-item-custom i {
+        color: #C2185B;
+    }
+    
+    .card-footer-custom {
+        padding: 1.5rem;
+        background: #f9fafb;
+        border-top: 2px solid rgba(194, 24, 91, 0.1);
+    }
+    
+    .btn-evaluate-custom {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        width: 100%;
+        padding: 1rem 1.5rem;
+        background: linear-gradient(135deg, #C2185B, #D32F2F);
+        color: white;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 12px rgba(194, 24, 91, 0.3);
+    }
+    
+    .btn-evaluate-custom:hover {
+        background: linear-gradient(135deg, #D32F2F, #ef4444);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(194, 24, 91, 0.4);
+        color: white;
+    }
+    
+    .formations-grid-custom {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .formations-grid-custom {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="container-fluid px-4 py-5">
+    <!-- Header avec gradient -->
+    <div class="page-header-custom">
+        <div class="row align-items-center">
+            <div class="col-md-9">
+                <h1 class="display-5 fw-bold mb-2">
+                    <i class="fas fa-star me-3"></i>Évaluations de formations
+                </h1>
+                <p class="fs-5 mb-0 opacity-90">Donnez votre avis sur les formations que vous avez terminées</p>
+            </div>
+            <div class="col-md-3 text-end">
+                <i class="fas fa-clipboard-check" style="font-size: 5rem; opacity: 0.2;"></i>
+            </div>
+        </div>
     </div>
 
+    <!-- Alerts -->
     @if(session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
+        <div class="alert-custom alert-success-custom">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-check-circle me-3 fs-4"></i>
+                <div>
+                    <strong>Succès !</strong>
+                    <p class="mb-0">{{ session('success') }}</p>
+                </div>
+            </div>
         </div>
     @endif
 
     @if(session('error'))
-        <div class="alert alert-error">
-            {{ session('error') }}
+        <div class="alert-custom alert-error-custom">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-circle me-3 fs-4"></i>
+                <div>
+                    <strong>Erreur !</strong>
+                    <p class="mb-0">{{ session('error') }}</p>
+                </div>
+            </div>
         </div>
     @endif
 
+    <!-- Empty State -->
     @if($inscriptions->isEmpty())
-        <div class="empty-state">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-                <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-            <h3>Aucune évaluation en attente</h3>
-            <p>Vous avez évalué toutes vos formations terminées. Merci pour votre participation !</p>
+        <div class="empty-state-custom">
+            <div class="empty-icon-wrapper">
+                <i class="fas fa-clipboard-list fa-4x text-white"></i>
+            </div>
+            <h3 class="fw-bold mb-3" style="color: #1f2937; font-size: 1.75rem;">
+                Aucune évaluation en attente
+            </h3>
+            <p class="text-muted fs-5 mb-0">
+                Vous avez évalué toutes vos formations terminées. Merci pour votre participation !
+            </p>
         </div>
     @else
-        <div class="formations-grid">
+        <!-- Formations Grid -->
+        <div class="formations-grid-custom">
             @foreach($inscriptions as $inscription)
-                <div class="formation-card">
-                    <div class="card-header">
-                        <h3>{{ $inscription->formation->name ?? 'Formation' }}</h3>
-                        <span class="badge badge-pending">À évaluer</span>
+                <div class="formation-card-custom">
+                    <div class="card-header-custom">
+                        <div class="d-flex justify-content-between align-items-start gap-3">
+                            <h3 class="fw-bold mb-0" style="color: #1f2937; font-size: 1.25rem;">
+                                {{ $inscription->formation->name ?? 'Formation' }}
+                            </h3>
+                            <span class="badge-pending-custom">
+                                <i class="fas fa-hourglass-half me-1"></i>À évaluer
+                            </span>
+                        </div>
                     </div>
                     
-                    <div class="card-body">
-                        <p class="formation-description">
-                            {{ Str::limit($inscription->formation->description ?? '', 100) }}
+                    <div class="card-body-custom">
+                        <p class="formation-description-custom mb-3">
+                            {{ Str::limit($inscription->formation->description ?? 'Aucune description disponible.', 100) }}
                         </p>
                         
-                        <div class="formation-meta">
-                            <span class="meta-item">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                                </svg>
+                        <div class="meta-item-custom">
+                            <i class="fas fa-calendar-check"></i>
+                            <span>
                                 Terminée le {{ $inscription->completed_at ? $inscription->completed_at->format('d/m/Y') : 'N/A' }}
                             </span>
                         </div>
                     </div>
                     
-                    <div class="card-footer">
-                        <a href="{{ route('satisfaction.create', $inscription->id) }}" class="btn-evaluate">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                            </svg>
+                    <div class="card-footer-custom">
+                        <a href="{{ route('satisfaction.create', $inscription->id) }}" class="btn-evaluate-custom">
+                            <i class="fas fa-star"></i>
                             Évaluer maintenant
                         </a>
                     </div>
@@ -73,167 +264,4 @@
         </div>
     @endif
 </div>
-
-<style>
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 40px 20px;
-}
-
-.page-header {
-    margin-bottom: 40px;
-}
-
-.page-header h1 {
-    margin: 0 0 8px 0;
-    font-size: 32px;
-    color: #1f2937;
-}
-
-.subtitle {
-    margin: 0;
-    color: #6b7280;
-    font-size: 16px;
-}
-
-.alert {
-    padding: 16px;
-    border-radius: 8px;
-    margin-bottom: 24px;
-}
-
-.alert-success {
-    background: #d1fae5;
-    color: #065f46;
-    border: 1px solid #6ee7b7;
-}
-
-.alert-error {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fca5a5;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 80px 20px;
-}
-
-.empty-state svg {
-    color: #9ca3af;
-    margin-bottom: 16px;
-}
-
-.empty-state h3 {
-    margin: 0 0 8px 0;
-    font-size: 20px;
-    color: #374151;
-}
-
-.empty-state p {
-    margin: 0;
-    color: #6b7280;
-}
-
-.formations-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 24px;
-}
-
-.formation-card {
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    overflow: hidden;
-    transition: all 0.2s;
-}
-
-.formation-card:hover {
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
-}
-
-.card-header {
-    padding: 20px;
-    border-bottom: 1px solid #e5e7eb;
-    display: flex;
-    justify-content: space-between;
-    align-items: start;
-    gap: 12px;
-}
-
-.card-header h3 {
-    margin: 0;
-    font-size: 18px;
-    color: #1f2937;
-    flex: 1;
-}
-
-.badge {
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-}
-
-.badge-pending {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.card-body {
-    padding: 20px;
-}
-
-.formation-description {
-    margin: 0 0 16px 0;
-    color: #6b7280;
-    line-height: 1.6;
-}
-
-.formation-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-
-.meta-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    color: #6b7280;
-}
-
-.meta-item svg {
-    color: #9ca3af;
-}
-
-.card-footer {
-    padding: 20px;
-    border-top: 1px solid #e5e7eb;
-}
-
-.btn-evaluate {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    justify-content: center;
-    padding: 12px 24px;
-    background: #3b82f6;
-    color: white;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 500;
-    transition: background 0.2s;
-}
-
-.btn-evaluate:hover {
-    background: #2563eb;
-}
-</style>
 @endsection
