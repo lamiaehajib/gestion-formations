@@ -3,50 +3,52 @@
 namespace App\Observers;
 
 use App\Models\Inscription;
-use App\Models\Promotion;
+use App\Http\Controllers\PromotionController;
 use Illuminate\Support\Facades\Log;
 
 class InscriptionObserver
 {
     /**
      * Handle the Inscription "created" event.
+     * ✅ Automatically assign student to promotion when inscription is created.
      */
     public function created(Inscription $inscription)
     {
-        $this->assignToPromotion($inscription);
+        try {
+            PromotionController::autoAssignStudentToPromotion($inscription);
+        } catch (\Exception $e) {
+            Log::error("Error auto-assigning student to promotion: " . $e->getMessage());
+        }
     }
 
     /**
      * Handle the Inscription "updated" event.
+     * ✅ Remove student from promotion if inscription is cancelled.
      */
     public function updated(Inscription $inscription)
     {
-        // Si le statut change ou la formation change
-        if ($inscription->isDirty('status') || $inscription->isDirty('formation_id')) {
-            $this->assignToPromotion($inscription);
+        // If inscription status changed to cancelled
+        if ($inscription->status === 'cancelled' && $inscription->user) {
+            try {
+                PromotionController::autoRemoveStudentFromPromotion($inscription->user);
+            } catch (\Exception $e) {
+                Log::error("Error removing student from promotion: " . $e->getMessage());
+            }
         }
     }
 
     /**
-     * Assign user to the appropriate promotion
+     * Handle the Inscription "deleted" event.
+     * ✅ Remove student from promotion if inscription is deleted.
      */
-    private function assignToPromotion(Inscription $inscription)
+    public function deleted(Inscription $inscription)
     {
-        // Skip if inscription is cancelled
-        if ($inscription->status === 'cancelled') {
-            return;
-        }
-
-        // Find the most recent promotion for this formation
-        $promotion = Promotion::where('formation_id', $inscription->formation_id)
-            ->orderBy('year', 'desc')
-            ->first();
-
-        if ($promotion && $inscription->user) {
-            // Update user's promotion_id
-            $inscription->user->update(['promotion_id' => $promotion->id]);
-            
-            Log::info("Student {$inscription->user->id} auto-assigned to promotion {$promotion->id}");
+        if ($inscription->user) {
+            try {
+                PromotionController::autoRemoveStudentFromPromotion($inscription->user);
+            } catch (\Exception $e) {
+                Log::error("Error removing student from promotion on delete: " . $e->getMessage());
+            }
         }
     }
 }

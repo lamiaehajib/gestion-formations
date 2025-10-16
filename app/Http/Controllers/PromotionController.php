@@ -11,8 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
-use PDF; // Assuming you have a PDF package like laravel-dompdf
-use Maatwebsite\Excel\Facades\Excel; // Assuming you have Maatwebsite/Laravel-Excel
+use PDF;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PromotionController extends Controller
 {
@@ -20,22 +20,21 @@ class PromotionController extends Controller
      * Display a listing of promotions.
      */
     public function index()
-{
-    $promotions = Promotion::with(['formation', 'formation.category'])
-        ->withCount('users') // This is the change
-        ->orderBy('year', 'desc')
-        ->orderBy('name')
-        ->paginate(15);
+    {
+        $promotions = Promotion::with(['formation', 'formation.category'])
+            ->withCount('users')
+            ->orderBy('year', 'desc')
+            ->orderBy('name')
+            ->paginate(15);
 
-    return view('promotions.index', compact('promotions'));
-}
+        return view('promotions.index', compact('promotions'));
+    }
 
     /**
-     * Show the form for creating  new promotion.
+     * Show the form for creating new promotion.
      */
-   public function create()
+    public function create()
     {
-        // Now you can use the short name
         $eligibleCategories = Category::pluck('id');
 
         $formations = Formation::whereIn('category_id', $eligibleCategories)
@@ -50,16 +49,9 @@ class PromotionController extends Controller
         return view('promotions.create', compact('formations', 'availableYears'));
     }
 
-
-
-
     /**
      * Store a newly created promotion and automatically populate it with students.
      */
-
-
-
-
     public function store(Request $request)
     {
         $request->validate([
@@ -104,62 +96,60 @@ class PromotionController extends Controller
     /**
      * Display the specified promotion with student payment details.
      */
-   public function show(Promotion $promotion)
-{
-    $promotion->load([
-        'formation.category',
-        'users' => function ($query) use ($promotion) {
-            $query->with(['inscriptions' => function ($q) use ($promotion) {
-                $q->where('formation_id', $promotion->formation_id)->with('payments');
-            }])
-            // 🎯 ترتيب الطلاب حسب تاريخ الـ inscription (الأقدم أولاً)
-            ->join('inscriptions', 'users.id', '=', 'inscriptions.user_id')
-            ->where('inscriptions.formation_id', $promotion->formation_id)
-            ->orderBy('inscriptions.inscription_date', 'asc') // الأقدم لاول ✅
-            ->select('users.*'); // نجيبو غير الـ users
-        },
-    ]);
+    public function show(Promotion $promotion)
+    {
+        $promotion->load([
+            'formation.category',
+            'users' => function ($query) use ($promotion) {
+                $query->with(['inscriptions' => function ($q) use ($promotion) {
+                    $q->where('formation_id', $promotion->formation_id)->with('payments');
+                }])
+                ->join('inscriptions', 'users.id', '=', 'inscriptions.user_id')
+                ->where('inscriptions.formation_id', $promotion->formation_id)
+                ->orderBy('inscriptions.inscription_date', 'asc')
+                ->select('users.*');
+            },
+        ]);
 
-    $studentsData = [];
-    $totalRevenue = 0;
-    $totalPaid = 0;
-    $totalRemaining = 0;
+        $studentsData = [];
+        $totalRevenue = 0;
+        $totalPaid = 0;
+        $totalRemaining = 0;
 
-    foreach ($promotion->users as $user) {
-        $inscription = $user->inscriptions->first();
-        if ($inscription) {
-            $studentData = [
-                'user' => $user,
-                'inscription' => $inscription,
-                'paid_amount' => $inscription->paid_amount,
-                'remaining_amount' => $inscription->remaining_amount,
-                'total_amount' => $inscription->total_amount,
-                'payment_status' => $inscription->payment_status_label,
-                'payment_type' => $inscription->payment_type,
-                'last_payment_date' => $inscription->payments->max('paid_date'),
-                'payments_count' => $inscription->payments->count(),
-                'avatar_url' => $user->avatar ? asset('storage/' . $user->avatar) : null,
-                // 🎯 نزيدو تاريخ الـ inscription
-                'inscription_date' => $inscription->inscription_date,
-            ];
+        foreach ($promotion->users as $user) {
+            $inscription = $user->inscriptions->first();
+            if ($inscription) {
+                $studentData = [
+                    'user' => $user,
+                    'inscription' => $inscription,
+                    'paid_amount' => $inscription->paid_amount,
+                    'remaining_amount' => $inscription->remaining_amount,
+                    'total_amount' => $inscription->total_amount,
+                    'payment_status' => $inscription->payment_status_label,
+                    'payment_type' => $inscription->payment_type,
+                    'last_payment_date' => $inscription->payments->max('paid_date'),
+                    'payments_count' => $inscription->payments->count(),
+                    'avatar_url' => $user->avatar ? asset('storage/' . $user->avatar) : null,
+                    'inscription_date' => $inscription->inscription_date,
+                ];
 
-            $studentsData[] = $studentData;
-            $totalRevenue += $inscription->total_amount;
-            $totalPaid += $inscription->paid_amount;
-            $totalRemaining += $inscription->remaining_amount;
+                $studentsData[] = $studentData;
+                $totalRevenue += $inscription->total_amount;
+                $totalPaid += $inscription->paid_amount;
+                $totalRemaining += $inscription->remaining_amount;
+            }
         }
+
+        $statistics = [
+            'total_students' => count($studentsData),
+            'total_revenue' => $totalRevenue,
+            'total_paid' => $totalPaid,
+            'total_remaining' => $totalRemaining,
+            'completion_percentage' => $totalRevenue > 0 ? round(($totalPaid / $totalRevenue) * 100, 2) : 0,
+        ];
+
+        return view('promotions.show', compact('promotion', 'studentsData', 'statistics'));
     }
-
-    $statistics = [
-        'total_students' => count($studentsData),
-        'total_revenue' => $totalRevenue,
-        'total_paid' => $totalPaid,
-        'total_remaining' => $totalRemaining,
-        'completion_percentage' => $totalRevenue > 0 ? round(($totalPaid / $totalRevenue) * 100, 2) : 0,
-    ];
-
-    return view('promotions.show', compact('promotion', 'studentsData', 'statistics'));
-}
 
     /**
      * Show the form for editing the specified promotion.
@@ -243,14 +233,9 @@ class PromotionController extends Controller
             $pdf = PDF::loadView('promotions.report', compact('reportData'));
             return $pdf->download('rapport-' . $promotion->name . '.pdf');
         } elseif ($format === 'excel') {
-            // ⭐ Début du code optimisé pour Excel CSV (séparateur ;) ⭐
-
-            $output = fopen('php://temp', 'r+'); // Ouvre un flux temporaire en mémoire
-
-            // 1. AJOUT DU BOM POUR L'ENCODAGE UTF-8 CORRECT DANS EXCEL
+            $output = fopen('php://temp', 'r+');
             fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-            // 2. DÉFINITION DES EN-TÊTES ET UTILISATION DU POINT-VIRGULE (;)
             $headers_excel = [
                 'Nom Étudiant',
                 'Email',
@@ -260,23 +245,21 @@ class PromotionController extends Controller
                 'Type de Paiement',
                 'Statut Paiement'
             ];
-            fputcsv($output, $headers_excel, ';'); // Utilisation de ';' comme séparateur
+            fputcsv($output, $headers_excel, ';');
 
             foreach ($reportData['students'] as $student) {
-                // Nettoyage des chaînes pour éviter les problèmes d'exportation
                 $name = str_replace(';', ',', $student['name']);
                 $email = str_replace(';', ',', $student['email']);
 
                 fputcsv($output, [
                     $name,
                     $email,
-                    // Utiliser point ('.') pour les décimales et pas de séparateur de milliers
                     number_format($student['total_amount'], 2, '.', ''),
                     number_format($student['paid_amount'], 2, '.', ''),
                     number_format($student['remaining_amount'], 2, '.', ''),
                     $student['payment_type'],
                     $student['payment_status'],
-                ], ';'); // Utilisation de ';'
+                ], ';');
             }
 
             rewind($output);
@@ -284,14 +267,11 @@ class PromotionController extends Controller
             fclose($output);
 
             $headers = [
-                // 3. CHANGER LE TYPE DE CONTENU POUR UNE MEILLEURE COMPATIBILITÉ EXCEL
                 'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
                 'Content-Disposition' => 'attachment; filename="rapport-' . $promotion->name . '_' . date('Ymd') . '.csv"',
             ];
 
             return response($csv, 200, $headers);
-
-            // ⭐ Fin du code optimisé pour Excel CSV ⭐
         } else {
             return view('promotions.report', compact('reportData'));
         }
@@ -411,9 +391,79 @@ class PromotionController extends Controller
         }
     }
     
+    /**
+     * 🎯 NEW METHOD: Auto-assign student to promotion when inscription is created
+     * This is called from InscriptionObserver or InscriptionController
+     */
+    public static function autoAssignStudentToPromotion(Inscription $inscription)
+    {
+        // Skip if inscription is cancelled or user doesn't exist
+        if (!$inscription->user || $inscription->status === 'cancelled') {
+            return false;
+        }
+
+        // Get year from inscription date
+        $year = date('Y', strtotime($inscription->inscription_date ?? now()));
+
+        // Find or create promotion for this formation and year
+        $promotion = Promotion::where('formation_id', $inscription->formation_id)
+            ->where('year', $year)
+            ->first();
+
+        // If no promotion exists, create one automatically
+        if (!$promotion) {
+            try {
+                $formation = Formation::find($inscription->formation_id);
+                
+                $promotion = Promotion::create([
+                    'name' => $formation->title . ' - Promotion ' . $year,
+                    'year' => $year,
+                    'formation_id' => $inscription->formation_id,
+                    'description' => 'Promotion créée automatiquement lors de l\'inscription',
+                ]);
+
+                Log::info("Auto-created promotion {$promotion->id} for formation {$inscription->formation_id}, year {$year}");
+            } catch (\Exception $e) {
+                Log::error("Failed to auto-create promotion: " . $e->getMessage());
+                return false;
+            }
+        }
+
+        // Assign student to promotion if not already assigned
+        $user = $inscription->user;
+        
+        if ($user->promotion_id !== $promotion->id) {
+            $user->update(['promotion_id' => $promotion->id]);
+            Log::info("Student {$user->id} auto-assigned to promotion {$promotion->id}");
+            return true;
+        }
+
+        return false;
+    }
 
     /**
-     * Get formations eligible for promotion creation (licence/master categories).
+     * 🎯 NEW METHOD: Remove student from promotion if inscription is cancelled/deleted
+     */
+    public static function autoRemoveStudentFromPromotion(User $user)
+    {
+        // Check if user has any other active inscriptions
+        $activeInscriptions = Inscription::where('user_id', $user->id)
+            ->where('status', '!=', 'cancelled')
+            ->exists();
+
+        // Only remove from promotion if no active inscriptions remain
+        if (!$activeInscriptions && $user->promotion_id) {
+            $oldPromotionId = $user->promotion_id;
+            $user->update(['promotion_id' => null]);
+            Log::info("Student {$user->id} removed from promotion {$oldPromotionId} - no active inscriptions");
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get formations eligible for promotion creation.
      */
     public function getEligibleFormations()
     {

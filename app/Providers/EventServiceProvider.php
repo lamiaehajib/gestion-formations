@@ -7,11 +7,15 @@ use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Event;
 
-// NEW: Importez vos events et listeners
+// Events and Listeners
 use App\Events\ReclamationCreated;
 use App\Listeners\SendAdminNotificationOnReclamation;
 use App\Events\PaymentCreated;
 use App\Listeners\SendAdminNotification;
+
+// 🎯 NEW: Observer for auto-assignment to promotions
+use App\Models\Inscription;
+use App\Observers\InscriptionObserver;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -24,7 +28,6 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
-        // C'est ICI que tu ajoutes la liaison entre les événements et les listeners
         ReclamationCreated::class => [
             SendAdminNotificationOnReclamation::class,
         ],
@@ -40,6 +43,17 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        // 🎯 Register Inscription Observer for auto-promotion assignment
+        Inscription::observe(InscriptionObserver::class);
+    }
+
+    /**
+     * Determine if events and listeners should be automatically discovered.
+     *
+     * @return bool
+     */
+    public function shouldDiscoverEvents()
+    {
+        return false;
     }
 }

@@ -626,6 +626,7 @@
                         </a>
                     </li>
 
+                    
                     <li class="sidebar-menu__item">
                         <a href="{{ route('course_reschedules.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-book"></i></span>
@@ -640,7 +641,14 @@
                         </a>
                     </li>
 
-                     
+                     @can('message-view-own')
+                     <li class="sidebar-menu__item">
+    <a href="{{ route('satisfaction.index') }}" class="sidebar-menu__link">
+        <span class="icon"><i class="fas fa-star"></i></span>
+        <span class="text">Évaluations</span>
+    </a>
+</li>
+@endcan
 
                    
 
