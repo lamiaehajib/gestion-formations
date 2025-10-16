@@ -683,31 +683,47 @@ document.addEventListener('DOMContentLoaded', function() {
         const input = document.querySelector(`input[name="${ratingName}"]`);
         const ratingTextEl = group.parentElement.querySelector('.rating-text-custom');
         
+        // Vérifier que l'input existe
+        if (!input) {
+            console.error(`Input not found for rating: ${ratingName}`);
+            return;
+        }
+        
         stars.forEach(star => {
-            star.addEventListener('click', function() {
+            star.addEventListener('click', function(e) {
+                e.preventDefault();
                 const value = this.getAttribute('data-value');
+                
+                // Définir la valeur dans l'input caché
                 input.value = value;
                 
+                // Afficher le texte de notation
                 if (ratingTextEl) {
                     ratingTextEl.textContent = ratingTexts[value];
+                    ratingTextEl.style.display = 'block';
                 }
                 
+                // Mettre à jour l'affichage des étoiles
                 stars.forEach(s => {
-                    if (s.getAttribute('data-value') <= value) {
+                    if (parseInt(s.getAttribute('data-value')) <= parseInt(value)) {
                         s.classList.add('active');
                     } else {
                         s.classList.remove('active');
                     }
                 });
+                
+                console.log(`Rating set for ${ratingName}: ${value}`);
             });
             
             star.addEventListener('mouseenter', function() {
                 const value = this.getAttribute('data-value');
                 stars.forEach(s => {
-                    if (s.getAttribute('data-value') <= value) {
+                    if (parseInt(s.getAttribute('data-value')) <= parseInt(value)) {
                         s.style.color = '#fbbf24';
+                        s.style.transform = 'scale(1.15) rotate(-10deg)';
                     } else {
                         s.style.color = '#d1d5db';
+                        s.style.transform = 'scale(1)';
                     }
                 });
             });
@@ -716,10 +732,13 @@ document.addEventListener('DOMContentLoaded', function() {
         group.addEventListener('mouseleave', function() {
             const currentValue = input.value;
             stars.forEach(s => {
-                if (currentValue && s.getAttribute('data-value') <= currentValue) {
+                const starValue = s.getAttribute('data-value');
+                if (currentValue && parseInt(starValue) <= parseInt(currentValue)) {
                     s.style.color = '#fbbf24';
+                    s.style.transform = 'scale(1.15) rotate(-10deg)';
                 } else {
                     s.style.color = '#d1d5db';
+                    s.style.transform = 'scale(1)';
                 }
             });
         });
@@ -733,6 +752,72 @@ document.addEventListener('DOMContentLoaded', function() {
         textarea.addEventListener('input', function() {
             if (charCount) {
                 charCount.textContent = `${this.value.length} / ${this.maxLength}`;
+            }
+        });
+        
+        // Initialiser le compteur
+        if (charCount && textarea.value) {
+            charCount.textContent = `${textarea.value.length} / ${textarea.maxLength}`;
+        }
+    });
+
+    // Validation du formulaire avant soumission
+    const form = document.querySelector('.evaluation-form-custom');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const requiredRatings = [
+                'content_quality',
+                'instructor_rating', 
+                'organization_rating',
+                'support_rating',
+                'overall_satisfaction'
+            ];
+            
+            let hasErrors = false;
+            const missingRatings = [];
+            
+            requiredRatings.forEach(ratingName => {
+                const input = document.querySelector(`input[name="${ratingName}"]`);
+                if (!input || !input.value) {
+                    hasErrors = true;
+                    missingRatings.push(ratingName);
+                    
+                    // Mettre en évidence le champ manquant
+                    const ratingItem = input?.closest('.rating-item-custom');
+                    if (ratingItem) {
+                        ratingItem.style.border = '2px solid #ef4444';
+                        ratingItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            });
+            
+            if (hasErrors) {
+                e.preventDefault();
+                alert('Veuillez évaluer tous les critères obligatoires (marqués avec *)');
+                console.error('Missing ratings:', missingRatings);
+                return false;
+            }
+            
+            // Vérifier la recommandation
+            const recommendInput = document.querySelector('input[name="would_recommend"]:checked');
+            if (!recommendInput) {
+                e.preventDefault();
+                alert('Veuillez indiquer si vous recommandez cette formation');
+                document.querySelector('.recommendation-box-custom').scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+                return false;
+            }
+        });
+    }
+    
+    // Retirer la bordure rouge lors du clic sur une étoile
+    document.querySelectorAll('.star-custom').forEach(star => {
+        star.addEventListener('click', function() {
+            const ratingItem = this.closest('.rating-item-custom');
+            if (ratingItem) {
+                ratingItem.style.border = '2px solid transparent';
             }
         });
     });
