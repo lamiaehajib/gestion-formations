@@ -541,7 +541,7 @@
 <li class="sidebar-menu__item">
                         <a href="{{ route('messages.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-chat-circle"></i></span>
-                            <span class="text">les Messages</span>
+                            <span class="text">Messages</span>
                         </a>
                     </li>
                     @endcan

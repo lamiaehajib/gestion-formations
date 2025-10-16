@@ -240,4 +240,10 @@ class User extends Authenticatable
         return $this->hasMany(Documentation::class, 'consultant_id')
             ->where('status', 'rejected');
     }
+
+    public function satisfactionSurveys()
+{
+    return $this->hasMany(SatisfactionSurvey::class);
+}
+
 }

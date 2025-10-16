@@ -1362,7 +1362,11 @@ button.btn-card-dropdown-toggle.dropdown-toggle {
                                                 data-formation-id="{{ $formation->id }}">
                                             <i class="fas fa-edit"></i> 
                                         </button>
-                                  
+                                  <a href="{{ route('formations.evaluations', $formation->id) }}" 
+   class="btn btn-sm btn-warning" 
+   title="Voir les évaluations">
+    <i class="fas fa-star"></i> Évaluations
+</a>
                                     
                                     <button type="button"
         class="btn-card-dropdown-toggle dropdown-toggle" data-bs-toggle="dropdown"

@@ -19,6 +19,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\ReclamationController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SatisfactionSurveyController;
 use App\Http\Controllers\UserController;
 
 use Illuminate\Support\Facades\Route;
@@ -414,6 +415,40 @@ Route::prefix('admin')->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('documentations/{id}/download/{fileIndex?}', [DocumentationController::class, 'download'])->name('documentations.download');
 });
+
+
+
+     Route::get('/satisfaction', [SatisfactionSurveyController::class, 'index'])
+        ->name('satisfaction.index');
+    
+    // Formulaire de création d'un sondage
+    Route::get('/satisfaction/create/{inscription}', [SatisfactionSurveyController::class, 'create'])
+        ->name('satisfaction.create');
+    
+    // Enregistrement du sondage
+    Route::post('/satisfaction', [SatisfactionSurveyController::class, 'store'])
+        ->name('satisfaction.store');
+    
+    // API AJAX pour récupérer les sondages en attente (pour le popup)
+    Route::get('/api/satisfaction/pending', [SatisfactionSurveyController::class, 'getPendingSurveys'])
+        ->name('satisfaction.pending');
+   
+
+// Routes pour les administrateurs
+
+    
+    // Statistiques des sondages
+    Route::get('/admin/satisfaction/statistics/{formation?}', [SatisfactionSurveyController::class, 'statistics'])
+        ->name('satisfaction.statistics');
+
+
+        Route::get('/formations/{formation}/evaluations', [SatisfactionSurveyController::class, 'formationEvaluations'])
+    ->name('formations.evaluations');
 });
+
+
+
+
+
 
 require __DIR__.'/auth.php';

@@ -374,6 +374,10 @@
 @auth
     @include('components.notification-banner')
 @endauth
+
+@auth
+    @include('components.satisfaction-survey-modal')
+@endauth
     
             @include('layouts.sidebar')
      
@@ -722,6 +726,7 @@
         }
     }
 </script>
+
     {{-- Pushed scripts from individual Blade views --}}
     @stack('scripts')
 </body>

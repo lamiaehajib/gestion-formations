@@ -72,6 +72,27 @@ class Inscription extends Model
     {
         return $this->hasMany(Payment::class);
     }
+    public function satisfactionSurvey()
+    {
+        return $this->hasOne(SatisfactionSurvey::class);
+    }
+
+    /**
+     * Vérifie si cette inscription a déjà un sondage de satisfaction
+     */
+    public function hasSatisfactionSurvey()
+    {
+        return $this->satisfactionSurvey()->exists();
+    }
+
+    /**
+     * Scope pour les inscriptions complétées sans sondage
+     */
+    // public function scopeCompletedWithoutSurvey($query)
+    // {
+    //     return $query->where('status', 'completed')
+    //                  ->doesntHave('satisfactionSurvey');
+    // }
 
     /**
      * Adds a new payment record to this inscription and updates inscription's paid_amount and remaining_installments.
