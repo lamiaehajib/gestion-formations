@@ -18,11 +18,11 @@ class SatisfactionSurveyController extends Controller
     {
         $user = Auth::user();
         
-        // Récupère les inscriptions de l'étudiant qui sont terminées
+        // Récupère les inscriptions de l'étudiant qui sont terminées OU actives
         // et qui n'ont pas encore de sondage de satisfaction
         $inscriptions = Inscription::with('formation')
             ->where('user_id', $user->id)
-            ->where('status', 'completed') // Uniquement les formations terminées
+            ->whereIn('status', ['completed', 'active']) // Formations terminées OU actives
             ->whereDoesntHave('satisfactionSurvey') // Sans sondage existant
             ->get();
 
@@ -118,7 +118,7 @@ class SatisfactionSurveyController extends Controller
         
         $inscriptions = Inscription::with('formation')
             ->where('user_id', $user->id)
-            ->where('status', 'completed')
+            ->whereIn('status', ['completed', 'active']) // Formations terminées OU actives
             ->whereDoesntHave('satisfactionSurvey')
             ->get()
             ->map(function($inscription) {
@@ -127,6 +127,7 @@ class SatisfactionSurveyController extends Controller
                     'formation_id' => $inscription->formation_id,
                     'formation_name' => $inscription->formation->name ?? 'Formation',
                     'completed_at' => $inscription->completed_at,
+                    'status' => $inscription->status,
                 ];
             });
 
@@ -164,75 +165,75 @@ class SatisfactionSurveyController extends Controller
 
 
     public function formationEvaluations($formationId)
-{
-    // Vérifier les permissions
-    if (!Auth::user()->can('formation-view-statistics')) {
-        abort(403, 'Accès non autorisé.');
-    }
+    {
+        // Vérifier les permissions
+        if (!Auth::user()->can('formation-view-statistics')) {
+            abort(403, 'Accès non autorisé.');
+        }
 
-    $formation = Formation::with('category', 'consultant')->findOrFail($formationId);
-    
-    // Si c'est un consultant, vérifier qu'il est propriétaire de la formation
-    if (Auth::user()->hasRole('Consultant') && $formation->consultant_id !== Auth::id()) {
-        abort(403, 'Vous pouvez uniquement voir les évaluations de vos propres formations.');
-    }
+        $formation = Formation::with('category', 'consultant')->findOrFail($formationId);
+        
+        // Si c'est un consultant, vérifier qu'il est propriétaire de la formation
+        if (Auth::user()->hasRole('Consultant') && $formation->consultant_id !== Auth::id()) {
+            abort(403, 'Vous pouvez uniquement voir les évaluations de vos propres formations.');
+        }
 
-    // Récupérer toutes les évaluations soumises pour cette formation
-    $surveys = SatisfactionSurvey::with('user')
-        ->where('formation_id', $formationId)
-        ->where('status', 'submitted')
-        ->latest('submitted_at')
-        ->paginate(15);
-
-    // Calculer les statistiques
-    $statistics = [
-        'total_surveys' => $surveys->total(),
-        'average_content_quality' => round(
-            SatisfactionSurvey::where('formation_id', $formationId)
-                ->where('status', 'submitted')
-                ->avg('content_quality'), 
-            2
-        ),
-        'average_instructor_rating' => round(
-            SatisfactionSurvey::where('formation_id', $formationId)
-                ->where('status', 'submitted')
-                ->avg('instructor_rating'), 
-            2
-        ),
-        'average_organization' => round(
-            SatisfactionSurvey::where('formation_id', $formationId)
-                ->where('status', 'submitted')
-                ->avg('organization_rating'), 
-            2
-        ),
-        'average_support' => round(
-            SatisfactionSurvey::where('formation_id', $formationId)
-                ->where('status', 'submitted')
-                ->avg('support_rating'), 
-            2
-        ),
-        'average_overall' => round(
-            SatisfactionSurvey::where('formation_id', $formationId)
-                ->where('status', 'submitted')
-                ->avg('overall_satisfaction'), 
-            2
-        ),
-        'would_recommend_count' => SatisfactionSurvey::where('formation_id', $formationId)
+        // Récupérer toutes les évaluations soumises pour cette formation
+        $surveys = SatisfactionSurvey::with('user')
+            ->where('formation_id', $formationId)
             ->where('status', 'submitted')
-            ->where('would_recommend', true)
-            ->count(),
-        'would_not_recommend_count' => SatisfactionSurvey::where('formation_id', $formationId)
-            ->where('status', 'submitted')
-            ->where('would_recommend', false)
-            ->count(),
-    ];
+            ->latest('submitted_at')
+            ->paginate(15);
 
-    // Calculer le taux de recommandation
-    $totalSurveys = $statistics['would_recommend_count'] + $statistics['would_not_recommend_count'];
-    $statistics['recommendation_rate'] = $totalSurveys > 0 
-        ? round(($statistics['would_recommend_count'] / $totalSurveys) * 100, 2) 
-        : 0;
+        // Calculer les statistiques
+        $statistics = [
+            'total_surveys' => $surveys->total(),
+            'average_content_quality' => round(
+                SatisfactionSurvey::where('formation_id', $formationId)
+                    ->where('status', 'submitted')
+                    ->avg('content_quality'), 
+                2
+            ),
+            'average_instructor_rating' => round(
+                SatisfactionSurvey::where('formation_id', $formationId)
+                    ->where('status', 'submitted')
+                    ->avg('instructor_rating'), 
+                2
+            ),
+            'average_organization' => round(
+                SatisfactionSurvey::where('formation_id', $formationId)
+                    ->where('status', 'submitted')
+                    ->avg('organization_rating'), 
+                2
+            ),
+            'average_support' => round(
+                SatisfactionSurvey::where('formation_id', $formationId)
+                    ->where('status', 'submitted')
+                    ->avg('support_rating'), 
+                2
+            ),
+            'average_overall' => round(
+                SatisfactionSurvey::where('formation_id', $formationId)
+                    ->where('status', 'submitted')
+                    ->avg('overall_satisfaction'), 
+                2
+            ),
+            'would_recommend_count' => SatisfactionSurvey::where('formation_id', $formationId)
+                ->where('status', 'submitted')
+                ->where('would_recommend', true)
+                ->count(),
+            'would_not_recommend_count' => SatisfactionSurvey::where('formation_id', $formationId)
+                ->where('status', 'submitted')
+                ->where('would_recommend', false)
+                ->count(),
+        ];
 
-    return view('satisfaction.formation-evaluations', compact('formation', 'surveys', 'statistics'));
-}
+        // Calculer le taux de recommandation
+        $totalSurveys = $statistics['would_recommend_count'] + $statistics['would_not_recommend_count'];
+        $statistics['recommendation_rate'] = $totalSurveys > 0 
+            ? round(($statistics['would_recommend_count'] / $totalSurveys) * 100, 2) 
+            : 0;
+
+        return view('satisfaction.formation-evaluations', compact('formation', 'surveys', 'statistics'));
+    }
 }
