@@ -572,6 +572,11 @@
 .table-container::-webkit-scrollbar-thumb:hover {
   background: var(--gradient-primary);
 }
+
+span.badge.badge-en_traitement {
+    color: black;
+    background-color: #d98888;
+}
 </style>
 
 <div class="page-container">

@@ -746,7 +746,7 @@
                     <div class="view-toggle me-3 d-inline-flex">
                         <a href="{{ route('courses.index', ['view_mode' => 'list'] + request()->except('view_mode', 'week_offset')) }}" 
                            class="btn-toggle {{ $viewMode === 'list' ? 'active' : '' }}">
-                            <i class="fas fa-list me-2"></i>Liste
+                            <i class="fas fa-list me-2"></i>coures
                         </a>
                         <a href="{{ route('courses.index', ['view_mode' => 'planning'] + request()->except('view_mode')) }}" 
                            class="btn-toggle {{ $viewMode === 'planning' ? 'active' : '' }}">
