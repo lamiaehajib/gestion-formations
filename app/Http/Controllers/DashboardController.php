@@ -588,25 +588,23 @@ private function getConsultantDashboardData(User $user, Request $request)
 
     // 🔥 Kan-prepare global modules progress chart (ga3 les modules dyal ga3 les formations)
     $allModules = $formationsWithModulesProgress->flatMap(function($formation) {
-        return $formation->modules->map(function($module) use ($formation) {
-            $module->formation_title = $formation->title;
-            return $module;
-        });
+    return $formation->modules->map(function($module) use ($formation) {
+        $module->formation_title = $formation->title;
+        return $module;
     });
+});
 
-    $globalModulesChart = [
-        'labels' => $allModules->map(function($module) {
-            return $module->formation_title . ' - ' . $module->title;
-        })->toArray(),
-        'data' => $allModules->pluck('progress')->toArray(),
-        'backgroundColor' => $allModules->map(function($module) {
-            if ($module->progress >= 80) return '#28a745';
-            elseif ($module->progress >= 60) return '#17a2b8';
-            elseif ($module->progress >= 40) return '#ffc107';
-            elseif ($module->progress >= 20) return '#fd7e14';
-            else return '#dc3545';
-        })->toArray(),
-    ];
+   $globalModulesChart = [
+    'labels' => $allModules->pluck('title')->toArray(), // 🔥 HADI TBEDLET: ghir title dyal module
+    'data' => $allModules->pluck('progress')->toArray(),
+    'backgroundColor' => $allModules->map(function($module) {
+        if ($module->progress >= 80) return '#28a745';
+        elseif ($module->progress >= 60) return '#17a2b8';
+        elseif ($module->progress >= 40) return '#ffc107';
+        elseif ($module->progress >= 20) return '#fd7e14';
+        else return '#dc3545';
+    })->toArray(),
+];
 
     // Données pour les graphiques (existing code)
     $paymentStatusDistribution = Payment::whereHas('inscription', function($q) use ($user) {
