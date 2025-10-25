@@ -1377,6 +1377,20 @@
         margin-top: 8px;
         font-size: 13px;
     }
+    .form-group textarea {
+    width: 100%;
+    padding: 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    transition: all 0.3s 
+ease;
+    background: white;
+    line-height: 1.6;
+    color: black !important;
+}
 </style>
 
 <div class="admin-wrapper">
