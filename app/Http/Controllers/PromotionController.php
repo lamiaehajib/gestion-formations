@@ -196,6 +196,7 @@ class PromotionController extends Controller
                 $studentInfo = [
                     'name' => $user->name,
                     'email' => $user->email,
+                    'phone' => $user->phone,
                     'inscription_date' => $inscription->inscription_date,
                     'total_amount' => $inscription->total_amount,
                     'paid_amount' => $inscription->paid_amount,
@@ -239,6 +240,7 @@ class PromotionController extends Controller
             $headers_excel = [
                 'Nom Étudiant',
                 'Email',
+                'tele',
                 'Montant Total',
                 'Montant Payé',
                 'Reste à Payer',
