@@ -162,122 +162,128 @@ class PromotionController extends Controller
     /**
      * Generate promotion report with detailed payment information.
      */
-    public function generateReport(Promotion $promotion, Request $request)
-    {
-        $promotion->load([
-            'formation.category',
-            'users' => function ($query) use ($promotion) {
-                $query->with([
-                    'inscriptions' => function ($q) use ($promotion) {
-                        $q->where('formation_id', $promotion->formation_id)->with('payments');
-                    }
-                ]);
-            },
-        ]);
-
-        $reportData = [
-            'promotion' => $promotion,
-            'generation_date' => now(),
-            'students' => [],
-            'summary' => [
-                'total_students' => 0,
-                'total_revenue' => 0,
-                'total_paid' => 0,
-                'total_remaining' => 0,
-                'fully_paid_count' => 0,
-                'partially_paid_count' => 0,
-                'unpaid_count' => 0,
-            ]
-        ];
-
-        foreach ($promotion->users as $user) {
-            $inscription = $user->inscriptions->first();
-            if ($inscription) {
-                $studentInfo = [
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'inscription_date' => $inscription->inscription_date,
-                    'total_amount' => $inscription->total_amount,
-                    'paid_amount' => $inscription->paid_amount,
-                    'remaining_amount' => $inscription->remaining_amount,
-                    'payment_type' => $inscription->payment_type,
-                    'payment_status' => $inscription->payment_status_label,
-                    'payments' => $inscription->payments->map(function ($payment) {
-                        return [
-                            'amount' => $payment->amount,
-                            'paid_date' => $payment->paid_date,
-                            'payment_method' => $payment->payment_method,
-                            'reference' => $payment->reference,
-                        ];
-                    })->toArray()
-                ];
-                $reportData['students'][] = $studentInfo;
-                $reportData['summary']['total_students']++;
-                $reportData['summary']['total_revenue'] += $inscription->total_amount;
-                $reportData['summary']['total_paid'] += $inscription->paid_amount;
-                $reportData['summary']['total_remaining'] += $inscription->remaining_amount;
-
-                if ($inscription->remaining_amount <= 0.01) {
-                    $reportData['summary']['fully_paid_count']++;
-                } elseif ($inscription->paid_amount > 0) {
-                    $reportData['summary']['partially_paid_count']++;
-                } else {
-                    $reportData['summary']['unpaid_count']++;
+   /**
+ * Generate promotion report with detailed payment information.
+ */
+public function generateReport(Promotion $promotion, Request $request)
+{
+    $promotion->load([
+        'formation.category',
+        'users' => function ($query) use ($promotion) {
+            $query->with([
+                'inscriptions' => function ($q) use ($promotion) {
+                    $q->where('formation_id', $promotion->formation_id)->with('payments');
                 }
-            }
-        }
+            ]);
+        },
+    ]);
 
-        $format = $request->input('format', 'html');
+    $reportData = [
+        'promotion' => $promotion,
+        'generation_date' => now(),
+        'students' => [],
+        'summary' => [
+            'total_students' => 0,
+            'total_revenue' => 0,
+            'total_paid' => 0,
+            'total_remaining' => 0,
+            'fully_paid_count' => 0,
+            'partially_paid_count' => 0,
+            'unpaid_count' => 0,
+        ]
+    ];
 
-        if ($format === 'pdf') {
-            $pdf = PDF::loadView('promotions.report', compact('reportData'));
-            return $pdf->download('rapport-' . $promotion->name . '.pdf');
-        } elseif ($format === 'excel') {
-            $output = fopen('php://temp', 'r+');
-            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
-
-            $headers_excel = [
-                'Nom Étudiant',
-                'Email',
-                'tele',
-                'Montant Total',
-                'Montant Payé',
-                'Reste à Payer',
-                'Type de Paiement',
-                'Statut Paiement'
+    foreach ($promotion->users as $user) {
+        $inscription = $user->inscriptions->first();
+        if ($inscription) {
+            $studentInfo = [
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone, // ✅ Téléphone ajouté
+                'inscription_date' => $inscription->inscription_date,
+                'total_amount' => $inscription->total_amount,
+                'paid_amount' => $inscription->paid_amount,
+                'remaining_amount' => $inscription->remaining_amount,
+                'payment_type' => $inscription->payment_type,
+                'payment_status' => $inscription->payment_status_label,
+                'payments' => $inscription->payments->map(function ($payment) {
+                    return [
+                        'amount' => $payment->amount,
+                        'paid_date' => $payment->paid_date,
+                        'payment_method' => $payment->payment_method,
+                        'reference' => $payment->reference,
+                    ];
+                })->toArray()
             ];
-            fputcsv($output, $headers_excel, ';');
+            $reportData['students'][] = $studentInfo;
+            $reportData['summary']['total_students']++;
+            $reportData['summary']['total_revenue'] += $inscription->total_amount;
+            $reportData['summary']['total_paid'] += $inscription->paid_amount;
+            $reportData['summary']['total_remaining'] += $inscription->remaining_amount;
 
-            foreach ($reportData['students'] as $student) {
-                $name = str_replace(';', ',', $student['name']);
-                $email = str_replace(';', ',', $student['email']);
-
-                fputcsv($output, [
-                    $name,
-                    $email,
-                    number_format($student['total_amount'], 2, '.', ''),
-                    number_format($student['paid_amount'], 2, '.', ''),
-                    number_format($student['remaining_amount'], 2, '.', ''),
-                    $student['payment_type'],
-                    $student['payment_status'],
-                ], ';');
+            if ($inscription->remaining_amount <= 0.01) {
+                $reportData['summary']['fully_paid_count']++;
+            } elseif ($inscription->paid_amount > 0) {
+                $reportData['summary']['partially_paid_count']++;
+            } else {
+                $reportData['summary']['unpaid_count']++;
             }
-
-            rewind($output);
-            $csv = stream_get_contents($output);
-            fclose($output);
-
-            $headers = [
-                'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
-                'Content-Disposition' => 'attachment; filename="rapport-' . $promotion->name . '_' . date('Ymd') . '.csv"',
-            ];
-
-            return response($csv, 200, $headers);
-        } else {
-            return view('promotions.report', compact('reportData'));
         }
     }
+
+    $format = $request->input('format', 'html');
+
+    if ($format === 'pdf') {
+        $pdf = PDF::loadView('promotions.report', compact('reportData'));
+        return $pdf->download('rapport-' . $promotion->name . '.pdf');
+    } elseif ($format === 'excel') {
+        $output = fopen('php://temp', 'r+');
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        // ✅ En-têtes Excel mis à jour avec Téléphone
+        $headers_excel = [
+            'Nom Étudiant',
+            'Email',
+            'Téléphone', // ✅ Nouvelle colonne
+            'Montant Total',
+            'Montant Payé',
+            'Reste à Payer',
+            'Type de Paiement',
+            'Statut Paiement'
+        ];
+        fputcsv($output, $headers_excel, ';');
+
+        foreach ($reportData['students'] as $student) {
+            $name = str_replace(';', ',', $student['name']);
+            $email = str_replace(';', ',', $student['email']);
+            $phone = str_replace(';', ',', $student['phone'] ?? 'N/A'); // ✅ Téléphone avec valeur par défaut
+
+            fputcsv($output, [
+                $name,
+                $email,
+                $phone, // ✅ Téléphone ajouté
+                number_format($student['total_amount'], 2, '.', ''),
+                number_format($student['paid_amount'], 2, '.', ''),
+                number_format($student['remaining_amount'], 2, '.', ''),
+                $student['payment_type'],
+                $student['payment_status'],
+            ], ';');
+        }
+
+        rewind($output);
+        $csv = stream_get_contents($output);
+        fclose($output);
+
+        $headers = [
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="rapport-' . $promotion->name . '_' . date('Ymd') . '.csv"',
+        ];
+
+        return response($csv, 200, $headers);
+    } else {
+        return view('promotions.report', compact('reportData'));
+    }
+}
 
     /**
      * Store a new promotion in bulk from the modal form.
