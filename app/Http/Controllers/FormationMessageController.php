@@ -393,60 +393,72 @@ class FormationMessageController extends Controller
 
 
 
+// Dans FormationMessageController.php - Remplacer la méthode getMessageDetails
+
 public function getMessageDetails($id)
 {
-    $message = FormationMessage::with([
-        'formations.activeStudents',
-        'recipientRecords.user',
-        'recipientRecords.inscription.formation',
-        'sender'
-    ])->findOrFail($id);
+    try {
+        $message = FormationMessage::with([
+            'formations' => function($query) {
+                $query->with('inscriptions');
+            },
+            'recipientRecords.user',
+            'recipientRecords.inscription.formation',
+            'sender'
+        ])->findOrFail($id);
 
-    // Calculate stats
-    $recipientsCount = $message->recipientRecords->count();
-    $readCount = $message->recipientRecords->where('is_read', true)->count();
-    $unreadCount = $recipientsCount - $readCount;
-    $readPercentage = $recipientsCount > 0 ? round(($readCount / $recipientsCount) * 100) : 0;
+        // Calculate stats
+        $recipientsCount = $message->recipientRecords->count();
+        $readCount = $message->recipientRecords->where('is_read', true)->count();
+        $unreadCount = $recipientsCount - $readCount;
+        $readPercentage = $recipientsCount > 0 ? round(($readCount / $recipientsCount) * 100) : 0;
 
-    // Format formations
-    $formations = $message->formations->map(function ($formation) {
-        return [
-            'title' => $formation->title,
-            'count' => $formation->activeStudents->count() . ' étudiant(s)'
-        ];
-    });
+        // Format formations avec leurs IDs
+        $formations = $message->formations->map(function ($formation) {
+            return [
+                'id' => $formation->id,
+                'title' => $formation->title,
+                'count' => $formation->active_students_count . ' étudiant(s)'
+            ];
+        });
 
-   
-    $recipients = $message->recipientRecords->map(function ($recipient) {
-        return [
-            'name' => $recipient->user->name,
-            'email' => $recipient->user->email,
-            'formation' => $recipient->inscription->formation->title ?? 'Non spécifié',
-            'isRead' => $recipient->is_read,
-            'readAt' => $recipient->read_at ? $recipient->read_at->diffForHumans() : null
-        ];
-    });
+        // Format recipients
+        $recipients = $message->recipientRecords->map(function ($recipient) {
+            return [
+                'name' => $recipient->user->name,
+                'email' => $recipient->user->email,
+                'formation' => $recipient->inscription->formation->title ?? 'Non spécifié',
+                'isRead' => $recipient->is_read,
+                'readAt' => $recipient->read_at ? $recipient->read_at->diffForHumans() : null
+            ];
+        });
 
-    return response()->json([
-        'id' => $message->id,
-        'subject' => $message->subject,
-        'message' => $message->message,
-        'priority' => $message->priority,
-        'audio_path' => $message->audio_path,
-        'audio_duration' => $message->audio_duration,
-        'created_at' => $message->created_at->format('Y-m-d H:i'),
-        'sent_at' => $message->sent_at ? $message->sent_at->diffForHumans() : null,
-        'sender' => [
-            'name' => $message->sender->name ?? 'Inconnu'
-        ],
-        'stats' => [
-            'total' => $recipientsCount,
-            'read' => $readCount,
-            'unread' => $unreadCount,
-            'percentage' => $readPercentage
-        ],
-        'formations' => $formations,
-        'recipients' => $recipients
-    ]);
+        return response()->json([
+            'id' => $message->id,
+            'subject' => $message->subject,
+            'message' => $message->message,
+            'priority' => $message->priority,
+            'audio_path' => $message->audio_path,
+            'audio_duration' => $message->audio_duration,
+            'created_at' => $message->created_at->format('Y-m-d H:i'),
+            'sent_at' => $message->sent_at ? $message->sent_at->diffForHumans() : null,
+            'sender' => [
+                'name' => $message->sender->name ?? 'Inconnu'
+            ],
+            'stats' => [
+                'total' => $recipientsCount,
+                'read' => $readCount,
+                'unread' => $unreadCount,
+                'percentage' => $readPercentage
+            ],
+            'formations' => $formations,
+            'recipients' => $recipients
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Erreur getMessageDetails: ' . $e->getMessage());
+        return response()->json([
+            'error' => 'Impossible de charger le message'
+        ], 500);
+    }
 }
 }

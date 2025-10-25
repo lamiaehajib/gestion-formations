@@ -348,21 +348,64 @@ Route::get('/download-backup', [BackupController::class, 'download'])->name('dow
  
 Route::prefix('messages')->name('messages.')->middleware(['auth', 'can:message-list-all'])->group(function () {
     Route::get('/', [FormationMessageController::class, 'index'])->name('index');
-    Route::get('/create', [FormationMessageController::class, 'create'])->name('create')->withoutMiddleware(['can:message-list-all'])->middleware('can:message-create');
-    Route::post('/', [FormationMessageController::class, 'store'])->name('store')->withoutMiddleware(['can:message-list-all'])->middleware('can:message-create');
+    Route::get('/create', [FormationMessageController::class, 'create'])
+        ->name('create')
+        ->withoutMiddleware(['can:message-list-all'])
+        ->middleware('can:message-create');
+    Route::post('/', [FormationMessageController::class, 'store'])
+        ->name('store')
+        ->withoutMiddleware(['can:message-list-all'])
+        ->middleware('can:message-create');
     
-    // ✨ NOUVELLE ROUTE: API pour récupérer les détails en JSON
-    Route::get('/{id}/details', [FormationMessageController::class, 'getMessageDetails'])->name('details')->withoutMiddleware(['can:message-list-all'])->middleware('can:message-view-all');
+    // ✨ Route pour récupérer les détails d'un message en JSON
+    Route::get('/{id}/details', [FormationMessageController::class, 'getMessageDetails'])
+        ->name('details')
+        ->withoutMiddleware(['can:message-list-all'])
+        ->middleware('can:message-view-all');
     
-    Route::get('/{id}', [FormationMessageController::class, 'show'])->name('show')->withoutMiddleware(['can:message-list-all'])->middleware('can:message-view-all');
-    Route::delete('/{id}', [FormationMessageController::class, 'destroy'])->name('destroy')->withoutMiddleware(['can:message-list-all'])->middleware('can:message-delete');
+    Route::get('/{id}', [FormationMessageController::class, 'show'])
+        ->name('show')
+        ->withoutMiddleware(['can:message-list-all'])
+        ->middleware('can:message-view-all');
+    
+    Route::delete('/{id}', [FormationMessageController::class, 'destroy'])
+        ->name('destroy')
+        ->withoutMiddleware(['can:message-list-all'])
+        ->middleware('can:message-delete');
+    
     Route::post('/get-students-count', [FormationMessageController::class, 'getFormationStudentsCount'])
         ->name('students-count')
-        ->withoutMiddleware(['can:message-list-all'])->middleware('can:message-get-students-count');
-    Route::get('/{id}/edit', [FormationMessageController::class, 'edit'])->name('edit');
-    Route::put('/{id}', [FormationMessageController::class, 'update'])->name('update');
+        ->withoutMiddleware(['can:message-list-all'])
+        ->middleware('can:message-get-students-count');
+    
+    Route::get('/{id}/edit', [FormationMessageController::class, 'edit'])
+        ->name('edit')
+        ->withoutMiddleware(['can:message-list-all'])
+        ->middleware('can:message-view-all');
+    
+    Route::put('/{id}', [FormationMessageController::class, 'update'])
+        ->name('update')
+        ->withoutMiddleware(['can:message-list-all'])
+        ->middleware('can:message-view-all');
 });
 
+// ✨ NOUVELLE ROUTE: API formations (EN DEHORS du groupe messages)
+Route::get('/api/formations', function() {
+    $formations = \App\Models\Formation::where('status', 'published')
+        ->withCount(['inscriptions' => function($query) {
+            $query->whereIn('status', ['active', 'pending', 'completed']);
+        }])
+        ->get()
+        ->map(function ($formation) {
+            return [
+                'id' => $formation->id,
+                'title' => $formation->title,
+                'students_count' => $formation->inscriptions_count ?? 0,
+            ];
+        });
+    
+    return response()->json($formations);
+})->middleware('auth')->name('api.formations');
 
 // Routes pour les Students (vues publiques des messages de l'étudiant)
 // Ces routes doivent utiliser une permission différente pour leur accès.

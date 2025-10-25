@@ -1925,55 +1925,112 @@ function closeCreateModal() {
 }
 
 function openEditModal(messageId) {
+    // Réinitialiser le formulaire d'abord
+    document.getElementById('editForm').reset();
+    
+    // Masquer les sections audio/preview
+    document.getElementById('currentAudioEdit').style.display = 'none';
+    document.getElementById('audioPreviewEdit').classList.remove('active');
+    
+    // Réinitialiser les boutons audio
+    const editModal = document.getElementById('editModal');
+    editModal.querySelector('.btn-record').disabled = false;
+    editModal.querySelector('.btn-stop').disabled = true;
+    editModal.querySelector('.btn-play').disabled = true;
+    
+    // Charger les données du message
     fetch(`/messages/${messageId}/details`, {
         headers: {
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) throw new Error('Erreur de chargement');
+        return response.json();
+    })
     .then(data => {
-        document.getElementById('editSubject').value = data.subject;
+        // Remplir les champs du formulaire
+        document.getElementById('editSubject').value = data.subject || '';
         document.getElementById('editMessage').value = data.message || '';
-        document.getElementById('editPriority').value = data.priority;
+        document.getElementById('editPriority').value = data.priority || 'normal';
         document.getElementById('editForm').action = `/messages/${messageId}`;
         
-        // Audio actuel
+        // Gérer l'audio actuel
         if (data.audio_path) {
-            document.getElementById('currentAudioEdit').style.display = 'block';
-            document.getElementById('currentAudioPlayer').src = '/storage/' + data.audio_path;
-        } else {
-            document.getElementById('currentAudioEdit').style.display = 'none';
+            const currentAudioEdit = document.getElementById('currentAudioEdit');
+            const currentAudioPlayer = document.getElementById('currentAudioPlayer');
+            currentAudioEdit.style.display = 'block';
+            currentAudioPlayer.src = '/storage/' + data.audio_path;
+            
+            // Décocher la case "Supprimer" par défaut
+            const removeCheckbox = currentAudioEdit.querySelector('input[name="remove_audio"]');
+            if (removeCheckbox) removeCheckbox.checked = false;
         }
         
-        // Formations
-        fetch('/api/formations')
-            .then(res => res.json())
-            .then(formations => {
-                let html = '';
-                formations.forEach(formation => {
-                    const checked = data.formations.some(f => f.title === formation.title) ? 'checked' : '';
-                    html += `
-                        <div class="formation-item">
-                            <input type="checkbox" name="formation_ids[]" value="${formation.id}" class="formation-checkbox" id="formation_edit_${formation.id}" ${checked}>
-                            <label for="formation_edit_${formation.id}" class="formation-label">
-                                <span>${formation.title}</span>
-                                <span class="formation-count-badge">${formation.students_count} étudiants</span>
-                            </label>
-                        </div>
-                    `;
-                });
-                document.getElementById('editFormationsList').innerHTML = html;
+        // Charger et remplir les formations
+        return fetch('/api/formations', {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(res => res.json()).then(formations => {
+            const editFormationsList = document.getElementById('editFormationsList');
+            
+            // Extraire les IDs des formations sélectionnées
+            const selectedIds = data.formations.map(f => {
+                // Chercher l'ID correspondant dans la liste complète
+                const found = formations.find(formation => formation.title === f.title);
+                return found ? found.id : null;
+            }).filter(id => id !== null);
+            
+            // Générer le HTML des formations
+            let html = '';
+            formations.forEach(formation => {
+                const isChecked = selectedIds.includes(formation.id) ? 'checked' : '';
+                html += `
+                    <div class="formation-item">
+                        <input type="checkbox" 
+                               name="formation_ids[]" 
+                               value="${formation.id}" 
+                               class="formation-checkbox" 
+                               id="formation_edit_${formation.id}" 
+                               ${isChecked}>
+                        <label for="formation_edit_${formation.id}" class="formation-label">
+                            <span>${formation.title}</span>
+                            <span class="formation-count-badge">${formation.students_count || 0} étudiants</span>
+                        </label>
+                    </div>
+                `;
             });
-        
-        document.getElementById('editModal').classList.add('active');
-        document.body.style.overflow = 'hidden';
+            
+            editFormationsList.innerHTML = html;
+            
+            // Afficher le modal
+            document.getElementById('editModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+    })
+    .catch(error => {
+        console.error('Erreur lors du chargement du message:', error);
+        alert('Erreur lors du chargement du message. Veuillez réessayer.');
     });
 }
 
+// Fonction pour fermer le modal d'édition
 function closeEditModal() {
     document.getElementById('editModal').classList.remove('active');
     document.body.style.overflow = 'auto';
+    
+    // Arrêter tout enregistrement en cours
+    if (mediaRecorders.edit && mediaRecorders.edit.state !== 'inactive') {
+        stopRecording('edit');
+    }
+    
+    // Réinitialiser le formulaire
+    document.getElementById('editForm').reset();
+    document.getElementById('currentAudioEdit').style.display = 'none';
+    document.getElementById('audioPreviewEdit').classList.remove('active');
 }
 
 // Tab Switching
