@@ -1438,7 +1438,7 @@ ease;
                         <div class="message-avatar">{{ strtoupper(substr($msg->sender->name ?? 'A', 0, 1)) }}</div>
                         <div class="message-content">
                             <div class="message-header">
-                                <div class="message-subject">{{ $msg->subject }}</div>
+                                <div class="message-subject">{!! nl2br(e($msg->subject)) !!}</div>
                                 <div class="message-time">{{ $msg->created_at->format('H:i') }}</div>
                             </div>
                             <div class="message-meta">
