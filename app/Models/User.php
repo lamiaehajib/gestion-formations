@@ -246,4 +246,29 @@ class User extends Authenticatable
     return $this->hasMany(SatisfactionSurvey::class);
 }
 
+public function attestations()
+{
+    return $this->hasMany(Attestation::class);
+}
+
+// Attestations li dar Admin
+public function processedAttestations()
+{
+    return $this->hasMany(Attestation::class, 'processed_by');
+}
+
+public function hasActiveInscriptionInProfessionalFormation()
+{
+    return $this->inscriptions()
+        ->where('status', 'active')
+        ->whereHas('formation.category', function ($query) {
+            $query->whereIn('name', [
+                'Licence Professionnelle',
+                'Master Professionnelle',
+                'LICENCE PROFESSIONNELLE RECONNU'
+            ]);
+        })
+        ->exists();
+}
+
 }

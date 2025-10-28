@@ -84,6 +84,10 @@ class Inscription extends Model
     {
         return $this->satisfactionSurvey()->exists();
     }
+    public function attestations()
+{
+    return $this->hasMany(Attestation::class);
+}
 
     /**
      * Scope pour les inscriptions complétées sans sondage

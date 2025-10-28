@@ -626,6 +626,15 @@
                         </a>
                     </li>
 
+                    @if(Auth::check() && Auth::user()->hasRole('Etudiant') && Auth::user()->hasActiveInscriptionInProfessionalFormation())
+    <li class="sidebar-menu__item">
+        <a href="{{ route('student.attestations.index') }}" class="sidebar-menu__link">
+            <span class="icon"><i class="ph ph-certificate"></i></span>
+            <span class="text">Mes Attestations</span>
+        </a>
+    </li>
+@endif
+
                     
                     <li class="sidebar-menu__item">
                         <a href="{{ route('course_reschedules.index') }}" class="sidebar-menu__link">
@@ -640,6 +649,15 @@
                             <span class="text">Réclamations</span>
                         </a>
                     </li>
+
+                    @can('message-list-all')
+                    <li class="sidebar-menu__item">
+                        <a href="{{ route('admin.attestations.index') }}" class="sidebar-menu__link">
+                            <span class="icon"><i class="ph ph-certificate"></i></span>
+                            <span class="text">les attestations</span>
+                        </a>
+                    </li>
+                    @endcan
 
                      @can('message-view-own')
                      <li class="sidebar-menu__item">

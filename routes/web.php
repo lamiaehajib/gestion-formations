@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AjaxController;
+use App\Http\Controllers\AttestationController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
@@ -487,6 +488,27 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/formations/{formation}/evaluations', [SatisfactionSurveyController::class, 'formationEvaluations'])
     ->name('formations.evaluations');
+
+
+Route::prefix('student/attestations')->name('student.attestations.')->group(function () {
+    Route::get('/', [AttestationController::class, 'myAttestations'])->name('index');
+    Route::get('/create', [AttestationController::class, 'create'])->name('create');
+    Route::post('/', [AttestationController::class, 'store'])->name('store');
+    Route::get('/{attestation}/download', [AttestationController::class, 'download'])->name('download');
+});
+
+// Routes pour l'admin
+Route::prefix('admin/attestations')->name('admin.attestations.')->group(function () {
+    Route::get('/att', [AttestationController::class, 'index'])->name('index');
+    
+    // NEW: Route pour télécharger et passer en "en_traitement"
+    Route::get('/{attestation}/download-for-processing', [AttestationController::class, 'downloadForProcessing'])->name('download-for-processing');
+    
+    Route::post('/{attestation}/upload-signed', [AttestationController::class, 'uploadSigned'])->name('upload-signed');
+    Route::get('/{attestation}/download', [AttestationController::class, 'download'])->name('download');
+    Route::delete('/{attestation}', [AttestationController::class, 'destroy'])->name('destroy');
+});
+
 });
 
 
