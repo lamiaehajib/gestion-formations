@@ -630,7 +630,7 @@
     <li class="sidebar-menu__item">
         <a href="{{ route('student.attestations.index') }}" class="sidebar-menu__link">
             <span class="icon"><i class="ph ph-certificate"></i></span>
-            <span class="text">Mes Attestations</span>
+            <span class="text">Attestations</span>
         </a>
     </li>
 @endif
