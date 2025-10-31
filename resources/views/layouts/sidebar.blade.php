@@ -584,6 +584,7 @@
         </a>
     </li>
 @endif
+
                       @can('payment-list')
                     <li class="sidebar-menu__item">
                         <a href="{{ route('payments.index') }}" class="sidebar-menu__link">
@@ -658,7 +659,7 @@
                         </a>
                     </li>
                     @endcan
-
+                
                      @can('message-view-own')
                      <li class="sidebar-menu__item">
     <a href="{{ route('satisfaction.index') }}" class="sidebar-menu__link">
