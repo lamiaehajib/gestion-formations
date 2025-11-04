@@ -594,6 +594,15 @@
                     </li>
                     @endcan
 
+                    @can('message-list-all')
+<li class="sidebar-menu__item">
+                        <a href="{{ route('payment-reminders.index') }}" class="sidebar-menu__link">
+                            <span class="icon"><i class="ph ph-bell"></i></span>
+                            <span class="text">Rappels</span>
+                        </a>
+                    </li>
+                    @endcan
+
                     <li class="sidebar-menu__item">
                         <a href="{{ route('modules.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-squares-four"></i></span>

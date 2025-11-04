@@ -6,32 +6,45 @@
     $user = Auth::user();
     $showPaymentReminder = false;
     $inscriptions = collect();
-    $dueDate = Carbon::create(2025, 11, 5); // 5 novembre 2025
-    $today = Carbon::today();
-    $daysRemaining = $today->diffInDays($dueDate, false);
+    $dueDate = null;
+    $daysRemaining = 0;
     
     // Vérifier si l'utilisateur a le rôle étudiant
-    if ($user && $user->hasRole('Etudiant')) {
-        // Catégories spécifiques
-        $targetCategories = ['LICENCE PROFESSIONNELLE RECONNU', 'Master Professionnelle', 'Licence Professionnelle'];
+    if ($user && $user->hasRole('etudiant')) {
+        // Vérifier si Admin a activé un rappel pour cet étudiant
+        $activeReminder = \App\Models\PaymentReminder::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->where('expiry_date', '>=', Carbon::today())
+            ->first();
         
-        // Récupérer les inscriptions actives avec montant restant
-        $inscriptions = \App\Models\Inscription::where('user_id', $user->id)
-            ->whereIn('status', ['active', 'pending'])
-            ->whereHas('formation.category', function($q) use ($targetCategories) {
-                $q->whereIn('name', $targetCategories);
-            })
-            ->with(['formation', 'formation.category'])
-            ->get()
-            ->filter(function($inscription) {
-                return $inscription->remaining_amount > 0.01;
-            });
-        
-        // Afficher le modal seulement si:
-        // 1. Il y a des inscriptions concernées
-        // 2. La date d'échéance n'est pas dépassée
-        // 3. L'utilisateur n'a pas fermé le modal aujourd'hui (via localStorage)
-        $showPaymentReminder = $inscriptions->isNotEmpty() && $daysRemaining >= 0;
+        if ($activeReminder) {
+            // Catégories spécifiques
+            $targetCategories = ['LICENCE PROFESSIONNELLE RECONNU', 'Master Professionnelle', 'Licence Professionnelle'];
+            
+            // Récupérer les inscriptions actives avec montant restant
+            $inscriptions = \App\Models\Inscription::where('user_id', $user->id)
+                ->whereIn('status', ['active', 'pending'])
+                ->whereHas('formation.category', function($q) use ($targetCategories) {
+                    $q->whereIn('name', $targetCategories);
+                })
+                ->with(['formation', 'formation.category'])
+                ->get()
+                ->filter(function($inscription) {
+                    return $inscription->remaining_amount > 0.01;
+                });
+            
+            if ($inscriptions->isNotEmpty()) {
+                $dueDate = $activeReminder->expiry_date;
+                $today = Carbon::today();
+                $daysRemaining = $today->diffInDays($dueDate, false);
+                
+                // Afficher le modal seulement si:
+                // 1. Il y a des inscriptions concernées
+                // 2. La date d'échéance n'est pas dépassée
+                // 3. L'utilisateur n'a pas fermé le modal aujourd'hui
+                $showPaymentReminder = $daysRemaining >= 0;
+            }
+        }
     }
 @endphp
 
@@ -79,7 +92,7 @@
                     </p>
                     <p style="color: #4b5563; line-height: 1.8;">
                         Nous vous rappelons que le paiement de vos mensualités pour vos formations doit être effectué 
-                        <strong class="text-danger">avant le 5 novembre 2025</strong>. Veuillez régulariser votre situation 
+                        <strong class="text-danger">avant le {{ $dueDate->format('d/m/Y') }}</strong>. Veuillez régulariser votre situation 
                         dans les plus brefs délais pour éviter toute interruption de votre accès aux cours.
                     </p>
                 </div>
@@ -219,7 +232,7 @@
         
         if (modalElement) {
             // Vérifier si l'utilisateur a déjà fermé le modal aujourd'hui
-            const lastDismissed = localStorage.getItem('paymentReminderDismissed');
+            const lastDismissed = localStorage.getItem('paymentReminderDismissed_{{ $user->id }}');
             const today = new Date().toDateString();
             
             if (lastDismissed !== today) {
@@ -232,12 +245,12 @@
             
             // Enregistrer la fermeture du modal
             remindLaterBtn.addEventListener('click', function() {
-                localStorage.setItem('paymentReminderDismissed', today);
+                localStorage.setItem('paymentReminderDismissed_{{ $user->id }}', today);
             });
             
             // Enregistrer également lors de la fermeture par le X
             modalElement.addEventListener('hidden.bs.modal', function() {
-                localStorage.setItem('paymentReminderDismissed', today);
+                localStorage.setItem('paymentReminderDismissed_{{ $user->id }}', today);
             });
         }
     });

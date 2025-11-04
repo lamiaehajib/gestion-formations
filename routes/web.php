@@ -16,6 +16,7 @@ use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationBannerController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PaymentReminderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\ReclamationController;
@@ -508,6 +509,19 @@ Route::prefix('admin/attestations')->name('admin.attestations.')->group(function
     Route::get('/{attestation}/download', [AttestationController::class, 'download'])->name('download');
     Route::delete('/{attestation}', [AttestationController::class, 'destroy'])->name('destroy');
 });
+
+
+// Routes pour Admin - Gestion des Rappels de Paiement
+
+    Route::get('/payment-reminders', [PaymentReminderController::class, 'index'])
+        ->name('payment-reminders.index');
+    Route::post('/payment-reminders/send', [PaymentReminderController::class, 'sendReminders'])
+        ->name('payment-reminders.send');
+    Route::post('/payment-reminders/{user}/deactivate', [PaymentReminderController::class, 'deactivate'])
+        ->name('payment-reminders.deactivate');
+    Route::delete('/payment-reminders/{user}', [PaymentReminderController::class, 'destroy'])
+        ->name('payment-reminders.destroy');
+
 
 });
 
