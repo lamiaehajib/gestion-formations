@@ -13,7 +13,7 @@
                         <i class="fas fa-bell me-2"></i>Rappels de Paiement
                     </h2>
                     <p class="mb-0 opacity-90">
-                        Gérez les rappels pour les étudiants ayant des paiements en attente
+                        Gérez les rappels pour tous les étudiants ayant des paiements en attente
                     </p>
                 </div>
                 <div class="text-white text-end">
@@ -40,13 +40,16 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-bold">
-                        <i class="fas fa-filter text-primary me-2"></i>Catégorie
+                        <i class="fas fa-graduation-cap text-primary me-2"></i>Formation
                     </label>
-                    <select name="category" class="form-select">
-                        <option value="">Toutes les catégories</option>
-                        @foreach($targetCategories as $category)
-                            <option value="{{ $category }}" {{ request('category') == $category ? 'selected' : '' }}>
-                                {{ $category }}
+                    <select name="formation" class="form-select">
+                        <option value="">Toutes les formations</option>
+                        @foreach($formations as $formation)
+                            <option value="{{ $formation->id }}" {{ request('formation') == $formation->id ? 'selected' : '' }}>
+                                {{ $formation->title }}
+                                @if($formation->category)
+                                    ({{ $formation->category->name }})
+                                @endif
                             </option>
                         @endforeach
                     </select>
@@ -170,9 +173,11 @@
                                                     {{ $inscription->formation->title }}
                                                 </small>
                                                 <small class="text-muted">
-                                                    <span class="badge bg-info me-1">
-                                                        {{ $inscription->formation->category->name }}
-                                                    </span>
+                                                    @if($inscription->formation->category)
+                                                        <span class="badge bg-info me-1">
+                                                            {{ $inscription->formation->category->name }}
+                                                        </span>
+                                                    @endif
                                                     Reste: <strong class="text-danger">{{ number_format($inscription->remaining_amount, 2) }} MAD</strong>
                                                 </small>
                                             </div>
@@ -191,6 +196,15 @@
                                             par {{ $student->last_reminder->sentBy->name }}
                                         @endif
                                     </small>
+                                    
+                                    @if($student->last_reminder->is_active)
+                                        <div class="mt-2">
+                                            <small class="text-success">
+                                                <i class="fas fa-calendar-check me-1"></i>
+                                                Échéance: {{ \Carbon\Carbon::parse($student->last_reminder->expiry_date)->format('d/m/Y') }}
+                                            </small>
+                                        </div>
+                                    @endif
                                 </div>
                             @endif
                         </div>
@@ -203,8 +217,19 @@
                             <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
                             <h4 class="text-muted">Aucun étudiant trouvé</h4>
                             <p class="text-muted">
-                                Aucun étudiant n'a d'inscription avec paiement en attente pour ces catégories.
+                                @if(request('formation'))
+                                    Aucun étudiant n'a de paiement en attente pour cette formation.
+                                @elseif(request('search'))
+                                    Aucun étudiant ne correspond à votre recherche.
+                                @else
+                                    Aucun étudiant n'a d'inscription avec paiement en attente.
+                                @endif
                             </p>
+                            @if(request('formation') || request('search'))
+                                <a href="{{ route('payment-reminders.index') }}" class="btn btn-primary">
+                                    <i class="fas fa-redo me-2"></i>Réinitialiser les filtres
+                                </a>
+                            @endif
                         </div>
                     </div>
                 </div>

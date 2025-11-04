@@ -6,36 +6,30 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Inscription;
 use App\Models\PaymentReminder;
+use App\Models\Formation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class PaymentReminderController extends Controller
 {
-    
-
     /**
      * Afficher la page avec liste des étudiants concernés
      */
     public function index(Request $request)
     {
-        // Les catégories concernées
-        $targetCategories = ['LICENCE PROFESSIONNELLE RECONNU', 'Master Professionnelle', 'Licence Professionnelle'];
+        // Récupérer toutes les formations disponibles pour le filtre
+        $formations = Formation::with('category')->orderBy('title')->get();
         
-        // Récupérer tous les étudiants avec inscriptions actives f ces catégories
-        $query = User::role('etudiant')
-            ->whereHas('inscriptions', function($q) use ($targetCategories) {
+        // Récupérer tous les étudiants avec inscriptions actives ayant des montants impayés
+        $query = User::role('Etudiant')
+            ->whereHas('inscriptions', function($q) {
                 $q->whereIn('status', ['active', 'pending'])
-                  ->whereHas('formation.category', function($catQuery) use ($targetCategories) {
-                      $catQuery->whereIn('name', $targetCategories);
-                  })
                   ->where(DB::raw('total_amount - paid_amount'), '>', 0.01);
             })
-            ->with(['inscriptions' => function($q) use ($targetCategories) {
+            ->with(['inscriptions' => function($q) {
                 $q->whereIn('status', ['active', 'pending'])
-                  ->whereHas('formation.category', function($catQuery) use ($targetCategories) {
-                      $catQuery->whereIn('name', $targetCategories);
-                  })
+                  ->where(DB::raw('total_amount - paid_amount'), '>', 0.01)
                   ->with(['formation', 'formation.category']);
             }]);
 
@@ -48,13 +42,21 @@ class PaymentReminderController extends Controller
             });
         }
 
-        if ($request->filled('category')) {
-            $query->whereHas('inscriptions.formation.category', function($q) use ($request) {
-                $q->where('name', $request->category);
+        // Filtre par formation spécifique
+        if ($request->filled('formation')) {
+            $query->whereHas('inscriptions', function($q) use ($request) {
+                $q->where('formation_id', $request->formation)
+                  ->whereIn('status', ['active', 'pending'])
+                  ->where(DB::raw('total_amount - paid_amount'), '>', 0.01);
             });
         }
 
-        $students = $query->get()->map(function($student) {
+        $students = $query->get()->map(function($student) use ($request) {
+            // Si un filtre de formation est appliqué, ne prendre que cette formation
+            if ($request->filled('formation')) {
+                $student->inscriptions = $student->inscriptions->where('formation_id', $request->formation);
+            }
+            
             // Calculer total montant restant pour chaque étudiant
             $totalRemaining = $student->inscriptions->sum(function($inscription) {
                 return $inscription->total_amount - $inscription->paid_amount;
@@ -69,9 +71,12 @@ class PaymentReminderController extends Controller
                 ->first();
                 
             return $student;
+        })->filter(function($student) {
+            // Ne garder que les étudiants qui ont au moins une inscription après filtrage
+            return $student->inscriptions_count > 0;
         });
 
-        return view('admin.payment-reminders.index', compact('students', 'targetCategories'));
+        return view('admin.payment-reminders.index', compact('students', 'formations'));
     }
 
     /**

@@ -9,7 +9,7 @@
     $dueDate = null;
     $daysRemaining = 0;
     
-    // Vérifier si l'utilisateur a le rôle étudiant
+    // Vérifier si l'utilisateur a le rôle étudiant (avec capital E)
     if ($user && $user->hasRole('Etudiant')) {
         // Vérifier si Admin a activé un rappel pour cet étudiant
         $activeReminder = \App\Models\PaymentReminder::where('user_id', $user->id)
@@ -18,19 +18,13 @@
             ->first();
         
         if ($activeReminder) {
-            // Catégories spécifiques
-            $targetCategories = ['LICENCE PROFESSIONNELLE RECONNU', 'Master Professionnelle', 'Licence Professionnelle'];
-            
-            // Récupérer les inscriptions actives avec montant restant
+            // Récupérer TOUTES les inscriptions actives avec montant restant
             $inscriptions = \App\Models\Inscription::where('user_id', $user->id)
                 ->whereIn('status', ['active', 'pending'])
-                ->whereHas('formation.category', function($q) use ($targetCategories) {
-                    $q->whereIn('name', $targetCategories);
-                })
                 ->with(['formation', 'formation.category'])
                 ->get()
                 ->filter(function($inscription) {
-                    return $inscription->remaining_amount > 0.01;
+                    return ($inscription->total_amount - $inscription->paid_amount) > 0.01;
                 });
             
             if ($inscriptions->isNotEmpty()) {
@@ -38,10 +32,7 @@
                 $today = Carbon::today();
                 $daysRemaining = $today->diffInDays($dueDate, false);
                 
-                // Afficher le modal seulement si:
-                // 1. Il y a des inscriptions concernées
-                // 2. La date d'échéance n'est pas dépassée
-                // 3. L'utilisateur n'a pas fermé le modal aujourd'hui
+                // Afficher le modal seulement si la date n'est pas dépassée
                 $showPaymentReminder = $daysRemaining >= 0;
             }
         }
@@ -107,6 +98,10 @@
                     </div>
                     <div class="card-body" style="padding: 20px; max-height: 300px; overflow-y: auto;">
                         @foreach($inscriptions as $inscription)
+                            @php
+                                $remainingAmount = $inscription->total_amount - $inscription->paid_amount;
+                                $paymentProgress = ($inscription->paid_amount / $inscription->total_amount) * 100;
+                            @endphp
                             <div class="mb-3 pb-3 @if(!$loop->last) border-bottom @endif">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div class="flex-grow-1">
@@ -115,9 +110,11 @@
                                             {{ $inscription->formation->title }}
                                         </h6>
                                         <div class="small text-muted mb-2">
-                                            <span class="badge bg-info me-2">
-                                                {{ $inscription->formation->category->name }}
-                                            </span>
+                                            @if($inscription->formation->category)
+                                                <span class="badge bg-info me-2">
+                                                    {{ $inscription->formation->category->name }}
+                                                </span>
+                                            @endif
                                             <span class="badge bg-secondary">
                                                 Statut: {{ ucfirst($inscription->status) }}
                                             </span>
@@ -125,9 +122,6 @@
                                         
                                         <!-- Barre de progression du paiement -->
                                         <div class="mt-2">
-                                            @php
-                                                $paymentProgress = ($inscription->paid_amount / $inscription->total_amount) * 100;
-                                            @endphp
                                             <div class="d-flex justify-content-between align-items-center mb-1">
                                                 <small class="text-muted">Progression du paiement</small>
                                                 <small class="fw-bold">{{ number_format($paymentProgress, 1) }}%</small>
@@ -147,7 +141,7 @@
                                         </div>
                                         <div>
                                             <small class="text-muted d-block">Reste à payer</small>
-                                            <strong class="text-danger fs-5">{{ number_format($inscription->remaining_amount, 2) }} MAD</strong>
+                                            <strong class="text-danger fs-5">{{ number_format($remainingAmount, 2) }} MAD</strong>
                                         </div>
                                     </div>
                                 </div>
