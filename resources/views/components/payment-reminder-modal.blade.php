@@ -10,7 +10,7 @@
     $daysRemaining = 0;
     
     // Vérifier si l'utilisateur a le rôle étudiant
-    if ($user && $user->hasRole('etudiant')) {
+    if ($user && $user->hasRole('Etudiant')) {
         // Vérifier si Admin a activé un rappel pour cet étudiant
         $activeReminder = \App\Models\PaymentReminder::where('user_id', $user->id)
             ->where('is_active', true)
