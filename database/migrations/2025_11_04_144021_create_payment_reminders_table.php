@@ -20,8 +20,6 @@ return new class extends Migration
             $table->foreignId('sent_by')->nullable()->constrained('users')->onDelete('set null'); // Admin qui a envoyé
             $table->timestamps();
 
-            // Index pour performance
-            $table->index(['user_id', 'is_active']);
         });
     }
 

@@ -664,7 +664,7 @@
                     <li class="sidebar-menu__item">
                         <a href="{{ route('admin.attestations.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-certificate"></i></span>
-                            <span class="text">les attestations</span>
+                            <span class="text">attestations</span>
                         </a>
                     </li>
                     @endcan

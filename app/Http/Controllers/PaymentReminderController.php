@@ -4,108 +4,158 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Formation;
 use App\Models\Inscription;
 use App\Models\PaymentReminder;
-use App\Models\Formation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class PaymentReminderController extends Controller
 {
+    
     /**
-     * Afficher la page avec liste des étudiants concernés
+     * Afficher la page avec liste des formations
      */
     public function index(Request $request)
     {
-        // Récupérer toutes les formations disponibles pour le filtre
-        $formations = Formation::with('category')->orderBy('title')->get();
-        
-        // Récupérer tous les étudiants avec inscriptions actives ayant des montants impayés
-        $query = User::role('Etudiant')
+        // Récupérer toutes les formations qui ont des étudiants avec paiements en attente
+        $query = Formation::with(['category', 'consultant'])
             ->whereHas('inscriptions', function($q) {
                 $q->whereIn('status', ['active', 'pending'])
                   ->where(DB::raw('total_amount - paid_amount'), '>', 0.01);
-            })
-            ->with(['inscriptions' => function($q) {
-                $q->whereIn('status', ['active', 'pending'])
-                  ->where(DB::raw('total_amount - paid_amount'), '>', 0.01)
-                  ->with(['formation', 'formation.category']);
-            }]);
+            });
 
         // Filtres
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
-        // Filtre par formation spécifique
-        if ($request->filled('formation')) {
-            $query->whereHas('inscriptions', function($q) use ($request) {
-                $q->where('formation_id', $request->formation)
-                  ->whereIn('status', ['active', 'pending'])
-                  ->where(DB::raw('total_amount - paid_amount'), '>', 0.01);
-            });
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
         }
 
-        $students = $query->get()->map(function($student) use ($request) {
-            // Si un filtre de formation est appliqué, ne prendre que cette formation
-            if ($request->filled('formation')) {
-                $student->inscriptions = $student->inscriptions->where('formation_id', $request->formation);
-            }
+        $formations = $query->get()->map(function($formation) {
+            // Compter étudiants avec paiements en attente
+            $studentsWithDebt = $formation->inscriptions()
+                ->whereIn('status', ['active', 'pending'])
+                ->where(DB::raw('total_amount - paid_amount'), '>', 0.01)
+                ->count();
             
-            // Calculer total montant restant pour chaque étudiant
-            $totalRemaining = $student->inscriptions->sum(function($inscription) {
-                return $inscription->total_amount - $inscription->paid_amount;
-            });
+            $formation->students_with_debt = $studentsWithDebt;
             
-            $student->total_remaining = $totalRemaining;
-            $student->inscriptions_count = $student->inscriptions->count();
+            // Total montant restant pour cette formation
+            $totalRemaining = $formation->inscriptions()
+                ->whereIn('status', ['active', 'pending'])
+                ->get()
+                ->sum(function($inscription) {
+                    return max(0, $inscription->total_amount - $inscription->paid_amount);
+                });
             
-            // Vérifier si le rappel a été envoyé récemment
-            $student->last_reminder = PaymentReminder::where('user_id', $student->id)
-                ->latest()
-                ->first();
-                
-            return $student;
-        })->filter(function($student) {
-            // Ne garder que les étudiants qui ont au moins une inscription après filtrage
-            return $student->inscriptions_count > 0;
+            $formation->total_remaining = $totalRemaining;
+            
+            // Vérifier si rappel actif existe pour cette formation
+            $formation->active_reminders_count = PaymentReminder::where('formation_id', $formation->id)
+                ->where('is_active', true)
+                ->where('expiry_date', '>=', Carbon::today())
+                ->count();
+            
+            return $formation;
+        })->filter(function($formation) {
+            return $formation->students_with_debt > 0;
         });
 
-        return view('admin.payment-reminders.index', compact('students', 'formations'));
+        // Pour les filtres
+        $categories = \App\Models\Category::where('is_active', true)->get();
+
+        return view('admin.payment-reminders.index', compact('formations', 'categories'));
     }
 
     /**
-     * Envoyer rappel aux étudiants sélectionnés
+     * Afficher les étudiants d'une formation spécifique
+     */
+    public function showStudents($formationId)
+    {
+        $formation = Formation::with(['category', 'consultant'])->findOrFail($formationId);
+        
+        // Récupérer étudiants avec paiements en attente pour cette formation
+        $students = User::role('etudiant')
+            ->whereHas('inscriptions', function($q) use ($formationId) {
+                $q->where('formation_id', $formationId)
+                  ->whereIn('status', ['active', 'pending'])
+                  ->where(DB::raw('total_amount - paid_amount'), '>', 0.01);
+            })
+            ->with(['inscriptions' => function($q) use ($formationId) {
+                $q->where('formation_id', $formationId)
+                  ->whereIn('status', ['active', 'pending'])
+                  ->with(['formation', 'formation.category']);
+            }])
+            ->get()
+            ->map(function($student) use ($formationId) {
+                // Calculer montant restant pour cette formation
+                $inscription = $student->inscriptions->first();
+                $student->remaining_amount = $inscription ? 
+                    max(0, $inscription->total_amount - $inscription->paid_amount) : 0;
+                
+                $student->inscription = $inscription;
+                
+                // Vérifier si rappel actif existe
+                $student->has_active_reminder = PaymentReminder::where('user_id', $student->id)
+                    ->where('formation_id', $formationId)
+                    ->where('is_active', true)
+                    ->where('expiry_date', '>=', Carbon::today())
+                    ->exists();
+                
+                return $student;
+            });
+
+        return view('admin.payment-reminders.students', compact('formation', 'students'));
+    }
+
+    /**
+     * Envoyer rappel aux étudiants sélectionnés d'une formation
      */
     public function sendReminders(Request $request)
     {
         $request->validate([
+            'formation_id' => 'required|exists:formations,id',
             'student_ids' => 'required|array|min:1',
             'student_ids.*' => 'exists:users,id',
-            'expiry_date' => 'nullable|date|after_or_equal:today'
+            'expiry_date' => 'required|date|after_or_equal:today'
         ]);
 
+        $formationId = $request->formation_id;
         $studentIds = $request->student_ids;
-        $expiryDate = $request->expiry_date ? Carbon::parse($request->expiry_date) : Carbon::create(2025, 11, 5);
+        $expiryDate = Carbon::parse($request->expiry_date);
         
         DB::beginTransaction();
         try {
             foreach ($studentIds as $studentId) {
-                // Créer/Mettre à jour le rappel pour cet étudiant
-                PaymentReminder::updateOrCreate(
-                    ['user_id' => $studentId],
-                    [
-                        'expiry_date' => $expiryDate,
-                        'is_active' => true,
-                        'sent_at' => now(),
-                        'sent_by' => auth()->id()
-                    ]
-                );
+                // Vérifier que l'étudiant a bien une inscription pour cette formation
+                $inscription = Inscription::where('user_id', $studentId)
+                    ->where('formation_id', $formationId)
+                    ->whereIn('status', ['active', 'pending'])
+                    ->first();
+                
+                if ($inscription && $inscription->remaining_amount > 0.01) {
+                    // Créer/Mettre à jour le rappel
+                    PaymentReminder::updateOrCreate(
+                        [
+                            'user_id' => $studentId,
+                            'formation_id' => $formationId
+                        ],
+                        [
+                            'expiry_date' => $expiryDate,
+                            'is_active' => true,
+                            'sent_at' => now(),
+                            'sent_by' => auth()->id()
+                        ]
+                    );
+                }
             }
             
             DB::commit();
@@ -121,9 +171,16 @@ class PaymentReminderController extends Controller
     /**
      * Désactiver un rappel
      */
-    public function deactivate($userId)
+    public function deactivate(Request $request)
     {
-        $reminder = PaymentReminder::where('user_id', $userId)->first();
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'formation_id' => 'required|exists:formations,id'
+        ]);
+        
+        $reminder = PaymentReminder::where('user_id', $request->user_id)
+            ->where('formation_id', $request->formation_id)
+            ->first();
         
         if ($reminder) {
             $reminder->update(['is_active' => false]);
@@ -136,9 +193,17 @@ class PaymentReminderController extends Controller
     /**
      * Supprimer un rappel
      */
-    public function destroy($userId)
+    public function destroy(Request $request)
     {
-        PaymentReminder::where('user_id', $userId)->delete();
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'formation_id' => 'required|exists:formations,id'
+        ]);
+        
+        PaymentReminder::where('user_id', $request->user_id)
+            ->where('formation_id', $request->formation_id)
+            ->delete();
+            
         return redirect()->back()->with('success', 'Rappel supprimé avec succès!');
     }
 }

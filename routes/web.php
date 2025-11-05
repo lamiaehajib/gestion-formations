@@ -515,6 +515,8 @@ Route::prefix('admin/attestations')->name('admin.attestations.')->group(function
 
     Route::get('/payment-reminders', [PaymentReminderController::class, 'index'])
         ->name('payment-reminders.index');
+        Route::get('/payment-reminders/formation/{formation}/students', [PaymentReminderController::class, 'showStudents'])
+        ->name('payment-reminders.students');
     Route::post('/payment-reminders/send', [PaymentReminderController::class, 'sendReminders'])
         ->name('payment-reminders.send');
     Route::post('/payment-reminders/{user}/deactivate', [PaymentReminderController::class, 'deactivate'])

@@ -11,6 +11,7 @@ class PaymentReminder extends Model
 
     protected $fillable = [
         'user_id',
+        'formation_id', // ✨ Zedna
         'expiry_date',
         'is_active',
         'sent_at',
@@ -24,7 +25,7 @@ class PaymentReminder extends Model
     ];
 
     /**
-     * Relation avec User (l'étudiant qui reçoit le rappel)
+     * Relation avec User (l'étudiant)
      */
     public function user()
     {
@@ -32,7 +33,15 @@ class PaymentReminder extends Model
     }
 
     /**
-     * Relation avec User (l'admin qui a envoyé le rappel)
+     * ✨ Relation avec Formation
+     */
+    public function formation()
+    {
+        return $this->belongsTo(\App\Models\Formation::class);
+    }
+
+    /**
+     * Relation avec User (l'admin)
      */
     public function sentBy()
     {

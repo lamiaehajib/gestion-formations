@@ -5,46 +5,65 @@
     
     $user = Auth::user();
     $showPaymentReminder = false;
-    $inscriptions = collect();
-    $dueDate = null;
-    $daysRemaining = 0;
     
-    // Vérifier si l'utilisateur a le rôle étudiant (avec capital E)
+    // Initialisation des variables pour éviter 'Undefined variable'
+    $dueDate = null; 
+    $daysRemaining = null; 
+    $inscriptions = collect(); 
+    $remindersGrouped = []; // Pour stocker les données pertinentes
+
+    
     if ($user && $user->hasRole('Etudiant')) {
-        // Vérifier si Admin a activé un rappel pour cet étudiant
-        $activeReminder = \App\Models\PaymentReminder::where('user_id', $user->id)
+        // 1. Récupérer TOUS les rappels actifs pour cet étudiant
+        $activeReminders = \App\Models\PaymentReminder::where('user_id', $user->id)
             ->where('is_active', true)
             ->where('expiry_date', '>=', Carbon::today())
-            ->first();
+            ->with(['formation', 'formation.category'])
+            ->get();
         
-        if ($activeReminder) {
-            // Récupérer TOUTES les inscriptions actives avec montant restant
-            $inscriptions = \App\Models\Inscription::where('user_id', $user->id)
-                ->whereIn('status', ['active', 'pending'])
-                ->with(['formation', 'formation.category'])
-                ->get()
-                ->filter(function($inscription) {
-                    return ($inscription->total_amount - $inscription->paid_amount) > 0.01;
-                });
+        if ($activeReminders->isNotEmpty()) {
             
-            if ($inscriptions->isNotEmpty()) {
-                $dueDate = $activeReminder->expiry_date;
-                $today = Carbon::today();
-                $daysRemaining = $today->diffInDays($dueDate, false);
+            foreach ($activeReminders as $reminder) {
+                // 2. Vérifier l'inscription pour cette formation et le montant restant
+                $inscription = \App\Models\Inscription::where('user_id', $user->id)
+                    ->where('formation_id', $reminder->formation_id)
+                    ->whereIn('status', ['active', 'pending'])
+                    ->whereRaw('(total_amount - paid_amount) > 0.01') // S'assurer qu'il reste à payer
+                    ->with(['formation', 'formation.category'])
+                    ->first();
                 
-                // Afficher le modal seulement si la date n'est pas dépassée
-                $showPaymentReminder = $daysRemaining >= 0;
+                if ($inscription) {
+                    $remindersGrouped[] = [
+                        'reminder' => $reminder,
+                        'inscription' => $inscription,
+                        'daysRemaining' => Carbon::today()->diffInDays($reminder->expiry_date, false)
+                    ];
+                }
+            }
+            
+            if (!empty($remindersGrouped)) {
+                $showPaymentReminder = true;
+                
+                // 3. Déterminer la plus proche échéance pour l'affichage principal
+                $closestReminder = collect($remindersGrouped)->sortBy('daysRemaining')->first();
+                
+                if ($closestReminder) {
+                    // La date d'échéance est l'expiry_date du rappel le plus proche
+                    $dueDate = $closestReminder['reminder']->expiry_date; 
+                    $daysRemaining = $closestReminder['daysRemaining'];
+                }
+
+                // 4. Extraire la liste des inscriptions pour la boucle d'affichage
+                $inscriptions = collect($remindersGrouped)->pluck('inscription'); 
             }
         }
     }
 @endphp
 
 @if($showPaymentReminder)
-<!-- Modal de Rappel de Paiement -->
 <div class="modal fade" id="paymentReminderModal" tabindex="-1" aria-labelledby="paymentReminderModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content" style="border-radius: 20px; border: 3px solid #D32F2F; overflow: hidden;">
-            <!-- Header avec dégradé -->
             <div class="modal-header text-white" style="background: linear-gradient(135deg, #D32F2F 0%, #C2185B 100%); border: none; padding: 25px 30px;">
                 <div class="d-flex align-items-center w-100">
                     <i class="fas fa-exclamation-triangle fa-2x me-3 animate__animated animate__wobble animate__infinite" style="animation-duration: 2s;"></i>
@@ -53,42 +72,42 @@
                             <i class="fas fa-bell me-2"></i>Rappel Important de Paiement
                         </h4>
                         <p class="mb-0 opacity-90" style="font-size: 0.9rem;">
-                            Échéance : <strong>{{ $dueDate->format('d/m/Y') }}</strong>
+                            Échéance : **{{ $dueDate ? $dueDate->format('d/m/Y') : 'Non définie' }}**
                         </p>
                     </div>
                 </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <!-- Corps du modal -->
             <div class="modal-body" style="padding: 30px;">
-                <!-- Alerte d'urgence -->
                 <div class="alert alert-warning d-flex align-items-center mb-4" role="alert" style="border-left: 5px solid #f59e0b; background-color: #fffbeb;">
                     <i class="fas fa-clock fa-2x me-3 text-warning"></i>
                     <div>
                         <strong class="d-block mb-1">⏰ Temps restant :</strong>
-                        @if($daysRemaining > 0)
-                            <span class="fs-5 fw-bold text-danger">{{ $daysRemaining }} jour(s) restant(s)</span>
+                        @if($daysRemaining !== null)
+                            @if($daysRemaining > 0)
+                                <span class="fs-5 fw-bold text-danger">{{ $daysRemaining }} jour(s) restant(s)</span>
+                            @else
+                                <span class="fs-5 fw-bold text-danger">Échéance aujourd'hui !</span>
+                            @endif
                         @else
-                            <span class="fs-5 fw-bold text-danger">Échéance aujourd'hui !</span>
+                            <span class="fs-5 fw-bold text-danger">Date d'échéance non spécifiée.</span>
                         @endif
                     </div>
                 </div>
 
-                <!-- Message principal -->
                 <div class="mb-4">
                     <p class="lead mb-3" style="color: #1f2937;">
                         <i class="fas fa-user-graduate text-primary me-2"></i>
-                        Cher(e) <strong>{{ $user->name }}</strong>,
+                        Cher(e) **{{ $user->name }}**,
                     </p>
                     <p style="color: #4b5563; line-height: 1.8;">
                         Nous vous rappelons que le paiement de vos mensualités pour vos formations doit être effectué 
-                        <strong class="text-danger">avant le {{ $dueDate->format('d/m/Y') }}</strong>. Veuillez régulariser votre situation 
+                        <strong class="text-danger">avant le {{ $dueDate ? $dueDate->format('d/m/Y') : 'Non définie' }}</strong>. Veuillez régulariser votre situation 
                         dans les plus brefs délais pour éviter toute interruption de votre accès aux cours.
                     </p>
                 </div>
 
-                <!-- Liste des inscriptions concernées -->
                 <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #fef2f2 0%, #fff 100%);">
                     <div class="card-header bg-transparent border-bottom" style="padding: 15px 20px;">
                         <h5 class="mb-0 text-danger">
@@ -100,7 +119,8 @@
                         @foreach($inscriptions as $inscription)
                             @php
                                 $remainingAmount = $inscription->total_amount - $inscription->paid_amount;
-                                $paymentProgress = ($inscription->paid_amount / $inscription->total_amount) * 100;
+                                $paymentProgress = ($inscription->total_amount > 0) ? ($inscription->paid_amount / $inscription->total_amount) * 100 : 0;
+                                $remainingAmount = max(0, $remainingAmount); // S'assurer qu'il n'est pas négatif
                             @endphp
                             <div class="mb-3 pb-3 @if(!$loop->last) border-bottom @endif">
                                 <div class="d-flex justify-content-between align-items-start">
@@ -120,7 +140,6 @@
                                             </span>
                                         </div>
                                         
-                                        <!-- Barre de progression du paiement -->
                                         <div class="mt-2">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
                                                 <small class="text-muted">Progression du paiement</small>
@@ -128,8 +147,8 @@
                                             </div>
                                             <div class="progress" style="height: 8px; border-radius: 10px;">
                                                 <div class="progress-bar bg-gradient" 
-                                                     style="width: {{ $paymentProgress }}%; background: linear-gradient(90deg, #D32F2F, #C2185B);"
-                                                     role="progressbar"></div>
+                                                    style="width: {{ $paymentProgress }}%; background: linear-gradient(90deg, #D32F2F, #C2185B);"
+                                                    role="progressbar"></div>
                                             </div>
                                         </div>
                                     </div>
@@ -150,7 +169,6 @@
                     </div>
                 </div>
 
-                <!-- Informations de contact -->
                 <div class="mt-4 p-3 rounded" style="background-color: #f3f4f6;">
                     <p class="mb-2 fw-bold" style="color: #1f2937;">
                         <i class="fas fa-info-circle text-primary me-2"></i>
@@ -163,7 +181,6 @@
                 </div>
             </div>
 
-            <!-- Footer -->
             <div class="modal-footer" style="background-color: #f9fafb; border-top: 1px solid #e5e7eb; padding: 20px 30px;">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="remindLaterBtn">
                     <i class="fas fa-clock me-2"></i>Me le rappeler plus tard
@@ -224,9 +241,16 @@
         const modalElement = document.getElementById('paymentReminderModal');
         const remindLaterBtn = document.getElementById('remindLaterBtn');
         
+        // Assurez-vous que l'objet user est disponible pour la clé localStorage
+        @if($user) 
+            const userId = '{{ $user->id }}';
+        @else 
+            const userId = 'guest';
+        @endif
+        
         if (modalElement) {
             // Vérifier si l'utilisateur a déjà fermé le modal aujourd'hui
-            const lastDismissed = localStorage.getItem('paymentReminderDismissed_{{ $user->id }}');
+            const lastDismissed = localStorage.getItem('paymentReminderDismissed_' + userId);
             const today = new Date().toDateString();
             
             if (lastDismissed !== today) {
@@ -238,13 +262,15 @@
             }
             
             // Enregistrer la fermeture du modal
-            remindLaterBtn.addEventListener('click', function() {
-                localStorage.setItem('paymentReminderDismissed_{{ $user->id }}', today);
-            });
+            if (remindLaterBtn) {
+                remindLaterBtn.addEventListener('click', function() {
+                    localStorage.setItem('paymentReminderDismissed_' + userId, today);
+                });
+            }
             
             // Enregistrer également lors de la fermeture par le X
             modalElement.addEventListener('hidden.bs.modal', function() {
-                localStorage.setItem('paymentReminderDismissed_{{ $user->id }}', today);
+                localStorage.setItem('paymentReminderDismissed_' + userId, today);
             });
         }
     });
