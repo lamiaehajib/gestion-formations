@@ -101,6 +101,9 @@
                                     <p class="text-muted mb-0 small">
                                         <i class="fas fa-envelope me-1"></i>{{ $student->email }}
                                     </p>
+                                    <p class="text-muted mb-0 small">
+                                        <i class="fas fa-phone me-1"></i>{{ $student->phone }}
+                                    </p>
                                 </div>
                                 
                                 @if($student->has_active_reminder)
@@ -130,12 +133,12 @@
                                     
                                     <!-- Barre de progression -->
                                     @php
-                                        $progress = ($student->inscription->paid_amount / $student->inscription->total_amount) * 100;
+                                        $progress = ($student->inscription->paid_amount );
                                     @endphp
                                     <div class="mt-2">
                                         <div class="d-flex justify-content-between mb-1">
                                             <small class="text-muted">Payé</small>
-                                            <small class="fw-bold">{{ number_format($progress, 1) }}%</small>
+                                            <small class="fw-bold">{{ number_format($progress) }}MAD</small>
                                         </div>
                                         <div class="progress" style="height: 6px;">
                                             <div class="progress-bar" 
