@@ -106,54 +106,69 @@ class CourseRescheduleController extends Controller
     /**
      * Show the form for creating a new course reschedule
      */
-    public function create(Request $request)
-    {
-        $user = Auth::user();
-        $courseId = $request->get('course_id');
-        $consultants = collect();
-        $courses = collect();
-        $selectedConsultantId = null;
+    /**
+ * Show the form for creating a new course reschedule
+ */
+/**
+ * Show the form for creating a new course reschedule
+ */
+public function create(Request $request)
+{
+    $user = Auth::user();
+    $courseId = $request->get('course_id');
+    $consultants = collect();
+    $courses = collect();
+    $selectedConsultantId = null;
 
-        // Had l'variable jdida kat7edded l'date dyal ghedda f 00:00:00
-        $minDate = Carbon::now()->addDay()->startOfDay();
+    // تحديد تاريخ اليوم بداية من الساعة 00:00:00
+    $todayStart = Carbon::now()->startOfDay();
+    
+    // تحديد تاريخ الغد بداية من الساعة 00:00:00 (للـ Consultant)
+    $tomorrowStart = Carbon::now()->addDay()->startOfDay();
 
-        // 1. تحديد المستشارين الذين يمكن عرضهم للاختيار:
-        if ($user->can('course-manage-all')) {
-            $consultants = User::role('Consultant')->select('id', 'name')->get();
-            $selectedConsultantId = old('consultant_id', $request->get('consultant_id'));
-        } else {
-            if ($user->hasRole('Consultant')) {
-                $selectedConsultantId = $user->id;
-            }
+    // 1. تحديد المستشارين الذين يمكن عرضهم للاختيار:
+    if ($user->can('course-manage-all')) {
+        $consultants = User::role('Consultant')->select('id', 'name')->get();
+        $selectedConsultantId = old('consultant_id', $request->get('consultant_id'));
+    } else {
+        if ($user->hasRole('Consultant')) {
+            $selectedConsultantId = $user->id;
         }
-
-        // 2. تحديد الدورات التي ستظهر في القائمة المنسدلة:
-        if ($user->can('course-manage-all') && $selectedConsultantId) {
-            // إذا كان مشرفًا وقد اختار مستشارًا: اعرض دورات هذا المستشار فقط ابتداءً من الغد.
-            $courses = Course::where('consultant_id', $selectedConsultantId)
-                                 ->whereDate('course_date', '>=', $minDate) // <-- Ajout de cette ligne
-                                 ->select('id', 'title', 'course_date', 'start_time', 'end_time')->get();
-        } elseif ($user->hasRole('Consultant') && !$user->can('course-manage-all')) {
-            // إذا كان مستشارًا وليس لديه صلاحية 'course-manage-all': اعرض دوراته هو فقط ابتداءً من الغد.
-            $courses = Course::where('consultant_id', $user->id)
-                                 ->whereDate('course_date', '>=', $minDate) // <-- Ajout de cette ligne
-                                 ->select('id', 'title', 'course_date', 'start_time', 'end_time')->get();
-        } elseif ($user->hasRole('Etudiant')) {
-            // إذا كان طالبًا: اعرض الدورات التي سجل فيها ابتداءً من الغد.
-            $courses = Course::whereHas('formation.inscriptions', function ($query) use ($user) {
-                $query->where('user_id', $user->id)->where('status', 'active');
-            })
-            ->whereDate('course_date', '>=', $minDate) // <-- Ajout de cette ligne
-            ->select('id', 'title', 'course_date', 'start_time', 'end_time')->get();
-        }
-
-        $selectedCourse = null;
-        if ($courseId) {
-            $selectedCourse = Course::find($courseId);
-        }
-
-        return view('course_reschedules.create', compact('courses', 'selectedCourse', 'consultants', 'selectedConsultantId'));
     }
+
+    // 2. تحديد الدورات التي ستظهر في القائمة المنسدلة:
+    if ($user->can('course-manage-all') && $selectedConsultantId) {
+        // Admin: اعرض دورات المستشار المختار من اليوم وما بعد
+        $courses = Course::where('consultant_id', $selectedConsultantId)
+                             ->whereDate('course_date', '>=', $todayStart)
+                             ->select('id', 'title', 'course_date', 'start_time', 'end_time')
+                             ->orderBy('course_date', 'asc')
+                             ->get();
+    } elseif ($user->hasRole('Consultant') && !$user->can('course-manage-all')) {
+        // Consultant: اعرض دوراته من الغد وما بعد فقط (بدون دورات اليوم)
+        $courses = Course::where('consultant_id', $user->id)
+                             ->whereDate('course_date', '>=', $tomorrowStart)
+                             ->select('id', 'title', 'course_date', 'start_time', 'end_time')
+                             ->orderBy('course_date', 'asc')
+                             ->get();
+    } elseif ($user->hasRole('Etudiant')) {
+        // Student: اعرض الدورات المسجل فيها من اليوم وما بعد
+        $courses = Course::whereHas('formation.inscriptions', function ($query) use ($user) {
+            $query->where('user_id', $user->id)->where('status', 'active');
+        })
+        ->whereDate('course_date', '>=', $todayStart)
+        ->select('id', 'title', 'course_date', 'start_time', 'end_time')
+        ->orderBy('course_date', 'asc')
+        ->get();
+    }
+
+    $selectedCourse = null;
+    if ($courseId) {
+        $selectedCourse = Course::find($courseId);
+    }
+
+    return view('course_reschedules.create', compact('courses', 'selectedCourse', 'consultants', 'selectedConsultantId'));
+}
 
     /**
      * Store a newly created course reschedule
@@ -436,10 +451,11 @@ class CourseRescheduleController extends Controller
             return response()->json(['error' => 'Selected user is not a consultant'], 400);
         }
 
-        // جلب الدورات المرتبطة مباشرة بهذا المستشار
+        // جلب الدورات المرتبطة بهذا المستشار من اليوم وما بعد فقط
         $courses = Course::where('consultant_id', $consultantId)
+            ->whereDate('course_date', '>=', Carbon::now()->startOfDay())
             ->select('id', 'title', 'course_date', 'start_time', 'end_time')
-            ->orderBy('course_date', 'asc') // ترتيب الدورات حسب التاريخ
+            ->orderBy('course_date', 'asc')
             ->get();
         
         Log::info("AJAX: Found " . $courses->count() . " courses for consultant ID {$consultantId}.");
