@@ -19,7 +19,6 @@ class CourseRescheduleController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        // The permissions here are broad, we will handle row-level security in the index method.
         $this->middleware('permission:course-list|course-manage-own', ['only' => ['index', 'show']]);
         $this->middleware('permission:course-edit|course-manage-own', ['only' => ['create', 'store', 'edit', 'update']]);
         $this->middleware('permission:course-delete|course-manage-own', ['only' => ['destroy']]);
@@ -37,27 +36,20 @@ class CourseRescheduleController extends Controller
 
     // Filter based on user role
     if ($user->hasRole('Consultant') && !$user->can('course-manage-all')) {
-        // Consultant: Only see reschedules for their own courses (Unchanged)
         $query->whereHas('course', function ($q) use ($user) {
             $q->where('consultant_id', $user->id);
         });
     } elseif ($user->hasRole('Etudiant')) {
-        // Student: Only see reschedules for courses they are enrolled in
-        
-        // FIX: Kan3awdou 'course.formations' b 'course.formation'
-        // W kan'assumo l'formation li fihom inscription kanchoufo ghir l'ID dyalha
         $enrolledFormationIds = $user->inscriptions()
                                     ->where('status', 'active')
                                     ->pluck('formation_id');
 
-        // Kanfiltréw 3la l'course 7itach fih formation_id direct
         $query->whereHas('course', function ($q) use ($enrolledFormationIds) {
             $q->whereIn('formation_id', $enrolledFormationIds);
         });
     }
-    // If the user has 'course-manage-all' permission (e.g., Admin), no additional filtering is applied at this stage.
 
-    // Search filters (Unchanged)
+    // Search filters
     if ($request->filled('course_id')) {
         $query->where('course_id', $request->course_id);
     }
@@ -76,7 +68,6 @@ class CourseRescheduleController extends Controller
     // --- Adjust Courses for Filters ---
     $courses = collect();
     if ($user->hasRole('Etudiant')) {
-        // FIX: Kanakhdou ghir les courses li l'formation_id dyalhom kayn f enrolledFormationIds
         $enrolledFormationIds = $user->inscriptions()
                                     ->where('status', 'active')
                                     ->pluck('formation_id');
@@ -90,8 +81,6 @@ class CourseRescheduleController extends Controller
         $courses = Course::select('id', 'title')->get();
     }
 
-
-    // --- Adjust Consultants for Filters (Unchanged) ---
     $consultants = collect();
     if ($user->can('course-manage-all')) {
         $consultants = User::role('Consultant')->select('id', 'name')->get();
@@ -100,18 +89,10 @@ class CourseRescheduleController extends Controller
     return view('course_reschedules.index', compact('reschedules', 'courses', 'consultants'));
 }
 
-    // ... rest of your methods (create, store, show, edit, update, destroy, getCourseHistory, getAvailableSlots, getCoursesByConsultant, bulkReschedule, notifyStudentsAboutReschedule) remain the same or as per your existing code.
-    // I've included the rest of the controller code below for completeness, but the primary change is in the index method.
-
     /**
-     * Show the form for creating a new course reschedule
+     * 🔥 NEW: Show the form for creating a new course reschedule
+     * Admin/Consultant shof ghir 1 course (grouped), machi duplicates
      */
-    /**
- * Show the form for creating a new course reschedule
- */
-/**
- * Show the form for creating a new course reschedule
- */
 public function create(Request $request)
 {
     $user = Auth::user();
@@ -120,13 +101,10 @@ public function create(Request $request)
     $courses = collect();
     $selectedConsultantId = null;
 
-    // تحديد تاريخ اليوم بداية من الساعة 00:00:00
     $todayStart = Carbon::now()->startOfDay();
-    
-    // تحديد تاريخ الغد بداية من الساعة 00:00:00 (للـ Consultant)
     $tomorrowStart = Carbon::now()->addDay()->startOfDay();
 
-    // 1. تحديد المستشارين الذين يمكن عرضهم للاختيار:
+    // 1. Determine consultants
     if ($user->can('course-manage-all')) {
         $consultants = User::role('Consultant')->select('id', 'name')->get();
         $selectedConsultantId = old('consultant_id', $request->get('consultant_id'));
@@ -136,31 +114,37 @@ public function create(Request $request)
         }
     }
 
-    // 2. تحديد الدورات التي ستظهر في القائمة المنسدلة:
+    // 2. 🔥 Get courses and GROUP them (like CourseController::index)
+    $coursesQuery = Course::query();
+
     if ($user->can('course-manage-all') && $selectedConsultantId) {
-        // Admin: اعرض دورات المستشار المختار من اليوم وما بعد
-        $courses = Course::where('consultant_id', $selectedConsultantId)
-                             ->whereDate('course_date', '>=', $todayStart)
-                             ->select('id', 'title', 'course_date', 'start_time', 'end_time')
-                             ->orderBy('course_date', 'asc')
-                             ->get();
+        // Admin: courses min selected consultant from today onwards
+        $coursesQuery->where('consultant_id', $selectedConsultantId)
+                     ->whereDate('course_date', '>=', $todayStart);
     } elseif ($user->hasRole('Consultant') && !$user->can('course-manage-all')) {
-        // Consultant: اعرض دوراته من الغد وما بعد فقط (بدون دورات اليوم)
-        $courses = Course::where('consultant_id', $user->id)
-                             ->whereDate('course_date', '>=', $tomorrowStart)
-                             ->select('id', 'title', 'course_date', 'start_time', 'end_time')
-                             ->orderBy('course_date', 'asc')
-                             ->get();
+        // Consultant: their courses from tomorrow onwards
+        $coursesQuery->where('consultant_id', $user->id)
+                     ->whereDate('course_date', '>=', $tomorrowStart);
     } elseif ($user->hasRole('Etudiant')) {
-        // Student: اعرض الدورات المسجل فيها من اليوم وما بعد
-        $courses = Course::whereHas('formation.inscriptions', function ($query) use ($user) {
+        // Student: enrolled courses from today onwards
+        $coursesQuery->whereHas('formation.inscriptions', function ($query) use ($user) {
             $query->where('user_id', $user->id)->where('status', 'active');
         })
-        ->whereDate('course_date', '>=', $todayStart)
-        ->select('id', 'title', 'course_date', 'start_time', 'end_time')
-        ->orderBy('course_date', 'asc')
-        ->get();
+        ->whereDate('course_date', '>=', $todayStart);
     }
+
+    // 🔥 Fetch and GROUP duplicates
+    $allCourses = $coursesQuery->select('id', 'title', 'course_date', 'start_time', 'end_time', 'module_id')
+                                ->orderBy('course_date', 'asc')
+                                ->get();
+
+    // Group by: module_id + course_date + start_time + title
+    $courses = $allCourses->unique(function ($course) {
+        return $course->module_id . '-' .
+               $course->course_date . '-' .
+               $course->start_time . '-' .
+               $course->title;
+    });
 
     $selectedCourse = null;
     if ($courseId) {
@@ -171,80 +155,84 @@ public function create(Request $request)
 }
 
     /**
-     * Store a newly created course reschedule
+     * 🔥 NEW: Store reschedule + reschedule ALL duplicate courses
      */
-    public function store(Request $request)
-    {
-        $user = Auth::user();
+public function store(Request $request)
+{
+    $user = Auth::user();
 
-        // Admin needs to select a consultant; consultant's ID is implicit for non-admins
-        $validationRules = [
-            'course_id' => 'required|exists:courses,id',
-            'new_date' => 'required|date|after:now',
-            'reason' => 'nullable|string|max:1000',
-        ];
+    $validationRules = [
+        'course_id' => 'required|exists:courses,id',
+        'new_date' => 'required|date|after:now',
+        'reason' => 'nullable|string|max:1000',
+    ];
 
-        if ($user->can('course-manage-all')) { // If admin, require consultant_id
-            $validationRules['consultant_id'] = 'required|exists:users,id';
+    if ($user->can('course-manage-all')) {
+        $validationRules['consultant_id'] = 'required|exists:users,id';
+    }
+
+    $request->validate($validationRules);
+
+    // Get the selected course
+    $course = Course::findOrFail($request->course_id);
+    
+    // Determine consultant_id
+    $consultantToRecordId = $user->id;
+    if ($user->can('course-manage-all') && $request->filled('consultant_id')) {
+        $consultantToRecordId = $request->consultant_id;
+    } elseif ($user->hasRole('Consultant') && !$user->can('course-manage-all')) {
+        if ($course->consultant_id !== $user->id) {
+            abort(403, 'Unauthorized to reschedule this course.');
         }
+    } else {
+        abort(403, 'Unauthorized to perform this action.');
+    }
 
-        $request->validate($validationRules);
+    DB::beginTransaction();
+    
+    try {
+        // 🔥 Find ALL duplicate courses (same module, date, time, title)
+        $duplicateCourses = Course::where('module_id', $course->module_id)
+            ->where('course_date', $course->course_date)
+            ->where('start_time', $course->start_time)
+            ->where('title', $course->title)
+            ->get();
 
-        // Get the course and verify permissions
-        $course = Course::findOrFail($request->course_id);
-        
-        // Determine the consultant_id for the reschedule record
-        $consultantToRecordId = $user->id; // Default to current user
-        if ($user->can('course-manage-all') && $request->filled('consultant_id')) {
-            $consultantToRecordId = $request->consultant_id; // Admin specified a consultant
-        } elseif ($user->hasRole('Consultant') && !$user->can('course-manage-all')) {
-            // If consultant, ensure the selected course belongs to them
-            // بما أن `Course` الآن يحتوي على `consultant_id`، تحقق من تطابق معرف المستشار
-            if ($course->consultant_id !== $user->id) { // <-- التغيير هنا
-                abort(403, 'Unauthorized to reschedule this course.');
-            }
-        } else {
-            // Fallback for other roles not explicitly handled, or if a non-consultant
-            // tries to create without 'course-manage-all'
-            abort(403, 'Unauthorized to perform this action.');
-        }
-
-        DB::beginTransaction();
-        
-        try {
+        // 🔥 Reschedule EACH duplicate course
+        foreach ($duplicateCourses as $dupCourse) {
             // Create reschedule record
-            $reschedule = CourseReschedule::create([
-                'course_id' => $request->course_id,
-                'consultant_id' => $consultantToRecordId, // Use the determined consultant ID
-                'original_date' => $course->course_date,
+            CourseReschedule::create([
+                'course_id' => $dupCourse->id,
+                'consultant_id' => $consultantToRecordId,
+                'original_date' => $dupCourse->course_date,
                 'new_date' => $request->new_date,
                 'reason' => $request->reason,
             ]);
 
-            // Update the course with new date
-            $course->update([
+            // Update course date
+            $dupCourse->update([
                 'course_date' => $request->new_date,
                 'updated_at' => now(),
             ]);
 
-             $this->notifyStudentsAboutReschedule($course, $reschedule);
-
-            // Here you can add notification logic to inform students
-            // $this->notifyStudentsAboutReschedule($course, $reschedule);
-
-            DB::commit();
-
-            return redirect()->route('course_reschedules.index')
-                ->with('success', 'Course has been successfully rescheduled.');
-
-        } catch (\Exception $e) {
-            DB::rollback();
-            
-            return back()
-                ->withInput()
-                ->with('error', 'An error occurred while rescheduling the course: ' . $e->getMessage());
+            // Notify students for this specific course
+            $this->notifyStudentsAboutReschedule($dupCourse, CourseReschedule::where('course_id', $dupCourse->id)->latest()->first());
         }
+
+        DB::commit();
+
+        $count = $duplicateCourses->count();
+        return redirect()->route('course_reschedules.index')
+            ->with('success', "Course rescheduled successfully! {$count} course(s) have been updated.");
+
+    } catch (\Exception $e) {
+        DB::rollback();
+        
+        return back()
+            ->withInput()
+            ->with('error', 'An error occurred while rescheduling: ' . $e->getMessage());
     }
+}
 
     /**
      * Display the specified course reschedule
@@ -254,19 +242,16 @@ public function create(Request $request)
         $reschedule = CourseReschedule::with(['course.formation', 'consultant'])
             ->findOrFail($id);
 
-        // Check permissions
         if (Auth::user()->hasRole('Consultant') && !Auth::user()->can('course-manage-all')) {
-            // بما أن `Course` الآن يحتوي على `consultant_id`، تحقق من تطابق معرف المستشار
-            if ($reschedule->course->consultant_id !== Auth::id()) { // <-- التغيير هنا (الوصول عبر course)
+            if ($reschedule->course->consultant_id !== Auth::id()) {
                 abort(403, 'Unauthorized to view this reschedule.');
             }
         }
 
-        // Add check for students
         if (Auth::user()->hasRole('Etudiant')) {
             $isEnrolled = $reschedule->course->formation->inscriptions->where('user_id', Auth::id())->where('status', 'active')->isNotEmpty();
             if (!$isEnrolled) {
-                abort(403, 'Unauthorized to view this reschedule. You are not enrolled in this course.');
+                abort(403, 'Unauthorized to view this reschedule.');
             }
         }
 
@@ -280,10 +265,8 @@ public function create(Request $request)
     {
         $reschedule = CourseReschedule::with('course')->findOrFail($id);
 
-        // Check permissions
         if (Auth::user()->hasRole('Consultant') && !Auth::user()->can('course-manage-all')) {
-            // بما أن `Course` الآن يحتوي على `consultant_id`، تحقق من تطابق معرف المستشار
-            if ($reschedule->course->consultant_id !== Auth::id()) { // <-- التغيير هنا (الوصول عبر course)
+            if ($reschedule->course->consultant_id !== Auth::id()) {
                 abort(403, 'Unauthorized to edit this reschedule.');
             }
         }
@@ -298,10 +281,8 @@ public function create(Request $request)
     {
         $reschedule = CourseReschedule::findOrFail($id);
 
-        // Check permissions
         if (Auth::user()->hasRole('Consultant') && !Auth::user()->can('course-manage-all')) {
-            // بما أن `Course` الآن يحتوي على `consultant_id`، تحقق من تطابق معرف المستشار
-            if ($reschedule->course->consultant_id !== Auth::id()) { // <-- التغيير هنا (الوصول عبر course)
+            if ($reschedule->course->consultant_id !== Auth::id()) {
                 abort(403, 'Unauthorized to update this reschedule.');
             }
         }
@@ -314,58 +295,48 @@ public function create(Request $request)
         DB::beginTransaction();
         
         try {
-            // Update reschedule record
             $reschedule->update([
                 'new_date' => $request->new_date,
                 'reason' => $request->reason,
             ]);
 
-            // Update the associated course
             $reschedule->course->update([
                 'course_date' => $request->new_date,
             ]);
 
-             $this->notifyStudentsAboutReschedule($reschedule->course, $reschedule);
+            $this->notifyStudentsAboutReschedule($reschedule->course, $reschedule);
 
             DB::commit();
 
             return redirect()->route('course_reschedules.index')
-                ->with('success', 'Course reschedule has been updated successfully.');
+                ->with('success', 'Course reschedule updated successfully.');
 
         } catch (\Exception $e) {
             DB::rollback();
             
             return back()
                 ->withInput()
-                ->with('error', 'An error occurred while updating the reschedule: ' . $e->getMessage());
+                ->with('error', 'An error occurred: ' . $e->getMessage());
         }
     }
 
     /**
-     * Remove the specified course reschedule
-     */
-   
-
-    /**
-     * Get course reschedule history for a specific course
+     * Get course reschedule history
      */
     public function getCourseHistory($courseId)
     {
         $course = Course::findOrFail($courseId);
         
-        // Check permissions
         if (Auth::user()->hasRole('Consultant') && !Auth::user()->can('course-manage-all')) {
-            // بما أن `Course` الآن يحتوي على `consultant_id`، تحقق من تطابق معرف المستشار
-            if ($course->consultant_id !== Auth::id()) { // <-- التغيير هنا (الوصول مباشرة إلى consultant_id)
-                abort(403, 'Unauthorized to view this course history.');
+            if ($course->consultant_id !== Auth::id()) {
+                abort(403, 'Unauthorized.');
             }
         }
 
-        // Add check for students
         if (Auth::user()->hasRole('Etudiant')) {
             $isEnrolled = $course->formation->inscriptions->where('user_id', Auth::id())->where('status', 'active')->isNotEmpty();
             if (!$isEnrolled) {
-                abort(403, 'Unauthorized to view this course history. You are not enrolled in this course.');
+                abort(403, 'Unauthorized.');
             }
         }
 
@@ -392,14 +363,11 @@ public function create(Request $request)
 
         $date = Carbon::parse($request->date)->format('Y-m-d');
         
-        // Get existing courses for this consultant on this date
-        // بما أن `Course` الآن يحتوي على `consultant_id`، غير الاستعلام ليستخدمه مباشرة
-        $existingCourses = Course::where('consultant_id', $request->consultant_id) // <-- التغيير هنا
+        $existingCourses = Course::where('consultant_id', $request->consultant_id)
             ->whereDate('course_date', $date)
             ->select('start_time', 'end_time')
             ->get();
 
-        // Define available time slots (you can customize this)
         $availableSlots = [
             ['start' => '09:00', 'end' => '10:30'],
             ['start' => '11:00', 'end' => '12:30'],
@@ -407,7 +375,6 @@ public function create(Request $request)
             ['start' => '16:00', 'end' => '17:30'],
         ];
 
-        // Filter out conflicting slots
         $freeSlots = collect($availableSlots)->filter(function ($slot) use ($existingCourses) {
             foreach ($existingCourses as $course) {
                 $courseStart = Carbon::parse($course->start_time);
@@ -415,7 +382,6 @@ public function create(Request $request)
                 $slotStart = Carbon::parse($slot['start']);
                 $slotEnd = Carbon::parse($slot['end']);
 
-                // Check for overlap
                 if ($slotStart < $courseEnd && $slotEnd > $courseStart) {
                     return false;
                 }
@@ -427,47 +393,46 @@ public function create(Request $request)
     }
 
     /**
-     * Fetch courses based on a consultant ID (for AJAX)
+     * 🔥 FIXED: Fetch courses by consultant (for AJAX in create form)
      */
-    public function getCoursesByConsultant(Request $request)
+public function getCoursesByConsultant(Request $request)
 {
     try {
-        // التحقق من أن الطلب يحتوي على consultant_id وأن المعرف موجود في جدول المستخدمين
         $request->validate([
             'consultant_id' => 'required|exists:users,id',
         ]);
 
         $consultantId = $request->input('consultant_id');
-        Log::info("AJAX: getCoursesByConsultant called for consultant ID: {$consultantId}");
 
-        // التحقق من أن المستخدم لديه الصلاحية المطلوبة
         if (!Auth::user()->can('course-manage-all')) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        // التحقق من أن المستشار المختار لديه دور "Consultant"
         $consultant = User::find($consultantId);
         if (!$consultant || !$consultant->hasRole('Consultant')) {
-            return response()->json(['error' => 'Selected user is not a consultant'], 400);
+            return response()->json(['error' => 'Not a consultant'], 400);
         }
 
-        // جلب الدورات المرتبطة بهذا المستشار من اليوم وما بعد فقط
-        $courses = Course::where('consultant_id', $consultantId)
+        // 🔥 Get courses from today onwards
+        $allCourses = Course::where('consultant_id', $consultantId)
             ->whereDate('course_date', '>=', Carbon::now()->startOfDay())
-            ->select('id', 'title', 'course_date', 'start_time', 'end_time')
+            ->select('id', 'title', 'course_date', 'start_time', 'end_time', 'module_id')
             ->orderBy('course_date', 'asc')
             ->get();
         
-        Log::info("AJAX: Found " . $courses->count() . " courses for consultant ID {$consultantId}.");
+        // 🔥 Group duplicates
+        $courses = $allCourses->unique(function ($course) {
+            return $course->module_id . '-' .
+                   $course->course_date . '-' .
+                   $course->start_time . '-' .
+                   $course->title;
+        })->values();
 
         return response()->json($courses);
 
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        Log::error("AJAX: Validation error in getCoursesByConsultant: " . json_encode($e->errors()));
-        return response()->json(['error' => 'Invalid consultant ID'], 400);
     } catch (\Exception $e) {
-        Log::error("AJAX: Error in getCoursesByConsultant: " . $e->getMessage());
-        return response()->json(['error' => 'Server error occurred'], 500);
+        Log::error("AJAX Error: " . $e->getMessage());
+        return response()->json(['error' => 'Server error'], 500);
     }
 }
 
@@ -492,10 +457,8 @@ public function create(Request $request)
             foreach ($request->course_ids as $courseId) {
                 $course = Course::find($courseId);
                 
-                // Check permissions for each course
                 if (Auth::user()->hasRole('Consultant') && !Auth::user()->can('course-manage-all')) {
-                    // بما أن `Course` الآن يحتوي على `consultant_id`، تحقق من تطابق معرف المستشار
-                    if ($course->consultant_id !== Auth::id()) { // <-- التغيير هنا (الوصول مباشرة إلى consultant_id)
+                    if ($course->consultant_id !== Auth::id()) {
                         $errorCount++;
                         continue;
                     }
@@ -504,16 +467,14 @@ public function create(Request $request)
                 $originalDate = $course->course_date;
                 $newDate = Carbon::parse($originalDate)->addDays($request->days_to_add);
 
-                // Create reschedule record
                 CourseReschedule::create([
                     'course_id' => $courseId,
-                    'consultant_id' => Auth::id(), // من قام بالتعديل هو المستخدم الحالي
+                    'consultant_id' => Auth::id(),
                     'original_date' => $originalDate,
                     'new_date' => $newDate,
                     'reason' => $request->reason,
                 ]);
 
-                // Update course date
                 $course->update(['course_date' => $newDate]);
                 
                 $successCount++;
@@ -521,9 +482,9 @@ public function create(Request $request)
 
             DB::commit();
 
-            $message = "Bulk reschedule completed. {$successCount} courses rescheduled successfully";
+            $message = "Bulk reschedule completed. {$successCount} courses rescheduled";
             if ($errorCount > 0) {
-                $message .= ", {$errorCount} courses failed due to permissions.";
+                $message .= ", {$errorCount} failed.";
             }
 
             return redirect()->route('course_reschedules.index')
@@ -538,21 +499,17 @@ public function create(Request $request)
     }
 
     /**
-     * Private method to notify students about reschedule
-     * You can implement this based on your notification system
+     * Notify students about reschedule
      */
-  private function notifyStudentsAboutReschedule($course, $reschedule)
+private function notifyStudentsAboutReschedule($course, $reschedule)
 {
-    // Get all students enrolled in this course's formation
     $students = $course->formation->inscriptions()
         ->where('status', 'active')
         ->with('user')
         ->get()
         ->pluck('user');
 
-    // Send notifications to each student
     foreach ($students as $student) {
-        // Create notification record
         $student->notifications()->create([
             'title' => 'Course Rescheduled',
             'message' => "The course '{$course->title}' has been rescheduled from " . 
@@ -569,46 +526,38 @@ public function create(Request $request)
             'is_read' => false,
         ]);
 
-        // HNA khassk t'active la ligne li katseft l'email
         Mail::to($student->email)->send(new CourseRescheduledMail($course, $reschedule));
     }
 }
 
+    /**
+     * Remove the specified course reschedule
+     */
+public function destroy($id)
+{
+    $reschedule = CourseReschedule::with('course')->findOrFail($id);
+    $user = Auth::user();
 
-    public function destroy($id)
-    {
-        $reschedule = CourseReschedule::with('course')->findOrFail($id);
-        $user = Auth::user();
+    if (!$user->can('course-delete') && !$user->can('course-manage-own')) {
+        abort(403, 'Unauthorized to delete this reschedule.');
+    }
 
-        // 1. Check permissions (Authorization)
-        // L'utilisateur khasso ikon 3ando 'course-delete' wla 'course-manage-own'
-        if (!$user->can('course-delete') && !$user->can('course-manage-own')) {
-            abort(403, 'Unauthorized to delete this reschedule.');
-        }
-
-        // 2. Row-level security: 
-        // If the user is a Consultant and doesn't have 'course-delete' (e.g., only 'course-manage-own'), 
-        // ghadi n'aكدou belli l'course kayn l'consultant_id dyalou m3a l'ID dyal l'utilisateur.
-        // N'aكدou 'course-manage-own' 3la l'reschedule dyal les cours dyalo
-        if ($user->hasRole('Consultant') && !$user->can('course-delete')) {
-            if ($reschedule->course->consultant_id !== $user->id) {
-                abort(403, 'Unauthorized to delete this specific course reschedule.');
-            }
-        }
-
-        // Note: L'étudiant ma3andouch l'7a9 y'supprimi, hitach ma3andouch 'course-delete' wla 'course-manage-own' (kayban lina ghir f l'middleware)
-
-        try {
-            // 3. Delete the reschedule record
-            $reschedule->delete();
-
-            return redirect()->route('course_reschedules.index')
-                ->with('success', 'Course reschedule has been deleted successfully. The associated course date remains unchanged.');
-
-        } catch (\Exception $e) {
-            Log::error("Error deleting course reschedule {$id}: " . $e->getMessage());
-            return back()
-                ->with('error', 'An error occurred while deleting the reschedule: ' . $e->getMessage());
+    if ($user->hasRole('Consultant') && !$user->can('course-delete')) {
+        if ($reschedule->course->consultant_id !== $user->id) {
+            abort(403, 'Unauthorized to delete this specific reschedule.');
         }
     }
+
+    try {
+        $reschedule->delete();
+
+        return redirect()->route('course_reschedules.index')
+            ->with('success', 'Course reschedule deleted successfully.');
+
+    } catch (\Exception $e) {
+        Log::error("Error deleting reschedule {$id}: " . $e->getMessage());
+        return back()
+            ->with('error', 'An error occurred: ' . $e->getMessage());
+    }
+}
 }

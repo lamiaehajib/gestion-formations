@@ -187,6 +187,13 @@
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
+
+    .btn-outline-secondary.btn-modern {
+    border: 2px solid var(--secondary-pink);
+    color: var(--secondary-pink);
+    background-color: var(--bs-red);
+    box-shadow: none;
+}
 </style>
 @endpush
 
