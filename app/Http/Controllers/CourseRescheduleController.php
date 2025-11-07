@@ -27,11 +27,12 @@ class CourseRescheduleController extends Controller
     /**
      * Display a listing of course reschedules
      */
-   public function index(Request $request)
+    public function index(Request $request)
 {
     $user = Auth::user();
 
-    $query = CourseReschedule::with(['course', 'consultant'])
+    // 🔥 Load courses with module for grouping
+    $query = CourseReschedule::with(['course.module', 'consultant'])
         ->orderBy('created_at', 'desc');
 
     // Filter based on user role
@@ -63,7 +64,31 @@ class CourseRescheduleController extends Controller
         $query->whereDate('new_date', '<=', $request->date_to);
     }
 
-    $reschedules = $query->paginate(15);
+    // 🔥 Get ALL reschedules BEFORE pagination
+    $allReschedules = $query->get();
+
+    // 🔥 Group duplicates by course attributes
+    $groupedReschedules = $allReschedules->unique(function ($reschedule) {
+        $course = $reschedule->course;
+        return $course->module_id . '-' .
+               $course->course_date . '-' .
+               $course->start_time . '-' .
+               $course->title . '-' .
+               $reschedule->new_date; // Include new_date in grouping
+    });
+
+    // 🔥 Manual pagination
+    $perPage = 15;
+    $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage();
+    $currentPageItems = $groupedReschedules->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+    $reschedules = new \Illuminate\Pagination\LengthAwarePaginator(
+        $currentPageItems,
+        $groupedReschedules->count(),
+        $perPage,
+        $currentPage,
+        ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+    );
 
     // --- Adjust Courses for Filters ---
     $courses = collect();
