@@ -603,12 +603,14 @@
                     </li>
                     @endcan
 
-                    <li class="sidebar-menu__item">
-                        <a href="{{ route('modules.index') }}" class="sidebar-menu__link">
-                            <span class="icon"><i class="ph ph-squares-four"></i></span>
-                            <span class="text">modules</span>
-                        </a>
-                    </li>
+                @unlessrole('Équipe Technique')
+                <li class="sidebar-menu__item">
+                    <a href="{{ route('modules.index') }}" class="sidebar-menu__link">
+                        <span class="icon"><i class="ph ph-squares-four"></i></span>
+                        <span class="text">modules</span>
+                    </a>
+                </li>
+                @endunlessrole
 
                     @can('documentation-create')
                       <li class="sidebar-menu__item">
@@ -629,12 +631,14 @@
                     </li>
 
                     @endcan
+                    @unlessrole('Équipe Technique')
                     <li class="sidebar-menu__item">
                         <a href="{{ route('courses.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-book"></i></span>
                             <span class="text">Séances</span>
                         </a>
                     </li>
+                    @endunlessrole
 
                     @if(Auth::check() && Auth::user()->hasRole('Etudiant') && Auth::user()->hasActiveInscriptionInProfessionalFormation())
     <li class="sidebar-menu__item">
@@ -645,13 +649,14 @@
     </li>
 @endif
 
-                    
+                    @unlessrole('Équipe Technique')
                     <li class="sidebar-menu__item">
                         <a href="{{ route('course_reschedules.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-book"></i></span>
                             <span class="text">Séances Reportées</span>
                         </a>
                     </li>
+                    @endunlessrole
 
                     <li class="sidebar-menu__item">
                         <a href="{{ route('reclamations.index') }}" class="sidebar-menu__link">

@@ -37,6 +37,7 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\EquipeTechniqueMiddleware::class, // Ajouter cette ligne
         ],
 
         'api' => [
@@ -70,6 +71,7 @@ class Kernel extends HttpKernel
     'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
 
     'check.access' => \App\Http\Middleware\CheckUserAccess::class, 
+    'equipe.technique' => \App\Http\Middleware\EquipeTechniqueMiddleware::class, // Ajouter cette ligne
 
     ];
 }

@@ -145,76 +145,90 @@ class PermissionseSeeder extends Seeder
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-        // 2. Create Roles (if they don't exist)
-        $roles = ['Admin', 'Etudiant', 'Consultant', 'Finance', 'Super Admin'];
+       // 2. Create Roles
+        $roles = ['Admin', 'Etudiant', 'Consultant', 'Finance', 'Super Admin', 'Équipe Technique'];
 
         foreach ($roles as $roleName) {
             Role::firstOrCreate(['name' => $roleName]);
         }
 
-        // 3. Assign ALL permissions to the 'Admin' role
+        // 3. Assign ALL permissions to Admin and Super Admin
         $adminRole = Role::where('name', 'Admin')->first();
         if ($adminRole) {
-            $adminRole->syncPermissions(Permission::all()); // Admin has all permissions
+            $adminRole->syncPermissions(Permission::all());
         }
 
-        // 4. Assign specific permissions to other roles
+        $superAdminRole = Role::where('name', 'Super Admin')->first();
+        if ($superAdminRole) {
+            $superAdminRole->syncPermissions(Permission::all());
+        }
+
+        // 4. Finance Role
         $financeRole = Role::where('name', 'Finance')->first();
         if ($financeRole) {
             $financeRole->givePermissionTo([
                 'inscription-list',
                 'inscription-create',
                 'inscription-edit',
-                'course-list',       // Finance might need to see courses
-                'course-view',       // Finance might need to view course details
+                'course-list',
+                'course-view',
             ]);
         }
         
+        // 5. Etudiant Role
         $etudiantRole = Role::where('name', 'Etudiant')->first();
         if ($etudiantRole) {
             $etudiantRole->givePermissionTo([
                 'inscription-list',
                 'inscription-view-own',
                 'profile-edit-own',
-                'course-list',       // Students need to see courses
-                'course-view',       // Students need to view course details
-                'course-join',       // Students need to join courses
-                'course-download-document', // Students might need to download documents
-                 'message-view-own', 
+                'course-list',
+                'course-view',
+                'course-join',
+                'course-download-document',
+                'message-view-own',
+                'reclamation-create',
+                'reclamation-view-own',
+                'reclamation-rate',
             ]);
         }
 
+        // 6. Consultant Role
         $consultantRole = Role::where('name', 'Consultant')->first();
         if ($consultantRole) {
             $consultantRole->givePermissionTo([
                 'inscription-list',
                 'user-list',
                 'profile-edit-own',
-                'course-list',           // Consultants need to see courses
-                'course-view',           // Consultants need to view course details
-                'course-create',         // Consultants create courses
-                'course-edit',           // Consultants edit courses
-                'course-delete',         // Consultants delete courses
-                'course-join',           // Consultants join their own courses
-                'course-download-document', // Consultants download their own documents
-                'course-manage-own',     // Grants a general permission for their own courses
+                'course-list',
+                'course-view',
+                'course-create',
+                'course-edit',
+                'course-delete',
+                'course-join',
+                'course-download-document',
+                'course-manage-own',
                 'documentation-create', 
                 'documentation-edit', 
                 'documentation-delete', 
                 'documentation-view',
                 'documentation-view-own',
-
             ]);
         }
 
-        $superAdminRole = Role::where('name', 'Super Admin')->first();
-        if ($superAdminRole) {
-            $superAdminRole->syncPermissions(Permission::all()); // Super Admin also gets all
+        // 7. Équipe Technique Role (NEW)
+        $equipeTechniqueRole = Role::where('name', 'Équipe Technique')->first();
+        if ($equipeTechniqueRole) {
+            $equipeTechniqueRole->givePermissionTo([
+                'reclamation-list',
+                'reclamation-view',
+                'reclamation-respond',
+                'reclamation-update-status',
+                'profile-edit-own',
+            ]);
         }
 
-        // ---
-        ## Add Categories
-        // Add the categories here
+        // Add Categories
         $categories = [
             ['name' => 'Master Professionnelle', 'description' => 'Programmes de Master Professionnelle', 'is_active' => true],
             ['name' => 'Licence Professionnelle', 'description' => 'Programmes de Licence Professionnelle', 'is_active' => true],
@@ -228,9 +242,8 @@ class PermissionseSeeder extends Seeder
                 $categoryData
             );
         }
-        // ---
 
-        // 5. Create or update users and assign their roles
+        // 8. Create Users
         // Admin User
         $adminEmail = 'admin@gmail.com';
         $adminUser = User::firstOrCreate(
@@ -255,7 +268,7 @@ class PermissionseSeeder extends Seeder
         );
         $etudiantUser->assignRole('Etudiant');
 
-        
+        // Consultant User
         $consultantEmail = 'consultant@gmail.com';
         $consultantUser = User::firstOrCreate(
             ['email' => $consultantEmail],
@@ -266,5 +279,17 @@ class PermissionseSeeder extends Seeder
             ]
         );
         $consultantUser->assignRole('Consultant');
+
+        // Équipe Technique User (NEW)
+        $equipeTechniqueEmail = 'technique@gmail.com';
+        $equipeTechniqueUser = User::firstOrCreate(
+            ['email' => $equipeTechniqueEmail],
+            [
+                'name' => 'Équipe Technique User',
+                'password' => Hash::make('password'),
+                'status' => 'active',
+            ]
+        );
+        $equipeTechniqueUser->assignRole('Équipe Technique');
     }
 }

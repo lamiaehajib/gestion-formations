@@ -122,7 +122,13 @@
                                         @foreach($allRoles as $role)
                                             @php
                                                 $roleValue = strtolower($role->name);
-                                                $displayValue = ($roleValue === 'admin') ? 'admis' : $roleValue;
+                                                if ($roleValue === 'admin') {
+                                                    $displayValue = 'admis';
+                                                } elseif ($role->name === 'Équipe Technique') {
+                                                    $displayValue = 'equipe-technique';
+                                                } else {
+                                                    $displayValue = $roleValue;
+                                                }
                                             @endphp
                                             <option value="{{ $displayValue }}" {{ request('role') == $displayValue ? 'selected' : '' }}>
                                                 {{ $role->name === 'Admin' ? 'Admis' : $role->name }}
@@ -285,7 +291,7 @@
                 <div class="table-card" data-group="admis">
                     <div class="table-header">
                         <h5 class="mb-0">
-                            <i class="fas fa-user-graduate me-2"></i>
+                            <i class="fas fa-user-shield me-2"></i>
                             Liste des Admis
                         </h5>
                         <div class="loading-spinner" style="display: none;">
@@ -330,6 +336,63 @@
                         </div>
                         <div class="pagination-wrapper">
                             {{ $admisPaginated->appends(request()->except('page_admin'))->links('vendor.pagination.bootstrap-5') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table de l'Équipe Technique -->
+        <div class="row mb-5" id="equipeTechniqueTableContainer" style="{{ request('role') && request('role') !== 'equipe-technique' ? 'display: none;' : '' }}">
+            <div class="col-12">
+                <div class="table-card" data-group="equipe-technique">
+                    <div class="table-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cogs me-2"></i>
+                            Liste de l'Équipe Technique
+                        </h5>
+                        <div class="loading-spinner" style="display: none;">
+                            <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th><input class="form-check-input" type="checkbox" id="selectAllEquipeTechnique"></th>
+                                    <th>Avatar</th>
+                                    <th>Nom</th>
+                                    <th>Email</th>
+                                    <th>Téléphone</th>
+                                    <th>Rôle</th>
+                                    <th>Statut</th>
+                                    <th>Date création</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="equipeTechniqueTableBody">
+                                @forelse($equipeTechniquePaginated as $user)
+                                    @include('users.partials.user_row', ['user' => $user])
+                                @empty
+                                    <tr>
+                                        <td colspan="9">
+                                            @include('users.partials.empty_state')
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-footer">
+                        <div class="pagination-info">
+                            @if($equipeTechniquePaginated->count() > 0)
+                                Affichage de {{ $equipeTechniquePaginated->firstItem() }} à {{ $equipeTechniquePaginated->lastItem() }} sur {{ $equipeTechniquePaginated->total() }} résultats
+                            @else
+                                Aucun résultat trouvé
+                            @endif
+                        </div>
+                        <div class="pagination-wrapper">
+                            {{ $equipeTechniquePaginated->appends(request()->except('page_equipe_technique'))->links('vendor.pagination.bootstrap-5') }}
                         </div>
                     </div>
                 </div>
@@ -444,7 +507,7 @@
         }
 
         .stats-card-info .stats-icon {
-            background: linear-gradient(135deg, var(--secondary-color), #D32F2F);
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
         }
 
         .stats-number {
@@ -924,11 +987,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const role = document.getElementById('roleFilter').value;
         
         // Déterminer quels groupes afficher
-        const groups = ['consultant', 'etudiant', 'admis'];
+        const groups = ['consultant', 'etudiant', 'admis', 'equipe-technique'];
         
         // Masquer tous les containers
         groups.forEach(group => {
-            const container = document.getElementById(`${group}TableContainer`);
+            const container = document.getElementById(`${group === 'equipe-technique' ? 'equipeTechnique' : group}TableContainer`);
             if (container) {
                 container.style.display = 'none';
             }
@@ -953,7 +1016,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('roleFilter').value = '';
         
         // Afficher tous les groupes et recharger depuis page 1
-        const groups = ['consultant', 'etudiant', 'admis'];
+        const groups = ['consultant', 'etudiant', 'admis', 'equipe-technique'];
         groups.forEach(group => {
             showAndLoadGroup(group, 1);
         });
@@ -961,7 +1024,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fonction pour afficher et charger un groupe
     function showAndLoadGroup(group, page = 1) {
-        const container = document.getElementById(`${group}TableContainer`);
+        const containerId = group === 'equipe-technique' ? 'equipeTechniqueTableContainer' : `${group}TableContainer`;
+        const container = document.getElementById(containerId);
         if (container) {
             container.style.display = 'block';
             loadGroupData(group, page);
@@ -981,7 +1045,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (loadingSpinner) loadingSpinner.style.display = 'block';
             if (tableCard) tableCard.classList.add('table-loading');
             
-            // Préparer les paramètres - CORRECTION IMPORTANTE ICI
+            // Préparer les paramètres
             const params = {
                 search: document.getElementById('searchInput').value,
                 status: document.getElementById('statusFilter').value,
@@ -990,7 +1054,14 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             
             // Ajouter le bon paramètre de page selon le groupe
-            const pageParam = `page_${group === 'admis' ? 'admin' : group}`;
+            let pageParam;
+            if (group === 'admis') {
+                pageParam = 'page_admin';
+            } else if (group === 'equipe-technique') {
+                pageParam = 'page_equipe_technique';
+            } else {
+                pageParam = `page_${group}`;
+            }
             params[pageParam] = page;
             
             console.log('Params envoyés:', params); // Debug
@@ -1159,7 +1230,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // === FONCTIONS UTILITAIRES ===
     
-    // Fonction pour gérer la pagination - CORRECTION MAJEURE ICI
+    // Fonction pour gérer la pagination
     function attachPaginationListeners() {
         document.addEventListener('click', function(e) {
             // Rechercher spécifiquement les liens dans les wrappers de pagination
@@ -1182,7 +1253,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Groupe détecté:', group); // Debug
                 
                 // Déterminer le paramètre de page correct
-                const pageParam = `page_${group === 'admis' ? 'admin' : group}`;
+                let pageParam;
+                if (group === 'admis') {
+                    pageParam = 'page_admin';
+                } else if (group === 'equipe-technique') {
+                    pageParam = 'page_equipe_technique';
+                } else {
+                    pageParam = `page_${group}`;
+                }
                 const page = url.searchParams.get(pageParam) || 1;
                 
                 console.log('Paramètre de page:', pageParam, 'Page:', page); // Debug

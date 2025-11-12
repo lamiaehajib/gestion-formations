@@ -1070,7 +1070,7 @@
 </div>
 
 <script>
-// JavaScript pour gérer le dropdown des messages
+// JavaScript pour gérer le dropdown des mio messages
 document.addEventListener('DOMContentLoaded', function() {
     const messagesToggle = document.getElementById('messagesDropdownToggle');
     const messagesDropdown = document.getElementById('messagesDropdownMenu');

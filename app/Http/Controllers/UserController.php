@@ -6,7 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Collection; // Correct namespace for Collection
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
@@ -21,9 +21,7 @@ class UserController extends Controller
     // Constructor to apply middleware for permissions
     public function __construct()
     {
-        // Apply permission middlewares to control access to methods
-        // Ensure these permissions are defined in your seeder and assigned to appropriate roles
-        $this->middleware('permission:user-list', ['only' => ['index', 'show', 'export']]); // Added show and export
+        $this->middleware('permission:user-list', ['only' => ['index', 'show', 'export']]);
         $this->middleware('permission:user-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:user-edit', ['only' => ['edit', 'update', 'toggleStatus']]);
         $this->middleware('permission:user-delete', ['only' => ['destroy', 'bulkAction']]);
@@ -31,14 +29,9 @@ class UserController extends Controller
 
     /**
      * Display a listing of the users.
+     * (FiX: Tri et filtrage par rôle corrigés + ajout Équipe Technique).
      */
- 
-    
-    /**
-     * Display a listing of the users.
-     * (FiX: Tri et filtrage par rôle corrigés).
-     */
-  public function index(Request $request)
+    public function index(Request $request)
     {
         // 1. Construire la requête de base avec eager loading
         $baseQuery = User::with('roles');
@@ -60,7 +53,8 @@ class UserController extends Controller
         // 3. Appliquer le filtre de rôle si spécifié
         if ($request->filled('role')) {
             $roleFilter = $request->get('role');
-            $roleToFilter = ($roleFilter === 'admis') ? 'Admin' : ucfirst($roleFilter);
+            $roleToFilter = ($roleFilter === 'admis') ? 'Admin' : 
+                           (($roleFilter === 'equipe-technique') ? 'Équipe Technique' : ucfirst($roleFilter));
             
             $baseQuery->whereHas('roles', function ($q) use ($roleToFilter) {
                 $q->where('name', $roleToFilter);
@@ -98,6 +92,13 @@ class UserController extends Controller
                         $q->where('name', 'Admin');
                     });
                     $pageParam = 'page_admin';
+                    break;
+                    
+                case 'equipe-technique':
+                    $groupQuery->whereHas('roles', function ($q) {
+                        $q->where('name', 'Équipe Technique');
+                    });
+                    $pageParam = 'page_equipe_technique';
                     break;
                     
                 default:
@@ -140,17 +141,23 @@ class UserController extends Controller
             return $user->hasRole('Admin');
         });
 
+        $equipeTechnique = $allFilteredUsers->filter(function ($user) {
+            return $user->hasRole('Équipe Technique');
+        });
+
         // Pagination manuelle pour l'affichage initial
         $perPage = 10;
         
         $consultantsPaginated = $this->paginateCollection($consultants, $perPage, $request->get('page_consultant'), 'page_consultant');
         $etudiantsPaginated = $this->paginateCollection($etudiants, $perPage, $request->get('page_etudiant'), 'page_etudiant');
         $admisPaginated = $this->paginateCollection($admis, $perPage, $request->get('page_admin'), 'page_admin');
+        $equipeTechniquePaginated = $this->paginateCollection($equipeTechnique, $perPage, $request->get('page_equipe_technique'), 'page_equipe_technique');
 
         // Conserver les paramètres de requête
         $consultantsPaginated->appends($request->except('page_consultant'));
         $etudiantsPaginated->appends($request->except('page_etudiant'));
         $admisPaginated->appends($request->except('page_admin'));
+        $equipeTechniquePaginated->appends($request->except('page_equipe_technique'));
 
         // Stats et rôles
         $stats = $this->getStats();
@@ -160,6 +167,7 @@ class UserController extends Controller
             'consultantsPaginated',
             'etudiantsPaginated', 
             'admisPaginated',
+            'equipeTechniquePaginated',
             'stats',
             'allRoles'
         ));

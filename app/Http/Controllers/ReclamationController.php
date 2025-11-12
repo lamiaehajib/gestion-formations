@@ -5,15 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Inscription;
 use App\Models\Reclamation;
 use App\Models\Formation;
-                                                                           use App\Models\User; // Ensure User model is imported
+use App\Models\User;
 use Illuminate\Http\Request;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
- use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail; // Zid had la ligne
-use App\Mail\NewReclamationNotification; // Zid had la ligne
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NewReclamationNotification;
 use Spatie\Permission\Models\Role; 
+
 class ReclamationController extends Controller
 {
     /**
@@ -21,7 +22,6 @@ class ReclamationController extends Controller
      */
     public function __construct()
     {
-        // Apply middleware for authorization
         $this->middleware('auth');
         $this->middleware('permission:reclamation-list|reclamation-create|reclamation-edit|reclamation-delete', ['only' => ['index', 'show']]);
         $this->middleware('permission:reclamation-create', ['only' => ['create', 'store']]);
@@ -33,9 +33,6 @@ class ReclamationController extends Controller
 
     /**
      * Display a listing of reclamations.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function index(Request $request)
     {
@@ -43,10 +40,15 @@ class ReclamationController extends Controller
             $user = Auth::user();
             $query = Reclamation::with(['user', 'formation', 'assignedTo']);
 
-            // Filter reclamations based on user role
+            // Filter based on role
             if ($user->hasRole('Etudiant') || $user->hasRole('Consultant')) {
+                // Students and Consultants see only their own reclamations
                 $query->where('user_id', $user->id);
+            } elseif ($user->hasRole('Équipe Technique')) {
+                // Équipe Technique sees only reclamations assigned to them
+                $query->where('assigned_to', $user->id);
             }
+            // Admin, Super Admin, Finance see all reclamations
 
             // Apply search filters
             if ($request->filled('search')) {
@@ -88,45 +90,35 @@ class ReclamationController extends Controller
 
     /**
      * Show the form for creating a new reclamation.
-     *
-     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function create()
-{
-    try {
-        $user = Auth::user(); // Get the currently authenticated user
-        $formations = collect(); // Initialize an empty collection
+    {
+        try {
+            $user = Auth::user();
+            $formations = collect();
 
-        if ($user) {
-            // Check if the user is a Student or a Consultant
-            if ($user->hasRole('Etudiant')) {
-                // Get formations a student is enrolled in
-                $formationIds = Inscription::where('user_id', $user->id)->pluck('formation_id');
-                $formations = Formation::whereIn('id', $formationIds)->where('status', 'published')->get();
-            } elseif ($user->hasRole('Consultant')) {
-                // Get formations assigned to a consultant
-                // Assuming 'consultant_id' is the foreign key in the 'formations' table
-                $formations = Formation::where('consultant_id', $user->id)->where('status', 'published')->get();
-            } else {
-                // For other roles (e.g., Admin), show all published formations
-                $formations = Formation::where('status', 'published')->get();
+            if ($user) {
+                if ($user->hasRole('Etudiant')) {
+                    $formationIds = Inscription::where('user_id', $user->id)->pluck('formation_id');
+                    $formations = Formation::whereIn('id', $formationIds)->where('status', 'published')->get();
+                } elseif ($user->hasRole('Consultant')) {
+                    $formations = Formation::where('consultant_id', $user->id)->where('status', 'published')->get();
+                } else {
+                    $formations = Formation::where('status', 'published')->get();
+                }
             }
+            
+            return view('reclamations.create', compact('formations'));
+        } catch (Exception $e) {
+            Log::error('Error in ReclamationController@create: ' . $e->getMessage());
+            return back()->with('error', 'Une erreur est survenue lors du chargement du formulaire de création.');
         }
-        
-        return view('reclamations.create', compact('formations'));
-    } catch (Exception $e) {
-        Log::error('Error in ReclamationController@create: ' . $e->getMessage());
-        return back()->with('error', 'Une erreur est survenue lors du chargement du formulaire de création.');
     }
-}
 
     /**
      * Store a newly created reclamation in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
      */
-   public function store(Request $request)
+    public function store(Request $request)
     {
         try {
             $request->validate([
@@ -137,8 +129,7 @@ class ReclamationController extends Controller
                 'priority' => 'required|in:' . implode(',', array_keys(Reclamation::PRIORITIES))
             ]);
 
-            // === L'CORRECTION ===
-            // 1. Create the reclamation first.
+            // Create the reclamation
             $reclamation = Reclamation::create([
                 'user_id' => Auth::id(),
                 'formation_id' => $request->formation_id,
@@ -149,11 +140,10 @@ class ReclamationController extends Controller
                 'status' => 'ouverte'
             ]);
 
-            // 2. Get users with the specified roles.
+            // Send notification to admins
             $rolesToSendEmail = ['Admin', 'Finance', 'Super Admin'];
             $usersToNotify = User::role($rolesToSendEmail)->get();
 
-            // 3. Send the notification email to each user.
             foreach ($usersToNotify as $user) {
                 Mail::to($user->email)->send(new NewReclamationNotification($reclamation));
             }
@@ -168,56 +158,63 @@ class ReclamationController extends Controller
 
     /**
      * Display the specified reclamation.
-     *
-     * @param  \App\Models\Reclamation  $reclamation
-     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
-// In App\Http\Controllers\ReclamationController.php
+    public function show(Reclamation $reclamation)
+    {
+        try {
+            $user = Auth::user();
 
-public function show(Reclamation $reclamation)
-{
-    try {
-        $user = Auth::user();
+            // Authorization check
+            if ($user->hasRole('Etudiant') || $user->hasRole('Consultant')) {
+                if ($reclamation->user_id !== $user->id) {
+                    abort(403, 'Accès non autorisé.');
+                }
+            } elseif ($user->hasRole('Équipe Technique')) {
+                if ($reclamation->assigned_to !== $user->id) {
+                    abort(403, 'Accès non autorisé.');
+                }
+            }
 
-        // Authorization check
-        if (($user->hasRole('Etudiant') || $user->hasRole('Consultant')) && $reclamation->user_id !== $user->id) {
-            abort(403, 'Accès non autorisé.');
+            $reclamation->load(['user', 'formation', 'assignedTo']);
+
+            // Fetch users who can be assigned (only for Admin, Super Admin, Finance)
+            $assignableUsers = collect();
+            if ($user->hasAnyRole(['Admin', 'Super Admin', 'Finance'])) {
+                $assignableUsers = User::role(['Admin', 'Finance', 'Super Admin', 'Équipe Technique'])->get();
+            }
+            
+            return view('reclamations.show', compact('reclamation', 'assignableUsers'));
+        } catch (Exception $e) {
+            Log::error('Error in ReclamationController@show: ' . $e->getMessage());
+            return back()->with('error', 'Une erreur est survenue lors du chargement de la réclamation.');
         }
-
-        $reclamation->load(['user', 'formation', 'assignedTo']);
-
-        // Fetch users who can be assigned to the reclamation
-        // This leverages the Spatie\Permission package's powerful scopes.
-        $assignableUsers = User::role(['Admin', 'Finance', 'Super Admin'])->get();
-        
-        return view('reclamations.show', compact('reclamation', 'assignableUsers'));
-    } catch (Exception $e) {
-        Log::error('Error in ReclamationController@show: ' . $e->getMessage());
-        return back()->with('error', 'Une erreur est survenue lors du chargement de la réclamation.');
     }
-}
 
     /**
      * Show the form for editing the specified reclamation.
-     *
-     * @param  \App\Models\Reclamation  $reclamation
-     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function edit(Reclamation $reclamation)
     {
         try {
             $user = Auth::user();
 
-            // Authorization check: only creator can edit if status is 'ouverte', or an admin.
-            // Also allow Consultants to edit their assigned reclamations
-            if (($user->hasRole('Etudiant') && ($reclamation->user_id !== $user->id || $reclamation->status !== 'ouverte')) ||
-                ($user->hasRole('Consultant') && ($reclamation->assigned_to !== $user->id && $reclamation->user_id !== $user->id))) {
+            // Authorization check
+            if ($user->hasRole('Etudiant')) {
+                if ($reclamation->user_id !== $user->id || $reclamation->status !== 'ouverte') {
+                    abort(403, 'Accès non autorisé.');
+                }
+            } elseif ($user->hasRole('Consultant')) {
+                if ($reclamation->user_id !== $user->id && $reclamation->assigned_to !== $user->id) {
+                    abort(403, 'Accès non autorisé.');
+                }
+            } elseif ($user->hasRole('Équipe Technique')) {
+                // Équipe Technique cannot edit, only respond
                 abort(403, 'Accès non autorisé.');
+            } elseif (!$user->hasAnyRole(['Admin', 'Super Admin', 'Finance'])) {
+                if ($reclamation->status !== 'ouverte' && $reclamation->user_id !== $user->id && $reclamation->assigned_to !== $user->id) {
+                    abort(403, 'Accès non autorisé.');
+                }
             }
-            if (!$user->hasAnyRole(['Admin', 'Super Admin', 'Finance']) && $reclamation->status !== 'ouverte' && $reclamation->user_id !== $user->id && $reclamation->assigned_to !== $user->id) {
-                abort(403, 'Accès non autorisé.');
-            }
-
 
             $formations = Formation::where('status', 'published')->get();
             return view('reclamations.edit', compact('reclamation', 'formations'));
@@ -229,10 +226,6 @@ public function show(Reclamation $reclamation)
 
     /**
      * Update the specified reclamation in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Reclamation  $reclamation
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(Request $request, Reclamation $reclamation)
     {
@@ -240,14 +233,22 @@ public function show(Reclamation $reclamation)
             $user = Auth::user();
 
             // Authorization check
-            if (($user->hasRole('Etudiant') && ($reclamation->user_id !== $user->id || $reclamation->status !== 'ouverte')) ||
-                ($user->hasRole('Consultant') && ($reclamation->assigned_to !== $user->id && $reclamation->user_id !== $user->id))) {
+            if ($user->hasRole('Etudiant')) {
+                if ($reclamation->user_id !== $user->id || $reclamation->status !== 'ouverte') {
+                    abort(403, 'Accès non autorisé.');
+                }
+            } elseif ($user->hasRole('Consultant')) {
+                if ($reclamation->user_id !== $user->id && $reclamation->assigned_to !== $user->id) {
+                    abort(403, 'Accès non autorisé.');
+                }
+            } elseif ($user->hasRole('Équipe Technique')) {
+                // Équipe Technique cannot edit
                 abort(403, 'Accès non autorisé.');
+            } elseif (!$user->hasAnyRole(['Admin', 'Super Admin', 'Finance'])) {
+                if ($reclamation->status !== 'ouverte' && $reclamation->user_id !== $user->id && $reclamation->assigned_to !== $user->id) {
+                    abort(403, 'Accès non autorisé.');
+                }
             }
-            if (!$user->hasAnyRole(['Admin', 'Super Admin', 'Finance']) && $reclamation->status !== 'ouverte' && $reclamation->user_id !== $user->id && $reclamation->assigned_to !== $user->id) {
-                abort(403, 'Accès non autorisé.');
-            }
-
 
             $request->validate([
                 'formation_id' => 'required|exists:formations,id',
@@ -275,16 +276,13 @@ public function show(Reclamation $reclamation)
 
     /**
      * Remove the specified reclamation from storage.
-     *
-     * @param  \App\Models\Reclamation  $reclamation
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Reclamation $reclamation)
     {
         try {
             $user = Auth::user();
 
-            // Authorization check: only admins can delete
+            // Only admins can delete
             if (!$user->hasAnyRole(['Admin', 'Super Admin', 'Finance'])) {
                 abort(403, 'Accès non autorisé.');
             }
@@ -301,10 +299,6 @@ public function show(Reclamation $reclamation)
 
     /**
      * Assign reclamation to a user.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Reclamation  $reclamation
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function assign(Request $request, Reclamation $reclamation)
     {
@@ -315,7 +309,7 @@ public function show(Reclamation $reclamation)
 
             $reclamation->update([
                 'assigned_to' => $request->assigned_to,
-                'status' => 'en_traitement' // Status changes when assigned
+                'status' => 'en_traitement'
             ]);
 
             return redirect()->back()
@@ -328,14 +322,17 @@ public function show(Reclamation $reclamation)
 
     /**
      * Respond to a reclamation.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Reclamation  $reclamation
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function respond(Request $request, Reclamation $reclamation)
     {
         try {
+            $user = Auth::user();
+
+            // Authorization: Équipe Technique can only respond to assigned reclamations
+            if ($user->hasRole('Équipe Technique') && $reclamation->assigned_to !== $user->id) {
+                abort(403, 'Accès non autorisé.');
+            }
+
             $request->validate([
                 'response' => 'required|string',
                 'status' => 'required|in:' . implode(',', array_keys(Reclamation::STATUSES))
@@ -357,14 +354,17 @@ public function show(Reclamation $reclamation)
 
     /**
      * Update status of reclamation.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Reclamation  $reclamation
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function updateStatus(Request $request, Reclamation $reclamation)
     {
         try {
+            $user = Auth::user();
+
+            // Authorization: Équipe Technique can update status of assigned reclamations
+            if ($user->hasRole('Équipe Technique') && $reclamation->assigned_to !== $user->id) {
+                abort(403, 'Accès non autorisé.');
+            }
+
             $request->validate([
                 'status' => 'required|in:' . implode(',', array_keys(Reclamation::STATUSES))
             ]);
@@ -382,18 +382,14 @@ public function show(Reclamation $reclamation)
     }
 
     /**
-     * Rate the resolution (satisfaction rating) for a reclamation.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Reclamation  $reclamation
-     * @return \Illuminate\Http\RedirectResponse
+     * Rate the resolution for a reclamation.
      */
     public function rate(Request $request, Reclamation $reclamation)
     {
         try {
             $user = Auth::user();
 
-            // Authorization check: only the creator can rate
+            // Only the creator can rate
             if ($reclamation->user_id !== $user->id) {
                 abort(403, 'Accès non autorisé.');
             }
@@ -416,8 +412,6 @@ public function show(Reclamation $reclamation)
 
     /**
      * Get reclamations statistics.
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
     public function statistics()
     {
@@ -444,6 +438,4 @@ public function show(Reclamation $reclamation)
             return response()->json(['error' => 'Une erreur est survenue lors du chargement des statistiques.'], 500);
         }
     }
-
-    
 }
