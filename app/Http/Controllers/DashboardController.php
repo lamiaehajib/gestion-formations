@@ -488,6 +488,7 @@ private function getConsultantDashboardData(User $user, Request $request)
 
     $currentInscriptions = $inscriptions->where('status', 'active');
     $pendingInscriptions = $inscriptions->where('status', 'pending');
+     $completedInscriptions = $inscriptions->where('status', 'completed');
 
     $totalPaid = Payment::whereHas('inscription', function($q) use ($user) {
             $q->where('user_id', $user->id);
@@ -644,6 +645,7 @@ private function getConsultantDashboardData(User $user, Request $request)
     return [
         'activeInscriptions' => $currentInscriptions,
         'pendingInscriptions' => $pendingInscriptions,
+        'completedInscriptions' => $completedInscriptions,
         'totalPaid' => $totalPaid,
         'totalOutstanding' => $totalOutstanding,
         'inscriptions' => $inscriptions,
