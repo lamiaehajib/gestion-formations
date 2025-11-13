@@ -340,7 +340,6 @@ class FormationMessageController extends Controller
     
     /**
      * ✨ OPTIONNEL: Fonction pour obtenir la durée de l'audio
-     * Nécessite la bibliothèque getID3 (composer require james-heinrich/getid3)
      */
     private function getAudioDuration($filePath)
     {
