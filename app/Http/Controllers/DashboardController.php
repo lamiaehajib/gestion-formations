@@ -461,7 +461,7 @@ private function getConsultantDashboardData(User $user, Request $request)
 
 // ... (all the other code in your controller remains the same)
 
-    private function getEtudiantDashboardData(User $user, Request $request): array
+   private function getEtudiantDashboardData(User $user, Request $request): array
 {
     $selectedMonth = $request->input('selected_month');
     $selectedYear = $request->input('selected_year', Carbon::now()->year);
@@ -488,7 +488,7 @@ private function getConsultantDashboardData(User $user, Request $request)
 
     $currentInscriptions = $inscriptions->where('status', 'active');
     $pendingInscriptions = $inscriptions->where('status', 'pending');
-     $completedInscriptions = $inscriptions->where('status', 'completed');
+    
 
     $totalPaid = Payment::whereHas('inscription', function($q) use ($user) {
             $q->where('user_id', $user->id);
@@ -529,26 +529,24 @@ private function getConsultantDashboardData(User $user, Request $request)
         ->with('inscription.formation')
         ->get();
 
-    // MISE À JOUR IMPORTANTE POUR LES COURS DU JOUR
+    // 🔥 HADI TBEDLET: Zedna 'completed' m3a 'active'
     $enrolledFormationIds = $user->inscriptions()
-        ->where('status', 'active')
+        ->whereIn('status', ['active', 'completed']) // ← HAD HIYA T3DIL
         ->where('access_restricted', false)
         ->pluck('formation_id');
 
     $today = Carbon::today();
     $coursesToday = Course::whereDate('course_date', $today)
         ->orderBy('start_time', 'asc')
-        // Nta daba katsta3mel l'relationship l's7i7a (formation)
         ->whereHas('formation', function ($q) use ($enrolledFormationIds) { 
             $q->whereIn('formations.id', $enrolledFormationIds);
         })
-        ->with(['consultant', 'formation' => function ($q) use ($enrolledFormationIds) { // Hna tbedlat 'formations' l 'formation'
+        ->with(['consultant', 'formation' => function ($q) use ($enrolledFormationIds) {
             $q->whereIn('formations.id', $enrolledFormationIds);
         }])
         ->get();
 
-    // Zid t3dil l'nafs l'mouchkil f had l'partie dyal CourseReschedule
-    $recentCourseReschedules = CourseReschedule::whereHas('course.formation', function ($q) use ($enrolledFormationIds) { // CHANGE: 'course.formations' -> 'course.formation'
+    $recentCourseReschedules = CourseReschedule::whereHas('course.formation', function ($q) use ($enrolledFormationIds) {
             $q->whereIn('formations.id', $enrolledFormationIds);
         })
         ->orderBy('created_at', 'desc')
@@ -556,29 +554,26 @@ private function getConsultantDashboardData(User $user, Request $request)
         ->with('course')
         ->get();
 
-    // 🔥 HAD HIYA L'PARTIE L'JDIDA: Jib les formations m3a modules o progress dyalhom
+    // 🔥 Les formations m3a modules o progress dyalhom (daba kayjiw 7ta completed)
     $formationsWithModulesProgress = Formation::whereIn('id', $enrolledFormationIds)
         ->with(['modules' => function($query) {
             $query->orderBy('order', 'asc');
         }])
         ->get()
         ->map(function($formation) {
-            // Kan-calculate l'overall progress dyal l'formation
             $totalModules = $formation->modules->count();
             $totalProgress = $formation->modules->sum('progress');
             $formation->overall_progress = $totalModules > 0 ? round($totalProgress / $totalModules, 2) : 0;
             
-            // Kan-prepare data dyal modules for charts
             $formation->modules_chart_data = [
                 'labels' => $formation->modules->pluck('title')->toArray(),
                 'data' => $formation->modules->pluck('progress')->toArray(),
                 'backgroundColor' => $formation->modules->map(function($module) {
-                    // Kan-choose color based 3la progress
-                    if ($module->progress >= 80) return '#28a745'; // Green - Excellent
-                    elseif ($module->progress >= 60) return '#17a2b8'; // Blue - Good  
-                    elseif ($module->progress >= 40) return '#ffc107'; // Yellow - Average
-                    elseif ($module->progress >= 20) return '#fd7e14'; // Orange - Low
-                    else return '#dc3545'; // Red - Very Low
+                    if ($module->progress >= 80) return '#28a745';
+                    elseif ($module->progress >= 60) return '#17a2b8';
+                    elseif ($module->progress >= 40) return '#ffc107';
+                    elseif ($module->progress >= 20) return '#fd7e14';
+                    else return '#dc3545';
                 })->toArray(),
                 'borderColor' => '#fff',
                 'borderWidth' => 2
@@ -587,27 +582,25 @@ private function getConsultantDashboardData(User $user, Request $request)
             return $formation;
         });
 
-    // 🔥 Kan-prepare global modules progress chart (ga3 les modules dyal ga3 les formations)
     $allModules = $formationsWithModulesProgress->flatMap(function($formation) {
-    return $formation->modules->map(function($module) use ($formation) {
-        $module->formation_title = $formation->title;
-        return $module;
+        return $formation->modules->map(function($module) use ($formation) {
+            $module->formation_title = $formation->title;
+            return $module;
+        });
     });
-});
 
-   $globalModulesChart = [
-    'labels' => $allModules->pluck('title')->toArray(), // 🔥 HADI TBEDLET: ghir title dyal module
-    'data' => $allModules->pluck('progress')->toArray(),
-    'backgroundColor' => $allModules->map(function($module) {
-        if ($module->progress >= 80) return '#28a745';
-        elseif ($module->progress >= 60) return '#17a2b8';
-        elseif ($module->progress >= 40) return '#ffc107';
-        elseif ($module->progress >= 20) return '#fd7e14';
-        else return '#dc3545';
-    })->toArray(),
-];
+    $globalModulesChart = [
+        'labels' => $allModules->pluck('title')->toArray(),
+        'data' => $allModules->pluck('progress')->toArray(),
+        'backgroundColor' => $allModules->map(function($module) {
+            if ($module->progress >= 80) return '#28a745';
+            elseif ($module->progress >= 60) return '#17a2b8';
+            elseif ($module->progress >= 40) return '#ffc107';
+            elseif ($module->progress >= 20) return '#fd7e14';
+            else return '#dc3545';
+        })->toArray(),
+    ];
 
-    // Données pour les graphiques (existing code)
     $paymentStatusDistribution = Payment::whereHas('inscription', function($q) use ($user) {
             $q->where('user_id', $user->id);
         })
@@ -644,7 +637,6 @@ private function getConsultantDashboardData(User $user, Request $request)
     return [
         'activeInscriptions' => $currentInscriptions,
         'pendingInscriptions' => $pendingInscriptions,
-        'completedInscriptions' => $completedInscriptions,
         'totalPaid' => $totalPaid,
         'totalOutstanding' => $totalOutstanding,
         'inscriptions' => $inscriptions,
@@ -674,8 +666,6 @@ private function getConsultantDashboardData(User $user, Request $request)
         'inscriptionChartLabels' => $inscriptionChartLabels,
         'inscriptionChartData' => $inscriptionChartData,
         'inscriptionChartBackgroundColors' => $inscriptionChartBackgroundColors,
-        
-        // 🔥 NEW DATA FOR MODULES PROGRESS
         'formationsWithModulesProgress' => $formationsWithModulesProgress,
         'globalModulesChart' => $globalModulesChart,
         'totalModulesCount' => $allModules->count(),
