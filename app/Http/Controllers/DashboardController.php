@@ -639,7 +639,6 @@ private function getConsultantDashboardData(User $user, Request $request)
     ];
     $inscriptionChartBackgroundColors = $inscriptionStatusDistribution->pluck('status')->map(fn($status) => $inscriptionChartColors[$status] ?? '#007bff')->toArray();
 
-    // 🔥 Updated progressByFormation bach nsta3mlo formations m3a modules
     $progressByFormation = $formationsWithModulesProgress;
 
     return [
