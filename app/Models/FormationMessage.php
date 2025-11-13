@@ -83,7 +83,7 @@ class FormationMessage extends Model
 
             // جلب جميع الطلاب المسجلين في هذه التكوينات
             $inscriptions = Inscription::whereIn('formation_id', $formationIds)
-                ->whereIn('status', ['active', 'pending', 'completed']) 
+                ->whereIn('status', ['active', 'completed']) 
                 ->with('user:id,email') // 💡 Optimisation: charger seulement l'email
                 ->get();
 
