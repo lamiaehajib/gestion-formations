@@ -339,7 +339,6 @@ class FormationMessageController extends Controller
     }
     
     /**
-     * ✨ OPTIONNEL: Fonction pour obtenir la durée de l'audio
      */
     private function getAudioDuration($filePath)
     {
