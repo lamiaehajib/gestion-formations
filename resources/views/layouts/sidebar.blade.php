@@ -630,7 +630,7 @@
                      <li class="sidebar-menu__item">
                         <a href="{{ route('documentations.adminIndex') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-file-text"></i></span>
-                            <span class="text">les Support de cours</span>
+                            <span class="text"> Support de cours</span>
                         </a>
                     </li>
 
