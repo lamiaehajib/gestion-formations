@@ -529,7 +529,6 @@ private function getConsultantDashboardData(User $user, Request $request)
         ->with('inscription.formation')
         ->get();
 
-    // 🔥 HADI TBEDLET: Zedna 'completed' m3a 'active'
     $enrolledFormationIds = $user->inscriptions()
         ->whereIn('status', ['active', 'completed']) // ← HAD HIYA T3DIL
         ->where('access_restricted', false)
