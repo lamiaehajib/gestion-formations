@@ -40,46 +40,62 @@ class EtudiantController extends Controller
     }
     // ... (rest of your methods remain unchanged before showChooseFormationForm) ...
 public function showChooseFormationForm(Request $request)
-    {
-        $categories = Category::all();
-        $staticPaymentPlans = [
-            'one_time' => [
-                'name' => 'Paiement Complet (1 Versement)',
-                'description' => 'Paiement de la totalité du montant en une seule fois.',
-                'installments_options' => [1]
-            ],
-            'monthly' => [
-                'name' => 'Paiement Mensuel',
-                'description' => 'Paiement par tranches (2 ou 3 mois).',
-                'installments_options' => [2, 3]
-            ],
-            'custom' => [
-                'name' => 'Paiement Personnalisé',
-                'description' => 'Un plan de paiement flexible à définir avec l\'administration.',
-                'installments_options' => []
-            ],
-        ];
+{
+    $categories = Category::all();
+    $staticPaymentPlans = [
+        'one_time' => [
+            'name' => 'Paiement Complet (1 Versement)',
+            'description' => 'Paiement de la totalité du montant en une seule fois.',
+            'installments_options' => [1]
+        ],
+        'monthly' => [
+            'name' => 'Paiement Mensuel',
+            'description' => 'Paiement par tranches (2 ou 3 mois).',
+            'installments_options' => [2, 3]
+        ],
+        'custom' => [
+            'name' => 'Paiement Personnalisé',
+            'description' => 'Un plan de paiement flexible à définir avec l\'administration.',
+            'installments_options' => [],
+        ],
+    ];
 
-        // --- Define fixed registration fees here (or load from config) ---
-        $fixedRegistrationFees = [
-            'Licence Professionnelle' => 1600.00,
-            'Master Professionnelle' => 1600.00,
-            // Add other categories and their fees here if needed
-        ];
-        // -----------------------------------------------------------------
+    $fixedRegistrationFees = [
+        'Licence Professionnelle' => 1600.00,
+        'Master Professionnelle' => 1600.00,
+    ];
 
-        $query = Formation::where('status', 'published');
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
-        }
-        $formations = $query->with('category')->get(); // Eager load category for category name access
-
-        $selectedCategoryId = $request->get('category_id');
-
-        // Pass fixedRegistrationFees to the view
-        return view('etudiant.choose-formation', compact('formations', 'categories', 'staticPaymentPlans', 'selectedCategoryId', 'fixedRegistrationFees')); // <--- MODIFIED THIS LINE
+    $query = Formation::where('status', 'published');
+    
+    if ($request->filled('category_id')) {
+        $query->where('category_id', $request->category_id);
     }
+    
+    $formations = $query->with('category')->get();
 
+    // ✨ FILTRER LES FORMATIONS AVEC start_date DÉPASSÉE POUR LES CATÉGORIES RESTREINTES
+    $restrictedCategories = ['LICENCE PROFESSIONNELLE RECONNU', 'FORMATIONS','All in One'];
+    $today = Carbon::today();
+    
+    $formations = $formations->filter(function($formation) use ($restrictedCategories, $today) {
+        $categoryName = $formation->category->name ?? '';
+        
+        // Si la formation appartient à une catégorie restreinte
+        if (in_array($categoryName, $restrictedCategories)) {
+            $startDate = Carbon::parse($formation->start_date);
+            // Garder seulement si start_date >= aujourd'hui
+            return $startDate->greaterThanOrEqualTo($today);
+        }
+        
+        // Pour les autres catégories, garder toutes les formations
+        return true;
+    });
+    // ✨ FIN DU FILTRAGE
+
+    $selectedCategoryId = $request->get('category_id');
+
+    return view('etudiant.choose-formation', compact('formations', 'categories', 'staticPaymentPlans', 'selectedCategoryId', 'fixedRegistrationFees'));
+}
 
     /**
      * Handle a student's request to enroll in a formation.
@@ -93,12 +109,27 @@ public function showChooseFormationForm(Request $request)
         $request->validate([
             'formation_id' => 'required|exists:formations,id',
             'selected_payment_option' => 'required|integer|min:1',
-            // We need to validate the amount from the student input
             'initial_paid_amount' => 'required|numeric|min:0.01', 
             'proof_of_payment' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'payment_method' => 'required|string|in:cash,bank_transfer',
             'notes' => 'nullable|string',
         ]);
+
+        $formation = Formation::with('category')->findOrFail($request->formation_id);
+        
+        // ✨ NOUVELLE VÉRIFICATION: Bloquer l'inscription si start_date est dépassée pour certaines catégories
+        $restrictedCategories = ['LICENCE PROFESSIONNELLE RECONNU', 'FORMATIONS','All in One'];
+        $categoryName = $formation->category->name ?? '';
+        
+        if (in_array($categoryName, $restrictedCategories)) {
+            $today = Carbon::today();
+            $startDate = Carbon::parse($formation->start_date);
+            
+            if ($startDate->lessThan($today)) {
+                return redirect()->back()->with('error', 'Les inscriptions pour cette formation sont closes. La date de début est déjà passée. 📅❌')->withInput();
+            }
+        }
+        // ✨ FIN DE LA VÉRIFICATION
 
         $existingActiveInscription = Inscription::where('user_id', $user->id)
             ->where('formation_id', $request->formation_id)
@@ -109,9 +140,8 @@ public function showChooseFormationForm(Request $request)
             return redirect()->back()->with('error', 'Vous avez déjà une inscription en cours ou en attente pour cette formation. Vous ne pouvez pas vous réinscrire. 🚫')->withInput();
         }
         
-        $formation = Formation::with('category')->findOrFail($request->formation_id);
         $chosenInstallments = (int) $request->input('selected_payment_option');
-        $initialPaidAmount = (float) $request->input('initial_paid_amount'); // The amount entered by the student
+        $initialPaidAmount = (float) $request->input('initial_paid_amount');
     
         $fixedRegistrationFees = [
             'Licence Professionnelle' => 1600.00,
@@ -120,45 +150,28 @@ public function showChooseFormationForm(Request $request)
     
         $amountPerInstallment = 0;
         $remainingInstallmentsCount = $chosenInstallments; 
-        $categoryName = $formation->category->name ?? '';
     
         $isProfessional = array_key_exists($categoryName, $fixedRegistrationFees);
 
-        // --- NEW LOGIC TO HANDLE CUSTOM INITIAL PAYMENT ---
-        $amountToDivide = $formation->price; // Default to total price
+        $amountToDivide = $formation->price;
         $initialFee = 0;
 
         if ($isProfessional) {
             $initialFee = $fixedRegistrationFees[$categoryName];
-            $amountToDivide = $formation->price - $initialFee; // 18000 DH
-        } else {
-            // For other categories, the first installment is part of the total.
-            // For now, we'll assume the same logic for simplicity if needed.
+            $amountToDivide = $formation->price - $initialFee;
         }
 
-        // We calculate the amount of one standard installment (1800 DH)
         $standardInstallmentAmount = ($chosenInstallments > 0) ? round($amountToDivide / $chosenInstallments, 2) : 0;
         
-        // The student must pay at least the initial fee.
         if ($initialPaidAmount < $initialFee) {
             return redirect()->back()->with('error', 'Le montant initial payé doit être au moins de ' . number_format($initialFee, 2) . ' DH (frais d\'inscription).')->withInput();
         }
 
-        // Calculate the amount paid that covers installments
         $paidTowardsInstallments = $initialPaidAmount - $initialFee;
-        
-        // Calculate the number of installments covered by the extra payment.
         $coveredInstallments = floor($paidTowardsInstallments / $standardInstallmentAmount);
-
-        // The remaining balance to be paid for installments
         $remainingInstallmentBalance = $amountToDivide - ($coveredInstallments * $standardInstallmentAmount);
-        
-        // Remaining number of installments
         $remainingInstallmentsCount = max(0, $chosenInstallments - $coveredInstallments);
-        
-        // The amount per installment is fixed at 1800 DH, regardless of the initial payment.
         $amountPerInstallment = $standardInstallmentAmount;
-        // --- END OF NEW LOGIC ---
 
         DB::beginTransaction();
     
@@ -184,7 +197,7 @@ public function showChooseFormationForm(Request $request)
             'status' => 'pending',
             'inscription_date' => now(),
             'total_amount' => $formation->price,
-            'paid_amount' => 0.00, // Store the exact amount the student paid
+            'paid_amount' => 0.00,
             'chosen_installments' => $chosenInstallments,
             'amount_per_installment' => $amountPerInstallment,
             'remaining_installments' =>  $chosenInstallments,
