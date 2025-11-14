@@ -668,8 +668,10 @@ public function store(Request $request)
 
     private function getPaymentStats($request = null)
     {
-        $dateFrom = $request && $request->filled('date_from') ? $request->date_from : now()->startOfMonth();
-        $dateTo = $request && $request->filled('date_to') ? $request->date_to : now()->endOfMonth();
+        // ✅ Ila l'utilisateur ma3taach des dates spécifiques, 
+        // kan7sabo KOLCHI (tous les paiements) au lieu de 30 jours
+        $dateFrom = $request && $request->filled('date_from') ? $request->date_from : null;
+        $dateTo = $request && $request->filled('date_to') ? $request->date_to : null;
 
         $baseQuery = Payment::query();
 
@@ -681,25 +683,43 @@ public function store(Request $request)
             });
         }
 
+        // ✅ KanAppliquer les filtres de dates GHIR ila kanw spécifiés
+        $totalPaymentsQuery = (clone $baseQuery);
+        $totalAmountQuery = (clone $baseQuery);
+        $paidAmountQuery = (clone $baseQuery)->where('status', 'paid');
+        $pendingAmountQuery = (clone $baseQuery)->where('status', 'pending');
+        $lateAmountQuery = (clone $baseQuery)->where('status', 'late');
+        $paymentMethodsQuery = (clone $baseQuery);
+        $monthlyRevenueQuery = (clone $baseQuery)->where('status', 'paid');
+        $statusBreakdownQuery = (clone $baseQuery);
+
+        // Application des filtres de dates seulement si définis
+        if ($dateFrom && $dateTo) {
+            $totalPaymentsQuery->whereBetween('created_at', [$dateFrom, $dateTo]);
+            $totalAmountQuery->whereBetween('created_at', [$dateFrom, $dateTo]);
+            $paidAmountQuery->whereBetween('paid_date', [$dateFrom, $dateTo]);
+            $pendingAmountQuery->whereBetween('due_date', [$dateFrom, $dateTo]);
+            $lateAmountQuery->whereBetween('due_date', [$dateFrom, $dateTo]);
+            $paymentMethodsQuery->whereBetween('created_at', [$dateFrom, $dateTo]);
+            $monthlyRevenueQuery->whereBetween('paid_date', [$dateFrom, $dateTo]);
+            $statusBreakdownQuery->whereBetween('created_at', [$dateFrom, $dateTo]);
+        }
+
         return [
-            'total_payments' => (clone $baseQuery)->whereBetween('created_at', [$dateFrom, $dateTo])->count(),
-            'total_amount' => (clone $baseQuery)->whereBetween('created_at', [$dateFrom, $dateTo])->sum('amount'),
-            'paid_amount' => (clone $baseQuery)->where('status', 'paid')
-                ->whereBetween('paid_date', [$dateFrom, $dateTo])->sum('amount'), // Use paid_date for paid amount
-            'pending_amount' => (clone $baseQuery)->where('status', 'pending')
-                ->whereBetween('due_date', [$dateFrom, $dateTo])->sum('amount'), // Use due_date for pending amount
-            'late_amount' => (clone $baseQuery)->where('status', 'late')
-                ->whereBetween('due_date', [$dateFrom, $dateTo])->sum('amount'), // Use due_date for late amount
-            'payment_methods' => (clone $baseQuery)->whereBetween('created_at', [$dateFrom, $dateTo])
+            'total_payments' => $totalPaymentsQuery->count(),
+            'total_amount' => $totalAmountQuery->sum('amount'),
+            'paid_amount' => $paidAmountQuery->sum('amount'),
+            'pending_amount' => $pendingAmountQuery->sum('amount'),
+            'late_amount' => $lateAmountQuery->sum('amount'),
+            'payment_methods' => $paymentMethodsQuery
                 ->groupBy('payment_method')
                 ->selectRaw('payment_method, count(*) as count, sum(amount) as total')
                 ->get(),
-            'monthly_revenue' => (clone $baseQuery)->where('status', 'paid')
-                ->whereBetween('paid_date', [$dateFrom, $dateTo])
+            'monthly_revenue' => $monthlyRevenueQuery
                 ->groupByRaw('MONTH(paid_date)')
                 ->selectRaw('MONTH(paid_date) as month, sum(amount) as total')
                 ->get(),
-            'status_breakdown' => (clone $baseQuery)->whereBetween('created_at', [$dateFrom, $dateTo])
+            'status_breakdown' => $statusBreakdownQuery
                 ->groupBy('status')
                 ->selectRaw('status, count(*) as count, sum(amount) as total')
                 ->get()
