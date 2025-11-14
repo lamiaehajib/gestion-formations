@@ -387,9 +387,8 @@ public function show(Course $course)
      */
     public function update(Request $request, Course $course)
 {
-    // 1. Validation: Kan7aydou 'formation_ids' array w kanzidou 'formation_id' w 'module_id'
+    // 1. Validation
     $validator = Validator::make($request->all(), [
-        'formation_id' => 'required|exists:formations,id',
         'module_id' => 'required|exists:modules,id',
         'consultant_id' => 'nullable|exists:users,id',
         'title' => 'required|string|max:255',
@@ -406,9 +405,9 @@ public function show(Course $course)
         return redirect()->back()->withErrors($validator)->withInput()->with('edit_course_id', $course->id);
     }
     
+    // 2. Handle documents (kanakhdou documents men l-course l-9dima)
     $documentPaths = $course->documents ?? [];
     
-    // Logic for handling document uploads (unchanged)
     if ($request->hasFile('documents')) {
         foreach ($request->file('documents') as $file) {
             $path = $file->store('courses/documents', 'public');
@@ -421,25 +420,36 @@ public function show(Course $course)
         }
     }
 
-    // 🔥 Kan7sab l'old module_id 9bal ma n-update
+    // 3. 🔥 JDID: Kanjibo l-old values 9bal ma n-update
     $oldModuleId = $course->module_id;
+    $oldCourseDate = $course->course_date;
+    $oldStartTime = $course->start_time;
+    $oldTitle = $course->title;
     
-    // 2. Update the Course: Kan7aydouch ghir 'consultant_id' w kanzidou 'formation_id' w 'module_id'
-    $course->update([
-        'formation_id' => $request->formation_id,
-        'module_id' => $request->module_id,
-        'consultant_id' => $request->consultant_id,
-        'title' => $request->title,
-        'description' => $request->description,
-        'course_date' => $request->course_date,
-        'start_time' => $request->start_time,
-        'end_time' => $request->end_time,
-        'zoom_link' => $request->zoom_link,
-        'recording_url' => $request->recording_url,
-        'documents' => $documentPaths
-    ]);
+    // 4. 🔥 JDID: Kanjibo TOUS les courses similaires (même groupe)
+    $relatedCourses = Course::where('module_id', $oldModuleId)
+        ->where('course_date', $oldCourseDate)
+        ->where('start_time', $oldStartTime)
+        ->where('title', $oldTitle)
+        ->get();
+    
+    // 5. 🔥 JDID: Kan-updatiw TOUS les courses similaires
+    foreach ($relatedCourses as $relatedCourse) {
+        $relatedCourse->update([
+            'module_id' => $request->module_id,
+            'consultant_id' => $request->consultant_id,
+            'title' => $request->title,
+            'description' => $request->description,
+            'course_date' => $request->course_date,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+            'zoom_link' => $request->zoom_link,
+            'recording_url' => $request->recording_url,
+            'documents' => $documentPaths
+        ]);
+    }
 
-    // 🔥 Had hiya l'partie l'jdida: N-update progress for both old and new modules
+    // 6. Update module progress (for old and new modules)
     if ($oldModuleId != $request->module_id) {
         $this->updateModuleProgress($oldModuleId); 
         $this->updateModuleProgress($request->module_id);
@@ -447,11 +457,8 @@ public function show(Course $course)
         $this->updateModuleProgress($request->module_id);
     }
     
-    // 3. Kan7aydou sync() : Had l'ligne ma bqatsh 3andha m3na 7itach db l'course belongsTo formation wahda.
-    // $course->formations()->sync($request->formation_ids);
-    
-    return redirect()->route('courses.show', $course)
-        ->with('success', 'Course updated successfully.');
+    return redirect()->route('courses.index')
+        ->with('success', 'Course updated successfully in all formations.');
 }
 
     /**
