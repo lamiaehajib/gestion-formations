@@ -405,7 +405,11 @@
     <div id="scrollToTopBtn">
         <i class="fas fa-arrow-up"></i>
     </div>
+{{-- BASE JS FILES FROM YOUR TEMPLATE (jQuery and Bootstrap first) --}}
+<script src="{{ asset('edmate/assets/js/jquery-3.7.1.min.js') }}"></script>
 
+{{-- ⚠️ BOOTSTRAP - GARDE SEULEMENT UNE VERSION --}}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 {{-- Other main JS files --}}
 <script src="{{ asset('edmate/assets/js/phosphor-icon.js') }}"></script>
