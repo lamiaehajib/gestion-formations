@@ -56,32 +56,116 @@ class ModuleController extends Controller
         return view('modules.index', compact('formations', 'uniqueModules'));
     }
 
-    public function show(Formation $formation)
-    {
-        $user = Auth::user();
-        $consultants = User::role('consultant')->get(['id', 'name']);
-
-        if ($user->hasRole('Admin')) {
-            $formation->load('modules.user'); 
-        } elseif ($user->hasRole('Consultant')) {
-            $formation->load(['modules' => function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            }, 'modules.user']);
-        } elseif ($user->hasRole('Etudiant')) {
-            $is_inscribed = Inscription::where('user_id', $user->id)
-                                       ->where('formation_id', $formation->id)
-                                       ->exists();
-            if ($is_inscribed) {
-                $formation->load('modules.user');
-            } else {
-                return redirect()->route('modules.index')->with('error', 'You are not authorized to view this formation.');
-            }
+   public function show(Formation $formation)
+{
+    $user = Auth::user();
+    $consultants = User::role('consultant')->get(['id', 'name']);
+    
+    // 🔥 NOUVEAU: Récupérer tous les modules disponibles pour la sélection
+    $availableModules = collect();
+    
+    if ($user->hasRole('Admin')) {
+        // Admin voit tous les modules
+        $availableModules = Module::with('user')
+            ->whereDoesntHave('formations', function($query) use ($formation) {
+                $query->where('formation_id', $formation->id);
+            })
+            ->orderBy('title')
+            ->get();
+        
+        $formation->load('modules.user'); 
+    } 
+    elseif ($user->hasRole('Consultant')) {
+        // Consultant voit seulement ses modules
+        $availableModules = Module::where('user_id', $user->id)
+            ->with('user')
+            ->whereDoesntHave('formations', function($query) use ($formation) {
+                $query->where('formation_id', $formation->id);
+            })
+            ->orderBy('title')
+            ->get();
+        
+        $formation->load(['modules' => function ($query) use ($user) {
+            $query->where('user_id', $user->id);
+        }, 'modules.user']);
+    } 
+    elseif ($user->hasRole('Etudiant')) {
+        $is_inscribed = Inscription::where('user_id', $user->id)
+                                   ->where('formation_id', $formation->id)
+                                   ->exists();
+        if ($is_inscribed) {
+            $formation->load('modules.user');
         } else {
-            return redirect()->route('modules.index')->with('error', 'You do not have permission to view this content.');
+            return redirect()->route('modules.index')
+                ->with('error', 'You are not authorized to view this formation.');
+        }
+    } 
+    else {
+        return redirect()->route('modules.index')
+            ->with('error', 'You do not have permission to view this content.');
+    }
+
+    return view('modules.show', compact('formation', 'consultants', 'availableModules')); 
+}
+
+// 🔥 NOUVEAU: Méthode pour attacher un module existant à une formation
+public function attachExisting(Request $request, Formation $formation)
+{
+    try {
+        // Validation
+        $validatedData = $request->validate([
+            'module_id' => 'required|exists:modules,id',
+        ]);
+
+        $moduleId = $validatedData['module_id'];
+
+        // Vérifier si le module n'est pas déjà attaché
+        $alreadyAttached = DB::table('formation_module')
+            ->where('formation_id', $formation->id)
+            ->where('module_id', $moduleId)
+            ->exists();
+
+        if ($alreadyAttached) {
+            return response()->json([
+                'error' => 'Ce module est déjà attaché à cette formation.'
+            ], 422);
         }
 
-        return view('modules.show', compact('formation', 'consultants')); 
+        // Calculer le prochain ordre
+        $lastOrder = DB::table('formation_module')
+            ->where('formation_id', $formation->id)
+            ->max('order');
+        
+        $nextOrder = ($lastOrder ?? 0) + 1;
+
+        // Attacher le module avec l'ordre
+        DB::table('formation_module')->insert([
+            'formation_id' => $formation->id,
+            'module_id' => $moduleId,
+            'order' => $nextOrder,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Recharger la formation avec les modules triés par ordre
+        $formation->load(['modules' => function($query) {
+            $query->orderBy('formation_module.order', 'asc');
+        }, 'modules.user']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Module attaché avec succès!',
+            'modules' => $formation->modules
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('Erreur attachExisting: ' . $e->getMessage());
+        
+        return response()->json([
+            'error' => 'Une erreur est survenue : ' . $e->getMessage()
+        ], 500);
     }
+}
 
     public function details(Module $module)
     {

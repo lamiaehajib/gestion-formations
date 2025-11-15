@@ -327,7 +327,10 @@ Route::post('/modules', [ModuleController::class, 'store'])->name('modules.store
 Route::get('/modules/{module}/edit', [ModuleController::class, 'edit'])->name('modules.edit');
 Route::put('/modules/{module}', [ModuleController::class, 'update'])->name('modules.update');
 Route::delete('/modules/{module}', [ModuleController::class, 'destroy'])->name('modules.destroy');
-
+// Dans routes/web.php
+Route::post('/formations/{formation}/modules/attach', [ModuleController::class, 'attachExisting'])
+    ->name('modules.attachExisting')
+    ->middleware('permission:module-create');
 // Route bach tchouf les modules dyal une formation
 Route::get('/formations/{formation}/modules', [ModuleController::class, 'show'])->name('modules.show');
 

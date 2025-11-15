@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="{{ asset('edmate/assets/css/calendar.css') }}">
     <link rel="stylesheet" href="{{ asset('edmate/assets/css/jquery-jvectormap-2.0.5.css') }}">
     <link rel="stylesheet" href="{{ asset('edmate/assets/css/main.css') }}">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     {{-- Font Awesome --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -405,23 +406,29 @@
         <i class="fas fa-arrow-up"></i>
     </div>
 
-    {{-- BASE JS FILES FROM YOUR TEMPLATE (jQuery and Bootstrap first) --}}
-    <script src="{{ asset('edmate/assets/js/jquery-3.7.1.min.js') }}"></script>
-    <script src="{{ asset('edmate/assets/js/bootstrap.bundle.min.js') }}"></script>
 
-    {{-- Other main JS files --}}
-    <script src="{{ asset('edmate/assets/js/phosphor-icon.js') }}"></script>
-    <script src="{{ asset('edmate/assets/js/file-upload.js') }}"></script>
-    <script src="{{ asset('edmate/assets/js/plyr.js') }}"></script>
-    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
-    <script src="{{ asset('edmate/assets/js/full-calendar.js') }}"></script>
-    <script src="{{ asset('edmate/assets/js/jquery-ui.js') }}"></script>
-    <script src="{{ asset('edmate/assets/js/editor-quill.js') }}"></script>
-    <script src="{{ asset('edmate/assets/js/apexcharts.min.js') }}"></script>
-    <script src="{{ asset('edmate/assets/js/calendar.js') }}"></script>
-    <script src="{{ asset('edmate/assets/js/jquery-jvectormap-2.0.5.min.js') }}"></script>
-    <script src="{{ asset('edmate/assets/js/jquery-jvectormap-world-mill-en.js') }}"></script>
-    <script src="{{ asset('edmate/assets/js/main.js') }}"></script>
+{{-- Other main JS files --}}
+<script src="{{ asset('edmate/assets/js/phosphor-icon.js') }}"></script>
+<script src="{{ asset('edmate/assets/js/file-upload.js') }}"></script>
+<script src="{{ asset('edmate/assets/js/plyr.js') }}"></script>
+<script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+<script src="{{ asset('edmate/assets/js/full-calendar.js') }}"></script>
+<script src="{{ asset('edmate/assets/js/jquery-ui.js') }}"></script>
+<script src="{{ asset('edmate/assets/js/editor-quill.js') }}"></script>
+<script src="{{ asset('edmate/assets/js/apexcharts.min.js') }}"></script>
+<script src="{{ asset('edmate/assets/js/calendar.js') }}"></script>
+<script src="{{ asset('edmate/assets/js/jquery-jvectormap-2.0.5.min.js') }}"></script>
+<script src="{{ asset('edmate/assets/js/jquery-jvectormap-world-mill-en.js') }}"></script>
+<script src="{{ asset('edmate/assets/js/main.js') }}"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+{{-- DEBUG SCRIPT --}}
+<script>
+    console.log('🔍 Checking Bootstrap...');
+    console.log('Bootstrap version:', typeof bootstrap !== 'undefined' ? bootstrap : 'NOT LOADED');
+    console.log('jQuery version:', typeof $ !== 'undefined' ? $.fn.jquery : 'NOT LOADED');
+</script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
