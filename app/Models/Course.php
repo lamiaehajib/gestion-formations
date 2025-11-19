@@ -10,7 +10,6 @@ class Course extends Model
     use HasFactory;
 
     protected $fillable = [
-      
         'title',
         'description',
         'course_date',
@@ -24,41 +23,31 @@ class Course extends Model
         'formation_id',
         'last_notification_time', 
         'notification_count',
+        'formation_recordings', // ✅ Nouvelle colonne
     ];
 
-     protected $casts = [
+    protected $casts = [
         'course_date' => 'date',
-        // 🔥 CORRECTION: Ma khas-ch n-castéw TIME l DATETIME!
-        // Khassna nkhalliwha string bach n-akhdhowha kima hiya mn DB
-        // 'start_time' => 'datetime:H:i',  // ❌ Hadi kant l-mochkila
-        // 'end_time' => 'datetime:H:i',    // ❌ Hadi kant l-mochkila
         'documents' => 'array',
+        'formation_recordings' => 'array', // 🔥 CAST IMPORTANT: JSON -> PHP Array automatically
         'last_notification_time' => 'datetime',
     ];
 
-
-
-
     public function usersJoined()
-{
-    // 'course_joins' hiya smit l'table dyal pivot li khassk tcreer
-    return $this->belongsToMany(User::class, 'course_joins', 'course_id', 'user_id')
-                ->withTimestamps(); // Bach n3erfo imta dar l'join
-}
-
+    {
+        return $this->belongsToMany(User::class, 'course_joins', 'course_id', 'user_id')
+                    ->withTimestamps();
+    }
 
     public function module()
     {
         return $this->belongsTo(Module::class);
     }
-  public function formation() 
+    
+    public function formation() 
     { 
-       
         return $this->belongsTo(Formation::class); 
     } 
-
-    // Relations
-   
 
     public function reschedules()
     {
@@ -74,8 +63,9 @@ class Course extends Model
     {
         return $this->hasMany(Document::class);
     }
-    public function consultant() // Define the new relationship
+    
+    public function consultant()
     {
-        return $this->belongsTo(User::class, 'consultant_id'); // 'consultant_id' is the foreign key
+        return $this->belongsTo(User::class, 'consultant_id');
     }
 }

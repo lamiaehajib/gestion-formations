@@ -185,6 +185,10 @@ Route::delete('/payments/{id}/forceDelete', [PaymentController::class, 'forceDel
       
     Route::resource('payments', PaymentController::class);
 
+    
+Route::post('courses/{course}/update-formation-recording', [CourseController::class, 'updateFormationRecording'])
+    ->name('courses.update-formation-recording');
+    
     Route::get('/courses/modules/{module}/formations', [CourseController::class, 'getFormationsByModule'])
     ->name('courses.getFormationsByModule');
    

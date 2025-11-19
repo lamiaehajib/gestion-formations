@@ -1648,3 +1648,4 @@ if (editCourseModal) {
     }
 </script>
 @endpush
+

@@ -335,42 +335,37 @@ public function index(Request $request)
      * Display the specified resource.
      */
 public function show(Course $course)
-{
-    $user = Auth::user();
-    
-    // Load relations de base
-    $course->load(['formation', 'module', 'consultant', 'evaluations', 'usersJoined']); 
-    
-    // Compteur et liste des utilisateurs qui ont joint
-    $joinCount = $course->usersJoined->count();
-    $joinedUsers = $course->usersJoined->pluck('name')->all();
-
-    // 🔥 NOUVELLE LOGIQUE: Récupérer TOUS les cours du même module avec la même date/heure/titre
-    $relatedCourses = Course::with(['formation', 'consultant'])
-        ->where('module_id', $course->module_id)
-        ->where('course_date', $course->course_date)
-        ->where('start_time', $course->start_time)
-        ->where('title', $course->title)
-        ->orderBy('formation_id')
-        ->get();
-
-    // Filtrer selon le rôle de l'utilisateur
-    if ($user->hasRole('Consultant')) {
-        // Le consultant ne voit que ses cours
-        $relatedCourses = $relatedCourses->where('consultant_id', $user->id);
-    } elseif ($user->hasRole('Etudiant')) {
-        // L'étudiant ne voit que les cours des formations auxquelles il est inscrit
-        $enrolledFormationIds = $user->inscriptions()
-            ->whereIn('status', ['active', 'completed'])
-            ->where('access_restricted', false)
-            ->pluck('formation_id');
+    {
+        $user = Auth::user();
         
-        $relatedCourses = $relatedCourses->whereIn('formation_id', $enrolledFormationIds);
-    }
-    // Admin/Super Admin/Finance voient tous les cours (pas de filtre)
+        $course->load(['formation', 'module', 'consultant', 'evaluations', 'usersJoined']); 
+        
+        $joinCount = $course->usersJoined->count();
+        $joinedUsers = $course->usersJoined->pluck('name')->all();
 
-    return view('courses.show', compact('course', 'joinCount', 'joinedUsers', 'relatedCourses'));
-}
+        // 🔥 Récupérer TOUS les cours du même module avec la même date/heure/titre
+        $relatedCourses = Course::with(['formation', 'consultant'])
+            ->where('module_id', $course->module_id)
+            ->where('course_date', $course->course_date)
+            ->where('start_time', $course->start_time)
+            ->where('title', $course->title)
+            ->orderBy('formation_id')
+            ->get();
+
+        // Filtrer selon le rôle de l'utilisateur
+        if ($user->hasRole('Consultant')) {
+            $relatedCourses = $relatedCourses->where('consultant_id', $user->id);
+        } elseif ($user->hasRole('Etudiant')) {
+            $enrolledFormationIds = $user->inscriptions()
+                ->whereIn('status', ['active', 'completed'])
+                ->where('access_restricted', false)
+                ->pluck('formation_id');
+            
+            $relatedCourses = $relatedCourses->whereIn('formation_id', $enrolledFormationIds);
+        }
+
+        return view('courses.show', compact('course', 'joinCount', 'joinedUsers', 'relatedCourses'));
+    }
 
     /**
      * Show the form for editing the specified resource.
@@ -385,81 +380,128 @@ public function show(Course $course)
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Course $course)
-{
-    // 1. Validation
-    $validator = Validator::make($request->all(), [
-        'module_id' => 'required|exists:modules,id',
-        'consultant_id' => 'nullable|exists:users,id',
-        'title' => 'required|string|max:255',
-        'description' => 'required|string',
-        'course_date' => 'required|date',
-        'start_time' => 'required|date_format:H:i',
-        'end_time' => 'required|date_format:H:i|after:start_time',
-        'zoom_link' => 'nullable|url',
-        'recording_url' => 'nullable|url',
-        'documents.*' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:10240'
-    ]);
-    
-    if ($validator->fails()) {
-        return redirect()->back()->withErrors($validator)->withInput()->with('edit_course_id', $course->id);
-    }
-    
-    // 2. Handle documents (kanakhdou documents men l-course l-9dima)
-    $documentPaths = $course->documents ?? [];
-    
-    if ($request->hasFile('documents')) {
-        foreach ($request->file('documents') as $file) {
-            $path = $file->store('courses/documents', 'public');
-            $documentPaths[] = [
-                'name' => $file->getClientOriginalName(),
-                'path' => $path,
-                'size' => $file->getSize(),
-                'type' => $file->getMimeType()
-            ];
+   public function update(Request $request, Course $course)
+    {
+        // 1. Validation
+        $validator = Validator::make($request->all(), [
+            'module_id' => 'required|exists:modules,id',
+            'consultant_id' => 'nullable|exists:users,id',
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'course_date' => 'required|date',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+            'zoom_link' => 'nullable|url',
+            'recording_url' => 'nullable|url',
+            'formation_recordings' => 'nullable|array',
+            'formation_recordings.*' => 'nullable|url',
+            'documents.*' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:10240'
+        ]);
+        
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput()->with('edit_course_id', $course->id);
         }
+        
+        // 2. Handle documents
+        $documentPaths = $course->documents ?? [];
+        
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $file) {
+                $path = $file->store('courses/documents', 'public');
+                $documentPaths[] = [
+                    'name' => $file->getClientOriginalName(),
+                    'path' => $path,
+                    'size' => $file->getSize(),
+                    'type' => $file->getMimeType()
+                ];
+            }
+        }
+
+        // 3. 🔥 Préparer formation_recordings
+        $formationRecordings = $request->input('formation_recordings', []);
+
+        // 4. 🔥 Récupérer les anciennes valeurs
+        $oldModuleId = $course->module_id;
+        $oldCourseDate = $course->course_date;
+        $oldStartTime = $course->start_time;
+        $oldTitle = $course->title;
+        
+        // 5. 🔥 Récupérer TOUS les courses similaires
+        $relatedCourses = Course::where('module_id', $oldModuleId)
+            ->where('course_date', $oldCourseDate)
+            ->where('start_time', $oldStartTime)
+            ->where('title', $oldTitle)
+            ->get();
+        
+        // 6. 🔥 Update TOUS les courses similaires
+        foreach ($relatedCourses as $relatedCourse) {
+            $relatedCourse->update([
+                'module_id' => $request->module_id,
+                'consultant_id' => $request->consultant_id,
+                'title' => $request->title,
+                'description' => $request->description,
+                'course_date' => $request->course_date,
+                'start_time' => $request->start_time,
+                'end_time' => $request->end_time,
+                'zoom_link' => $request->zoom_link,
+                'recording_url' => $request->recording_url, // Garde l'ancienne colonne
+                'formation_recordings' => $formationRecordings, // Nouvelle colonne
+                'documents' => $documentPaths
+            ]);
+        }
+
+        // 7. Update module progress
+        if ($oldModuleId != $request->module_id) {
+            $this->updateModuleProgress($oldModuleId); 
+            $this->updateModuleProgress($request->module_id);
+        } else {
+            $this->updateModuleProgress($request->module_id);
+        }
+        
+        return redirect()->route('courses.index')
+            ->with('success', 'Course updated successfully in all formations.');
     }
 
-    // 3. 🔥 JDID: Kanjibo l-old values 9bal ma n-update
-    $oldModuleId = $course->module_id;
-    $oldCourseDate = $course->course_date;
-    $oldStartTime = $course->start_time;
-    $oldTitle = $course->title;
-    
-    // 4. 🔥 JDID: Kanjibo TOUS les courses similaires (même groupe)
-    $relatedCourses = Course::where('module_id', $oldModuleId)
-        ->where('course_date', $oldCourseDate)
-        ->where('start_time', $oldStartTime)
-        ->where('title', $oldTitle)
-        ->get();
-    
-    // 5. 🔥 JDID: Kan-updatiw TOUS les courses similaires
-    foreach ($relatedCourses as $relatedCourse) {
-        $relatedCourse->update([
-            'module_id' => $request->module_id,
-            'consultant_id' => $request->consultant_id,
-            'title' => $request->title,
-            'description' => $request->description,
-            'course_date' => $request->course_date,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
-            'zoom_link' => $request->zoom_link,
-            'recording_url' => $request->recording_url,
-            'documents' => $documentPaths
+    // 🔥 NOUVELLE MÉTHODE: Update un seul recording pour une formation spécifique
+    public function updateFormationRecording(Request $request, Course $course)
+    {
+        $validator = Validator::make($request->all(), [
+            'formation_id' => 'required|exists:formations,id',
+            'recording_url' => 'required|url'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        $formationId = (string) $request->input('formation_id'); // 🔥 Convert to string for array key
+        $recordingUrl = $request->input('recording_url');
+
+        // Récupérer tous les cours similaires
+        $relatedCourses = Course::where('module_id', $course->module_id)
+            ->where('course_date', $course->course_date)
+            ->where('start_time', $course->start_time)
+            ->where('title', $course->title)
+            ->get();
+
+        foreach ($relatedCourses as $relatedCourse) {
+            // 🔥 Kanjibo l'formation_recordings (Laravel kat-cast automatically l'array)
+            $formationRecordings = $relatedCourse->formation_recordings ?? [];
+            
+            // 🔥 N-ajoutiw/n-updatew l'URL dyal had l-formation
+            $formationRecordings[$formationId] = $recordingUrl;
+            
+            // 🔥 N-savéw (Laravel kat-convert automatically l'JSON)
+            $relatedCourse->update([
+                'formation_recordings' => $formationRecordings
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Recording URL mis à jour pour cette formation'
         ]);
     }
-
-    // 6. Update module progress (for old and new modules)
-    if ($oldModuleId != $request->module_id) {
-        $this->updateModuleProgress($oldModuleId); 
-        $this->updateModuleProgress($request->module_id);
-    } else {
-        $this->updateModuleProgress($request->module_id);
-    }
-    
-    return redirect()->route('courses.index')
-        ->with('success', 'Course updated successfully in all formations.');
-}
 
     /**
      * Remove the specified resource from storage.
