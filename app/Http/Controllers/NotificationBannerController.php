@@ -85,11 +85,15 @@ class NotificationBannerController extends Controller
     }
 
     /**
-     * Récupérer TOUS les cours reportés (sans limite de date)
+     * Récupérer les cours reportés qui n'ont pas encore eu lieu
+     * (la nouvelle date n'est pas encore passée)
      */
     private function getRescheduledCourses($user)
     {
+        $today = Carbon::today();
+        
         $query = CourseReschedule::with(['course.module', 'course.formation'])
+            ->whereDate('new_date', '>=', $today) // 🔥 Seulement si la nouvelle date n'est pas encore passée
             ->orderBy('created_at', 'desc'); // Les plus récents en premier
 
         // Filtrer selon le rôle
