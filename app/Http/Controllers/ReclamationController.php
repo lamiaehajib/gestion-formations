@@ -35,58 +35,70 @@ class ReclamationController extends Controller
      * Display a listing of reclamations.
      */
     public function index(Request $request)
-    {
-        try {
-            $user = Auth::user();
-            $query = Reclamation::with(['user', 'formation', 'assignedTo']);
+{
+    try {
+        $user = Auth::user();
+        $query = Reclamation::with(['user', 'formation', 'assignedTo']);
 
-            // Filter based on role
-            if ($user->hasRole('Etudiant') || $user->hasRole('Consultant')) {
-                // Students and Consultants see only their own reclamations
-                $query->where('user_id', $user->id);
-            } elseif ($user->hasRole('Équipe Technique')) {
-                // Équipe Technique sees only reclamations assigned to them
-                $query->where('assigned_to', $user->id);
-            }
-            // Admin, Super Admin, Finance see all reclamations
-
-            // Apply search filters
-            if ($request->filled('search')) {
-                $query->where(function($q) use ($request) {
-                    $q->where('subject', 'like', '%' . $request->search . '%')
-                      ->orWhere('description', 'like', '%' . $request->search . '%');
-                });
-            }
-
-            // Apply status filter
-            if ($request->filled('status')) {
-                $query->where('status', $request->status);
-            }
-
-            // Apply category filter
-            if ($request->filled('category')) {
-                $query->where('category', $request->category);
-            }
-
-            // Apply priority filter
-            if ($request->filled('priority')) {
-                $query->where('priority', $request->priority);
-            }
-
-            // Apply formation filter
-            if ($request->filled('formation_id')) {
-                $query->where('formation_id', $request->formation_id);
-            }
-
-            $reclamations = $query->orderBy('created_at', 'desc')->paginate(10);
-            $formations = Formation::select('id', 'title')->get();
-
-            return view('reclamations.index', compact('reclamations', 'formations'));
-        } catch (Exception $e) {
-            Log::error('Error in ReclamationController@index: ' . $e->getMessage());
-            return back()->with('error', 'Une erreur est survenue lors du chargement des réclamations.');
+        // Filter based on role
+        if ($user->hasRole('Etudiant') || $user->hasRole('Consultant')) {
+            // Students and Consultants see only their own reclamations
+            $query->where('user_id', $user->id);
+        } elseif ($user->hasRole('Équipe Technique')) {
+            // Équipe Technique sees only reclamations assigned to them
+            $query->where('assigned_to', $user->id);
         }
+        // Admin, Super Admin, Finance see all reclamations
+
+        // Apply search filters
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('subject', 'like', '%' . $request->search . '%')
+                  ->orWhere('description', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        // Apply status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Apply category filter
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
+        }
+
+        // Apply priority filter
+        if ($request->filled('priority')) {
+            $query->where('priority', $request->priority);
+        }
+
+        // Apply formation filter
+        if ($request->filled('formation_id')) {
+            $query->where('formation_id', $request->formation_id);
+        }
+
+        // Order by status priority (ouverte, en_traitement, resolue, fermee), then by created_at
+        $reclamations = $query->orderByRaw("
+            CASE status
+                WHEN 'ouverte' THEN 1
+                WHEN 'en_traitement' THEN 2
+                WHEN 'resolue' THEN 3
+                WHEN 'fermee' THEN 4
+                ELSE 5
+            END
+        ")
+        ->orderBy('created_at', 'desc')
+        ->paginate(10);
+        
+        $formations = Formation::select('id', 'title')->get();
+
+        return view('reclamations.index', compact('reclamations', 'formations'));
+    } catch (Exception $e) {
+        Log::error('Error in ReclamationController@index: ' . $e->getMessage());
+        return back()->with('error', 'Une erreur est survenue lors du chargement des réclamations.');
     }
+}
 
     /**
      * Show the form for creating a new reclamation.
