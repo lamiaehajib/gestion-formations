@@ -199,7 +199,8 @@ public function generateReport(Promotion $promotion, Request $request)
             $studentInfo = [
                 'name' => $user->name,
                 'email' => $user->email,
-                'phone' => $user->phone, // ✅ Téléphone ajouté
+                'phone' => $user->phone,
+                'cin' => $user->cin, // ✅ CIN ajouté
                 'inscription_date' => $inscription->inscription_date,
                 'total_amount' => $inscription->total_amount,
                 'paid_amount' => $inscription->paid_amount,
@@ -240,11 +241,12 @@ public function generateReport(Promotion $promotion, Request $request)
         $output = fopen('php://temp', 'r+');
         fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-        // ✅ En-têtes Excel mis à jour avec Téléphone
+        // ✅ En-têtes Excel mis à jour avec CIN
         $headers_excel = [
             'Nom Étudiant',
             'Email',
-            'Téléphone', // ✅ Nouvelle colonne
+            'Téléphone',
+            'CIN', // ✅ Nouvelle colonne
             'Montant Total',
             'Montant Payé',
             'Reste à Payer',
@@ -256,12 +258,14 @@ public function generateReport(Promotion $promotion, Request $request)
         foreach ($reportData['students'] as $student) {
             $name = str_replace(';', ',', $student['name']);
             $email = str_replace(';', ',', $student['email']);
-            $phone = str_replace(';', ',', $student['phone'] ?? 'N/A'); // ✅ Téléphone avec valeur par défaut
+            $phone = str_replace(';', ',', $student['phone'] ?? 'N/A');
+            $cin = str_replace(';', ',', $student['cin'] ?? 'N/A'); // ✅ CIN avec valeur par défaut
 
             fputcsv($output, [
                 $name,
                 $email,
-                $phone, // ✅ Téléphone ajouté
+                $phone,
+                $cin, // ✅ CIN ajouté
                 number_format($student['total_amount'], 2, '.', ''),
                 number_format($student['paid_amount'], 2, '.', ''),
                 number_format($student['remaining_amount'], 2, '.', ''),
