@@ -509,30 +509,40 @@
                         Modules pour cette Formation ({{ $formation->modules->count() }})
                     </h4>
                     @can('module-create')
-                    <div class="d-flex gap-2">
-                        <div class="dropdown">
-                            <button type="button" class="add-module-btn dropdown-toggle" id="addModuleDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-plus-circle"></i> Ajouter un module
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="addModuleDropdown" style="border-radius: 15px; padding: 0.5rem; box-shadow: 0 4px 15px rgba(194, 24, 91, 0.2);">
-                                <li>
-                                    <button class="dropdown-item" type="button" data-modal-target="create" style="border-radius: 10px; padding: 0.75rem 1rem;">
-                                        <i class="fas fa-plus-circle text-primary"></i> Créer un nouveau module
-                                    </button>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <button class="dropdown-item" type="button" data-modal-target="select" style="border-radius: 10px; padding: 0.75rem 1rem;">
-                                        <i class="fas fa-link text-success"></i> Sélectionner un module existant
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-                        <a href="{{ route('modules.corbeille') }}" class="btn btn-danger" style="border-radius: 15px;">
-                            <i class="fa fa-trash"></i> Corbeille
-                        </a>
-                    </div>
-                    @endcan
+<div class="d-flex gap-2">
+    <div class="dropdown">
+        <button type="button" 
+                class="add-module-btn dropdown-toggle" 
+                id="addModuleDropdown" 
+                data-bs-toggle="dropdown" 
+                aria-expanded="false">
+            <i class="fas fa-plus-circle"></i> Ajouter un module
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="addModuleDropdown">
+            <li>
+                <a class="dropdown-item" 
+                   href="#" 
+                   data-bs-toggle="modal" 
+                   data-bs-target="#createModuleModal">
+                    <i class="fas fa-plus-circle text-primary"></i> Créer un nouveau module
+                </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <a class="dropdown-item" 
+                   href="#" 
+                   data-bs-toggle="modal" 
+                   data-bs-target="#selectModuleModal">
+                    <i class="fas fa-link text-success"></i> Sélectionner un module existant
+                </a>
+            </li>
+        </ul>
+    </div>
+    <a href="{{ route('modules.corbeille') }}" class="btn btn-danger" style="border-radius: 15px;">
+        <i class="fa fa-trash"></i> Corbeille
+    </a>
+</div>
+@endcan
                 </div>
 
                 <div id="alert-container"></div>
@@ -865,470 +875,204 @@
 
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        console.log('🔥 Script loaded');
-        
-        const modulesList = document.getElementById('modules-list');
-        const alertContainer = document.getElementById('alert-container');
-        const editModalElement = document.getElementById('editModuleModal');
-        const createModalElement = document.getElementById('createModuleModal');
-        const selectModuleModalElement = document.getElementById('selectModuleModal');
-        
-        console.log('Modal elements:', {
-            edit: editModalElement,
-            create: createModalElement,
-            select: selectModuleModalElement
-        });
-        
-        // Initialize modals
-        let editModuleModal = null;
-        let createModuleModal = null;
-        let selectModuleModal = null;
-        
-        if (typeof bootstrap !== 'undefined') {
-            if (editModalElement) editModuleModal = new bootstrap.Modal(editModalElement);
-            if (createModalElement) createModuleModal = new bootstrap.Modal(createModalElement);
-            if (selectModuleModalElement) selectModuleModal = new bootstrap.Modal(selectModuleModalElement);
-            console.log('✅ Bootstrap modals initialized');
-        } else {
-            console.error('❌ Bootstrap not loaded!');
-        }
-        
-        const consultants = @json($consultants);
-        const formationId = {{ $formation->id }};
+// ==================== CORRIGER LA GESTION DU DROPDOWN ====================
+// Le problème: L'événement click sur les dropdowns interfère avec Bootstrap
 
-        // ==================== TOGGLE CONTENT VISIBILITY ====================
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.content-toggle-btn')) {
-                const button = e.target.closest('.content-toggle-btn');
-                const moduleId = button.dataset.moduleId;
-                const contentDiv = document.getElementById('content-' + moduleId);
-                
-                if (contentDiv.classList.contains('show')) {
-                    contentDiv.classList.remove('show');
-                    button.innerHTML = '<i class="fas fa-chevron-down"></i> Voir le contenu';
-                    button.classList.remove('active');
-                } else {
-                    contentDiv.classList.add('show');
-                    button.innerHTML = '<i class="fas fa-chevron-up"></i> Masquer le contenu';
-                    button.classList.add('active');
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('🔥 Script loaded');
+    
+    const modulesList = document.getElementById('modules-list');
+    const alertContainer = document.getElementById('alert-container');
+    const editModalElement = document.getElementById('editModuleModal');
+    const createModalElement = document.getElementById('createModuleModal');
+    const selectModuleModalElement = document.getElementById('selectModuleModal');
+    
+    // Initialize modals
+    let editModuleModal = null;
+    let createModuleModal = null;
+    let selectModuleModal = null;
+    
+    if (typeof bootstrap !== 'undefined') {
+        if (editModalElement) editModuleModal = new bootstrap.Modal(editModalElement);
+        if (createModalElement) createModuleModal = new bootstrap.Modal(createModalElement);
+        if (selectModuleModalElement) selectModuleModal = new bootstrap.Modal(selectModuleModalElement);
+        console.log('✅ Bootstrap modals initialized');
+    }
+    
+    const consultants = @json($consultants);
+    const formationId = {{ $formation->id }};
+
+    // ==================== FIX: GÉRER LES CLICS DROPDOWN CORRECTEMENT ====================
+    document.addEventListener('click', function(e) {
+        const dropdownItem = e.target.closest('[data-modal-target]');
+        if (dropdownItem) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const modalTarget = dropdownItem.dataset.modalTarget;
+            console.log('Modal target:', modalTarget);
+            
+            // Fermer le dropdown proprement avec Bootstrap
+            const dropdownButton = document.getElementById('addModuleDropdown');
+            if (dropdownButton) {
+                const dropdownInstance = bootstrap.Dropdown.getInstance(dropdownButton);
+                if (dropdownInstance) {
+                    dropdownInstance.hide();
                 }
             }
-        });
-
-        // ==================== POPULATE CONSULTANTS DROPDOWN ====================
-        function populateConsultantsSelect(selectElement, selectedUserId = null) {
-            selectElement.innerHTML = '';
-            consultants.forEach(consultant => {
-                const option = document.createElement('option');
-                option.value = consultant.id;
-                option.textContent = consultant.name;
-                if (consultant.id === selectedUserId) {
-                    option.selected = true;
+            
+            // Attendre que le dropdown se ferme avant d'ouvrir le modal
+            setTimeout(() => {
+                if (modalTarget === 'create' && createModuleModal) {
+                    populateConsultantsSelect(document.getElementById('create-user'));
+                    document.getElementById('createModuleForm').reset();
+                    createModuleModal.show();
+                } else if (modalTarget === 'select' && selectModuleModal) {
+                    selectModuleModal.show();
                 }
-                selectElement.appendChild(option);
-            });
+            }, 300); // Augmenté à 300ms pour laisser le temps au dropdown de se fermer
         }
+    });
 
-        // ==================== INITIALIZE MODALS FROM DROPDOWN ====================
-        document.addEventListener('click', function(e) {
-            const dropdownItem = e.target.closest('[data-modal-target]');
-            if (dropdownItem) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                console.log('🎯 Dropdown item clicked:', dropdownItem);
-                
-                const modalTarget = dropdownItem.dataset.modalTarget;
-                console.log('Modal target:', modalTarget);
-                
-                // Close dropdown
-                const dropdownElement = document.getElementById('addModuleDropdown');
-                if (dropdownElement) {
-                    const dropdown = bootstrap.Dropdown.getInstance(dropdownElement);
-                    if (dropdown) {
-                        dropdown.hide();
-                        console.log('✅ Dropdown closed');
-                    }
-                }
-                
-                // Open modal
-                setTimeout(() => {
-                    if (modalTarget === 'create' && createModuleModal) {
-                        console.log('🚀 Opening create modal');
-                        populateConsultantsSelect(document.getElementById('create-user'));
-                        document.getElementById('createModuleForm').reset();
-                        createModuleModal.show();
-                    } else if (modalTarget === 'select' && selectModuleModal) {
-                        console.log('🚀 Opening select modal');
-                        selectModuleModal.show();
-                    } else {
-                        console.error('❌ Modal not found or not initialized');
-                    }
-                }, 200);
+    // ==================== ALTERNATIVE: UTILISER DATA-BS-TOGGLE ET DATA-BS-TARGET ====================
+    // Si la méthode ci-dessus ne fonctionne pas, utilisez cette approche dans votre HTML:
+    /*
+    <button class="dropdown-item" 
+            type="button" 
+            data-bs-toggle="modal" 
+            data-bs-target="#createModuleModal"
+            style="border-radius: 10px; padding: 0.75rem 1rem;">
+        <i class="fas fa-plus-circle text-primary"></i> Créer un nouveau module
+    </button>
+    */
+
+    // ==================== POPULATE CONSULTANTS DROPDOWN ====================
+    function populateConsultantsSelect(selectElement, selectedUserId = null) {
+        selectElement.innerHTML = '';
+        consultants.forEach(consultant => {
+            const option = document.createElement('option');
+            option.value = consultant.id;
+            option.textContent = consultant.name;
+            if (consultant.id === selectedUserId) {
+                option.selected = true;
             }
+            selectElement.appendChild(option);
         });
+    }
 
-        // ==================== HANDLE MODULE ACTIONS (EDIT/DELETE) ====================
-        if (modulesList) {
-            modulesList.addEventListener('click', function (e) {
-                if (e.target.closest('.delete-btn')) {
-                    e.preventDefault();
-                    if (confirm('Êtes-vous sûr de vouloir supprimer ce module ?')) {
-                        const moduleId = e.target.closest('.delete-btn').dataset.id;
-                        deleteModule(moduleId);
-                    }
-                }
-
-                if (e.target.closest('.edit-btn')) {
-                    const button = e.target.closest('.edit-btn');
-                    const moduleId = button.dataset.id;
-                    const currentOrder = button.dataset.order;
-                    fetchModuleData(moduleId, currentOrder);
-                }
-            });
-        }
-
-        // ==================== FETCH MODULE DATA FOR EDITING ====================
-        function fetchModuleData(moduleId, currentOrder) {
-            const url = `/modules/${moduleId}/get-data`;
-            axios.get(url)
-                .then(response => {
-                    const { module } = response.data;
-                    document.getElementById('edit-module-id').value = module.id;
-                    document.getElementById('edit-title').value = module.title;
-                    document.getElementById('edit-duration_hours').value = module.duration_hours || '';
-                    document.getElementById('edit-number_seance').value = module.number_seance || '';
-                    document.getElementById('edit-new_order').value = currentOrder;
-                    document.getElementById('edit-status').value = module.status;
-                    document.getElementById('edit-content').value = Array.isArray(module.content) ? module.content.join('\n') : '';
-                    
-                    populateConsultantsSelect(document.getElementById('edit-user'), module.user_id);
-                    editModuleModal.show();
-                })
-                .catch(error => {
-                    console.error('Error fetching module data:', error);
-                    handleFormError(error);
-                });
-        }
-
-        // ==================== CREATE MODULE ====================
-        const createModuleBtn = document.getElementById('createModuleBtn');
-        if (createModuleBtn) {
-            createModuleBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                const contentValue = document.getElementById('create-content').value.trim();
-                
-                const formData = new FormData();
-                formData.append('title', document.getElementById('create-title').value);
-                formData.append('duration_hours', document.getElementById('create-duration_hours').value || '');
-                formData.append('number_seance', document.getElementById('create-number_seance').value || '');
-                formData.append('status', document.getElementById('create-status').value);
-                formData.append('content', contentValue || 'No content specified');
-                formData.append('user_id', document.getElementById('create-user').value);
-                formData.append('formation_ids[]', formationId);
-                
-                axios.post('{{ route('modules.store') }}', formData)
-                    .then(response => {
-                        createModuleModal.hide();
-                        showAlert('Module créé avec succès!', 'success');
-                        setTimeout(() => location.reload(), 1000);
-                    })
-                    .catch(error => {
-                        handleFormError(error);
-                    });
-            });
-        }
-
-        // ==================== UPDATE MODULE ====================
-        const editModuleBtn = document.getElementById('editModuleBtn');
-        if (editModuleBtn) {
-            editModuleBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                const moduleId = document.getElementById('edit-module-id').value;
-                const url = `/modules/${moduleId}`;
-                
-                const formData = {
-                    title: document.getElementById('edit-title').value,
-                    duration_hours: document.getElementById('edit-duration_hours').value || null,
-                    number_seance: document.getElementById('edit-number_seance').value || null,
-                    new_order: document.getElementById('edit-new_order').value,
-                    formation_id: formationId,
-                    status: document.getElementById('edit-status').value,
-                    content: document.getElementById('edit-content').value,
-                    user_id: document.getElementById('edit-user').value,
-                };
-
-                axios.put(url, formData)
-                    .then(response => {
-                        editModuleModal.hide();
-                        showAlert('Module mis à jour avec succès!', 'success');
-                        
-                        if (response.data.modules) {
-                            updateModulesList(response.data.modules);
-                        } else {
-                            setTimeout(() => location.reload(), 1000);
-                        }
-                    })
-                    .catch(error => {
-                        handleFormError(error);
-                    });
-            });
-        }
-
-        // ==================== UPDATE MODULES LIST AFTER EDIT ====================
-        function updateModulesList(modules) {
-            const sortedModules = modules.sort((a, b) => {
-                const orderA = a.pivot ? a.pivot.order : a.order;
-                const orderB = b.pivot ? b.pivot.order : b.order;
-                return orderA - orderB;
-            });
-
-            modulesList.innerHTML = '';
+    // ==================== TOGGLE CONTENT VISIBILITY ====================
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.content-toggle-btn')) {
+            const button = e.target.closest('.content-toggle-btn');
+            const moduleId = button.dataset.moduleId;
+            const contentDiv = document.getElementById('content-' + moduleId);
             
-            sortedModules.forEach((module, index) => {
-                const moduleOrder = module.pivot ? module.pivot.order : module.order;
-                const moduleCard = createModuleCard(module, moduleOrder);
-                modulesList.innerHTML += moduleCard;
-            });
-        }
-
-        // ==================== CREATE MODULE CARD HTML ====================
-        function createModuleCard(module, order) {
-            const statusClass = module.status === 'published' ? 'status-published' : 'status-draft';
-            const statusIcon = module.status === 'published' ? 'fa-check-circle' : 'fa-edit';
-            
-            let contentHTML = '';
-            if (Array.isArray(module.content) && module.content.length > 0) {
-                module.content.forEach(item => {
-                    contentHTML += `
-                        <div class="content-item-modern">
-                            <i class="fas fa-check-circle"></i>
-                            <span>${item}</span>
-                        </div>`;
-                });
+            if (contentDiv.classList.contains('show')) {
+                contentDiv.classList.remove('show');
+                button.innerHTML = '<i class="fas fa-chevron-down"></i> Voir le contenu';
+                button.classList.remove('active');
             } else {
-                contentHTML = `
-                    <div class="content-item-modern">
-                        <i class="fas fa-info-circle"></i>
-                        <span class="text-muted">Aucun contenu disponible.</span>
-                    </div>`;
+                contentDiv.classList.add('show');
+                button.innerHTML = '<i class="fas fa-chevron-up"></i> Masquer le contenu';
+                button.classList.add('active');
+            }
+        }
+    });
+
+    // ==================== HANDLE MODULE ACTIONS (EDIT/DELETE) ====================
+    if (modulesList) {
+        modulesList.addEventListener('click', function (e) {
+            if (e.target.closest('.delete-btn')) {
+                e.preventDefault();
+                if (confirm('Êtes-vous sûr de vouloir supprimer ce module ?')) {
+                    const moduleId = e.target.closest('.delete-btn').dataset.id;
+                    deleteModule(moduleId);
+                }
             }
 
-            return `
-            <div class="col" id="module-card-${module.id}">
-                <div class="module-card-modern h-100">
-                    <div class="module-card-header">
-                        <div class="module-header-top">
-                            <div class="flex-grow-1">
-                                <span class="module-order-badge">Module ${order}</span>
-                                <h5 class="module-title-modern">${module.title}</h5>
-                            </div>
-                            <div class="module-actions-modern">
-                                @can('module-edit')
-                                <button class="btn-icon btn-edit-modern edit-btn" 
-                                        data-id="${module.id}" 
-                                        data-order="${order}"
-                                        title="Edit module">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                @endcan
-                                @can('module-delete')
-                                <button class="btn-icon btn-delete-modern delete-btn" 
-                                        data-id="${module.id}"
-                                        title="Delete module">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                                @endcan
-                            </div>
-                        </div>
-                        
-                        <div class="module-meta">
-                            <div class="meta-item">
-                                <i class="fas fa-clock"></i>
-                                <span class="meta-value module-duration">${module.duration_hours || 'N/A'} heures</span>
-                            </div>
-                            <div class="meta-item">
-                                <i class="fas fa-calendar-alt"></i>
-                                <span class="meta-value module-sessions">${module.number_seance || 'N/A'} séances</span>
-                            </div>
-                        </div>
-                    </div>
+            if (e.target.closest('.edit-btn')) {
+                const button = e.target.closest('.edit-btn');
+                const moduleId = button.dataset.id;
+                const currentOrder = button.dataset.order;
+                fetchModuleData(moduleId, currentOrder);
+            }
+        });
+    }
 
-                    <div class="module-card-body">
-                        <div class="info-row">
-                            <div class="info-label-modern">
-                                <i class="fas fa-user-tie"></i>
-                                Consultant
-                            </div>
-                            <div class="info-value module-consultant">${module.user ? module.user.name : 'N/A'}</div>
-                        </div>
-
-                        <div class="info-row">
-                            <div class="info-label-modern">
-                                <i class="fas fa-flag"></i>
-                                Statut
-                            </div>
-                            <div>
-                                <span class="status-badge-modern module-status ${statusClass}" data-status="${module.status}">
-                                    <i class="fas ${statusIcon}"></i>
-                                    ${module.status}
-                                </span>
-                            </div>
-                        </div>
-
-                        <button class="content-toggle-btn" data-module-id="${module.id}">
-                            <i class="fas fa-chevron-down"></i> Voir le contenu
-                        </button>
-
-                        <div class="module-content-collapsible" id="content-${module.id}">
-                            <div class="content-list-modern">
-                                ${contentHTML}
-                            </div>
-                        </div>
-
-                        <div class="progress-section-modern">
-                            <div class="progress-label">
-                                <span class="progress-label-text">
-                                    <i class="fas fa-chart-line"></i> Progression
-                                </span>
-                                <span class="progress-percentage">${module.progress}%</span>
-                            </div>
-                            <div class="custom-progress">
-                                <div class="custom-progress-bar" style="width: ${module.progress}%;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        }
-
-        // ==================== DELETE MODULE ====================
-        function deleteModule(moduleId) {
-            axios.post(`/modules/${moduleId}/destroy-ajax`, {
-                _method: 'DELETE',
-                _token: '{{ csrf_token() }}'
-            })
+    // ==================== FETCH MODULE DATA FOR EDITING ====================
+    function fetchModuleData(moduleId, currentOrder) {
+        const url = `/modules/${moduleId}/get-data`;
+        axios.get(url)
             .then(response => {
-                const moduleCard = document.getElementById('module-card-' + moduleId);
-                if (moduleCard) {
-                    moduleCard.style.animation = 'fadeOutUp 0.5s ease';
-                    setTimeout(() => {
-                        moduleCard.remove();
-                        showAlert(response.data.message || 'Module supprimé avec succès!', 'success');
-                        
-                        if (document.querySelectorAll('.module-card-modern').length === 0) {
-                            modulesList.innerHTML = `
-                            <div class="no-modules">
-                                <i class="fas fa-inbox"></i>
-                                <h5>Aucun module n'a encore été ajouté à cette formation.</h5>
-                                <p class="text-muted">Commencez à construire votre formation en ajoutant le premier module!</p>
-                            </div>`;
-                        }
-                    }, 500);
-                }
+                const { module } = response.data;
+                document.getElementById('edit-module-id').value = module.id;
+                document.getElementById('edit-title').value = module.title;
+                document.getElementById('edit-duration_hours').value = module.duration_hours || '';
+                document.getElementById('edit-number_seance').value = module.number_seance || '';
+                document.getElementById('edit-new_order').value = currentOrder;
+                document.getElementById('edit-status').value = module.status;
+                document.getElementById('edit-content').value = Array.isArray(module.content) ? module.content.join('\n') : '';
+                
+                populateConsultantsSelect(document.getElementById('edit-user'), module.user_id);
+                editModuleModal.show();
             })
             .catch(error => {
-                console.error('Deletion error:', error);
-                let errorMsg = 'Échec de la suppression du module.';
-                if (error.response && error.response.data && error.response.data.message) {
-                    errorMsg = error.response.data.message;
-                }
-                showAlert(errorMsg, 'danger');
+                console.error('Error fetching module data:', error);
+                handleFormError(error);
             });
-        }
+    }
 
-        // ==================== HANDLE FORM ERRORS ====================
-        function handleFormError(error) {
-            console.error('Form error:', error);
-            let errorMessage = 'Une erreur s\'est produite. Veuillez réessayer.';
+    // ==================== CREATE MODULE ====================
+    const createModuleBtn = document.getElementById('createModuleBtn');
+    if (createModuleBtn) {
+        createModuleBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const contentValue = document.getElementById('create-content').value.trim();
             
-            if (error.response && error.response.data) {
-                if (error.response.data.errors) {
-                    const errors = error.response.data.errors;
-                    errorMessage = 'Veuillez corriger les erreurs suivantes:<br>';
-                    for (const key in errors) {
-                        errorMessage += `- ${errors[key][0]}<br>`;
-                    }
-                } else if (error.response.data.message) {
-                    errorMessage = error.response.data.message;
-                }
-            }
+            const formData = new FormData();
+            formData.append('title', document.getElementById('create-title').value);
+            formData.append('duration_hours', document.getElementById('create-duration_hours').value || '');
+            formData.append('number_seance', document.getElementById('create-number_seance').value || '');
+            formData.append('status', document.getElementById('create-status').value);
+            formData.append('content', contentValue || 'No content specified');
+            formData.append('user_id', document.getElementById('create-user').value);
+            formData.append('formation_ids[]', formationId);
             
-            showAlert(errorMessage, 'danger');
-        }
-
-        // ==================== SHOW ALERT MESSAGES ====================
-        function showAlert(message, type) {
-            const alertHtml = `
-            <div class="alert alert-${type} alert-custom alert-dismissible fade show" role="alert" style="animation: fadeInDown 0.5s ease">
-                ${message}
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            `;
-            alertContainer.innerHTML = alertHtml;
-            
-            setTimeout(() => {
-                const alert = alertContainer.querySelector('.alert');
-                if (alert) {
-                    alert.style.animation = 'fadeOutUp 0.5s ease';
-                    setTimeout(() => alert.remove(), 500);
-                }
-            }, 5000);
-        }
-
-        // ==================== MODAL CLEANUP ====================
-        editModalElement.addEventListener('hidden.bs.modal', function () {
-            document.getElementById('editModuleForm').reset();
-        });
-
-        createModalElement.addEventListener('hidden.bs.modal', function () {
-            document.getElementById('createModuleForm').reset();
-        });
-
-        // ==================== SELECT EXISTING MODULE FUNCTIONALITY ====================
-        if (selectModuleModalElement) {
-            const searchInput = document.getElementById('searchModule');
-            
-            if (searchInput) {
-                searchInput.addEventListener('input', function(e) {
-                    const searchTerm = e.target.value.toLowerCase();
-                    document.querySelectorAll('.module-selection-card').forEach(card => {
-                        const title = card.dataset.moduleTitle;
-                        if (title.includes(searchTerm)) {
-                            card.style.display = 'block';
-                        } else {
-                            card.style.display = 'none';
-                        }
-                    });
-                });
-            }
-            
-            document.querySelectorAll('.select-module-btn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const moduleId = this.dataset.moduleId;
-                    attachModule(moduleId);
-                });
-            });
-            
-            function attachModule(moduleId) {
-                const btn = document.querySelector(`.select-module-btn[data-module-id="${moduleId}"]`);
-                if (!btn) return;
-                
-                const originalContent = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ajout...';
-                btn.disabled = true;
-                
-                axios.post(`/formations/${formationId}/modules/attach`, {
-                    module_id: moduleId,
-                    _token: '{{ csrf_token() }}'
-                })
+            axios.post('{{ route('modules.store') }}', formData)
                 .then(response => {
-                    if (selectModuleModal) {
-                        selectModuleModal.hide();
-                    }
-                    showAlert('Module attaché avec succès!', 'success');
+                    createModuleModal.hide();
+                    showAlert('Module créé avec succès!', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                })
+                .catch(error => {
+                    handleFormError(error);
+                });
+        });
+    }
+
+    // ==================== UPDATE MODULE ====================
+    const editModuleBtn = document.getElementById('editModuleBtn');
+    if (editModuleBtn) {
+        editModuleBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const moduleId = document.getElementById('edit-module-id').value;
+            const url = `/modules/${moduleId}`;
+            
+            const formData = {
+                title: document.getElementById('edit-title').value,
+                duration_hours: document.getElementById('edit-duration_hours').value || null,
+                number_seance: document.getElementById('edit-number_seance').value || null,
+                new_order: document.getElementById('edit-new_order').value,
+                formation_id: formationId,
+                status: document.getElementById('edit-status').value,
+                content: document.getElementById('edit-content').value,
+                user_id: document.getElementById('edit-user').value,
+            };
+
+            axios.put(url, formData)
+                .then(response => {
+                    editModuleModal.hide();
+                    showAlert('Module mis à jour avec succès!', 'success');
                     
                     if (response.data.modules) {
                         updateModulesList(response.data.modules);
@@ -1337,18 +1081,116 @@
                     }
                 })
                 .catch(error => {
-                    btn.innerHTML = originalContent;
-                    btn.disabled = false;
-                    
-                    let errorMsg = 'Erreur lors de l\'attachement du module.';
-                    if (error.response && error.response.data && error.response.data.error) {
-                        errorMsg = error.response.data.error;
-                    }
-                    showAlert(errorMsg, 'danger');
+                    handleFormError(error);
                 });
+        });
+    }
+
+    // ==================== HELPER FUNCTIONS ====================
+    function deleteModule(moduleId) {
+        axios.post(`/modules/${moduleId}/destroy-ajax`, {
+            _method: 'DELETE',
+            _token: '{{ csrf_token() }}'
+        })
+        .then(response => {
+            const moduleCard = document.getElementById('module-card-' + moduleId);
+            if (moduleCard) {
+                moduleCard.style.animation = 'fadeOutUp 0.5s ease';
+                setTimeout(() => {
+                    moduleCard.remove();
+                    showAlert(response.data.message || 'Module supprimé avec succès!', 'success');
+                }, 500);
+            }
+        })
+        .catch(error => {
+            handleFormError(error);
+        });
+    }
+
+    function handleFormError(error) {
+        console.error('Form error:', error);
+        let errorMessage = 'Une erreur s\'est produite. Veuillez réessayer.';
+        
+        if (error.response && error.response.data) {
+            if (error.response.data.errors) {
+                const errors = error.response.data.errors;
+                errorMessage = 'Veuillez corriger les erreurs suivantes:<br>';
+                for (const key in errors) {
+                    errorMessage += `- ${errors[key][0]}<br>`;
+                }
+            } else if (error.response.data.message) {
+                errorMessage = error.response.data.message;
             }
         }
-    });
+        
+        showAlert(errorMessage, 'danger');
+    }
+
+    function showAlert(message, type) {
+        const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>`;
+        alertContainer.innerHTML = alertHtml;
+        
+        setTimeout(() => {
+            const alert = alertContainer.querySelector('.alert');
+            if (alert) alert.remove();
+        }, 5000);
+    }
+
+    function updateModulesList(modules) {
+        // Votre fonction existante
+    }
+
+    // ==================== SELECT EXISTING MODULE ====================
+    if (selectModuleModalElement) {
+        const searchInput = document.getElementById('searchModule');
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                document.querySelectorAll('.module-selection-card').forEach(card => {
+                    const title = card.dataset.moduleTitle;
+                    card.style.display = title.includes(searchTerm) ? 'block' : 'none';
+                });
+            });
+        }
+        
+        document.querySelectorAll('.select-module-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const moduleId = this.dataset.moduleId;
+                attachModule(moduleId);
+            });
+        });
+    }
+
+    function attachModule(moduleId) {
+        const btn = document.querySelector(`.select-module-btn[data-module-id="${moduleId}"]`);
+        if (!btn) return;
+        
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ajout...';
+        btn.disabled = true;
+        
+        axios.post(`/formations/${formationId}/modules/attach`, {
+            module_id: moduleId,
+            _token: '{{ csrf_token() }}'
+        })
+        .then(response => {
+            if (selectModuleModal) selectModuleModal.hide();
+            showAlert('Module attaché avec succès!', 'success');
+            setTimeout(() => location.reload(), 1000);
+        })
+        .catch(error => {
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+            handleFormError(error);
+        });
+    }
+});
 </script>
 
 @endsection

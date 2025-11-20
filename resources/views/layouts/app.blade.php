@@ -437,159 +437,142 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     {{-- Global JavaScript for Loading Overlay, Scroll-to-Top, and Progress Bar --}}
-    <script>
-        // Function to show the global loading overlay
-        // function showGlobalLoadingOverlay() {
-        //     $('#globalLoadingOverlay').addClass('active');
-        // }
+    
 
-        // // Function to hide the global loading overlay
-        // function hideGlobalLoadingOverlay() {
-        //     $('#globalLoadingOverlay').removeClass('active');
-        // }
 
-        // Show loading overlay on all form submissions
-        $(document).on('submit', 'form', function() {
-            showGlobalLoadingOverlay();
-        });
 
-        // Show loading overlay on all anchor tag clicks that lead to a new page
-        $(document).on('click', 'a[href]', function(e) {
-            if (this.hostname === window.location.hostname && !$(this).attr('href').startsWith('#') && !$(this).attr('download')) {
-                showGlobalLoadingOverlay();
-            }
-        });
-
-        // Hide loading overlay when the page finishes loading
-        $(window).on('load', function() {
-            hideGlobalLoadingOverlay();
-        });
-
-        // Optionally, hide loading overlay on browser back/forward (BFCache issues)
-        $(window).on('pageshow', function(event) {
-            if (event.originalEvent.persisted) {
-                hideGlobalLoadingOverlay();
-            }
-        });
-
-        /* Scroll-to-Top Button JavaScript */
-        $(document).ready(function() {
-            var scrollToTopBtn = $('#scrollToTopBtn');
-
-            // Show/hide the button based on scroll position
-            $(window).scroll(function() {
-                if ($(this).scrollTop() > 300) {
-                    scrollToTopBtn.addClass('show');
-                } else {
-                    scrollToTopBtn.removeClass('show');
-                }
-            });
-
-            // Scroll to top when button is clicked
-            scrollToTopBtn.on('click', function() {
-                $('html, body').animate({
-                    scrollTop: 0
-                }, 500);
-                return false;
-            });
-        });
-        /* END Scroll-to-Top Button JavaScript */
-
-        /* Scroll Progress Bar JavaScript */
-        $(document).ready(function() {
-            var progressBar = $('#scrollProgressBar');
-
-            $(window).on('scroll', function() {
-                const scrollTop = $(this).scrollTop();
-                const docHeight = $(document).height();
-                const winHeight = $(this).height();
-                const scrollPercent = (scrollTop / (docHeight - winHeight)) * 100;
-                progressBar.css('width', scrollPercent + '%');
-            });
-        });
-        /* END Scroll Progress Bar JavaScript */
-
-        // Mobile Sidebar Toggle and Overlay Logic
-        $(document).ready(function() {
-            const mobileToggleBtn = $('.toggle-btn.d-xl-none'); // The hamburger icon in the header
-            const sidebar = $('.sidebar');
-            const mobileOverlay = $('#mobileSidebarOverlay');
-            const sidebarCloseBtn = $('.sidebar-close-btn');
-
-            // Open mobile sidebar
-            mobileToggleBtn.on('click', function() {
-                $('body').addClass('mobile-sidebar-open');
-            });
-
-            // Close mobile sidebar via overlay click or close button
-            mobileOverlay.on('click', function() {
-                $('body').removeClass('mobile-sidebar-open');
-            });
-
-            sidebarCloseBtn.on('click', function() {
-                $('body').removeClass('mobile-sidebar-open');
-            });
-        });
-    </script>
+  <!-- REPLACE THIS SECTION IN app.blade.php around line 250 -->
+<!-- From: "Global JavaScript for Loading Overlay, Scroll-to-Top, and Progress Bar" -->
 
 <script>
+    // ✅ DEFINE THESE FUNCTIONS FIRST (they were commented out before)
+    function showGlobalLoadingOverlay() {
+        const overlay = document.getElementById('globalLoadingOverlay');
+        if (overlay) {
+            overlay.classList.add('active');
+        }
+    }
+
+    function hideGlobalLoadingOverlay() {
+        const overlay = document.getElementById('globalLoadingOverlay');
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
+    }
+
+    // Show loading overlay on all form submissions
+    document.addEventListener('submit', function(e) {
+        // Don't show loading for modals or AJAX forms
+        if (!e.target.closest('.modal')) {
+            showGlobalLoadingOverlay();
+        }
+    }, true);
+
+    // Show loading overlay on all anchor tag clicks that lead to a new page
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[href]');
+        if (link && link.hostname === window.location.hostname && 
+            !link.getAttribute('href').startsWith('#') && 
+            !link.hasAttribute('download') &&
+            !link.closest('.modal') &&
+            !link.closest('[data-bs-toggle="modal"]')) {
+            showGlobalLoadingOverlay();
+        }
+    }, true);
+
+    // Hide loading overlay when the page finishes loading
+    window.addEventListener('load', function() {
+        hideGlobalLoadingOverlay();
+    });
+
+    // Hide loading overlay on browser back/forward
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            hideGlobalLoadingOverlay();
+        }
+    });
+
+    // ✅ Scroll-to-Top Button
     document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('searchInput');
-        const searchableItems = document.querySelectorAll('.list-card'); // Use the class of your cards
+        const scrollToTopBtn = document.getElementById('scrollToTopBtn');
 
-        searchInput.addEventListener('input', function() {
-            const query = searchInput.value.toLowerCase();
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 300) {
+                scrollToTopBtn?.classList.add('show');
+            } else {
+                scrollToTopBtn?.classList.remove('show');
+            }
+        });
 
-            searchableItems.forEach(item => {
-                const itemText = item.textContent.toLowerCase();
-
-                if (itemText.includes(query)) {
-                    item.style.display = 'block'; // Or whatever the default display style is
-                } else {
-                    item.style.display = 'none';
-                }
+        scrollToTopBtn?.addEventListener('click', function() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
             });
         });
     });
+
+    // ✅ Scroll Progress Bar
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressBar = document.getElementById('scrollProgressBar');
+
+        window.addEventListener('scroll', function() {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight;
+            const winHeight = window.innerHeight;
+            const scrollPercent = (scrollTop / (docHeight - winHeight)) * 100;
+            if (progressBar) {
+                progressBar.style.width = Math.min(scrollPercent, 100) + '%';
+            }
+        });
+    });
+
+    // ✅ Mobile Sidebar Toggle
+    document.addEventListener('DOMContentLoaded', function() {
+        const mobileToggleBtn = document.querySelector('.toggle-btn.d-xl-none');
+        const mobileOverlay = document.getElementById('mobileSidebarOverlay');
+        const sidebarCloseBtn = document.querySelector('.sidebar-close-btn');
+
+        mobileToggleBtn?.addEventListener('click', function() {
+            document.body.classList.add('mobile-sidebar-open');
+        });
+
+        mobileOverlay?.addEventListener('click', function() {
+            document.body.classList.remove('mobile-sidebar-open');
+        });
+
+        sidebarCloseBtn?.addEventListener('click', function() {
+            document.body.classList.remove('mobile-sidebar-open');
+        });
+    });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+    // ✅ Notifications & Profile Dropdown
     document.addEventListener('DOMContentLoaded', function() {
-        // --- Notification Dropdown (Bootstrap's native dropdown) ---
+        // Close notification dropdown
         const closeNotificationDropdown = document.querySelector('.close-dropdown');
         if (closeNotificationDropdown) {
             closeNotificationDropdown.addEventListener('click', function() {
-                const notificationDropdownElement = closeNotificationDropdown.closest('.dropdown');
-                if (notificationDropdownElement) {
-                    const bsCollapse = new bootstrap.Dropdown(notificationDropdownElement.querySelector('[data-bs-toggle="dropdown"]'));
-                    bsCollapse.hide();
+                const dropdown = this.closest('.dropdown');
+                const toggleBtn = dropdown?.querySelector('[data-bs-toggle="dropdown"]');
+                if (toggleBtn && typeof bootstrap !== 'undefined') {
+                    bootstrap.Dropdown.getInstance(toggleBtn)?.hide();
                 }
             });
         }
         
-        // Handle marking notifications as read
-        const notificationDropdownToggle = document.getElementById('notificationDropdownToggle');
-        if (notificationDropdownToggle) {
-            notificationDropdownToggle.addEventListener('click', function() {
-                const unreadCountElement = this.querySelector('.notification-badge');
-                if (unreadCountElement) {
-                    unreadCountElement.remove();
-                }
-            });
-        }
-        
-        // Handle "Mark All as Read" button
+        // Mark all notifications as read
         const markAllAsReadButton = document.getElementById('markAllAsRead');
         if (markAllAsReadButton) {
             markAllAsReadButton.addEventListener('click', function(e) {
                 e.preventDefault();
-                // Assurez-vous d'avoir la bonne route définie pour marquer toutes les notifications comme lues
-                // Cette route doit être protégée par un middleware
-                fetch('{{ route('admin.notifications.markAllAsRead') }}', {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                
+                fetch('{{ route("admin.notifications.markAllAsRead") }}', {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'X-CSRF-TOKEN': csrfToken,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     }
@@ -597,74 +580,56 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Mettre à jour l'interface utilisateur pour toutes les notifications
-                        document.querySelectorAll('.notification-badge').forEach(badge => badge.remove());
+                        document.querySelectorAll('.notification-badge').forEach(b => b.remove());
                         document.querySelectorAll('.fw-bold').forEach(el => el.classList.remove('fw-bold'));
-                        console.log('All notifications marked as read.');
                     }
                 })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
+                .catch(error => console.error('Error:', error));
             });
         }
         
-        // --- Profile Dropdown (Custom implementation, not Bootstrap's native) ---
-        const profileDropdownToggle = document.getElementById('profileDropdownToggle');
-        const profileDropdownMenu = document.getElementById('profileDropdownMenu');
+        // Profile Dropdown Toggle
+        const profileToggle = document.getElementById('profileDropdownToggle');
+        const profileMenu = document.getElementById('profileDropdownMenu');
 
-        if (profileDropdownToggle && profileDropdownMenu) {
-            profileDropdownToggle.addEventListener('click', function(e) {
+        if (profileToggle && profileMenu) {
+            profileToggle.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                profileDropdownMenu.classList.toggle('show');
+                profileMenu.classList.toggle('show');
             });
 
             document.addEventListener('click', function(e) {
-                if (!profileDropdownToggle.contains(e.target) && !profileDropdownMenu.contains(e.target)) {
-                    profileDropdownMenu.classList.remove('show');
+                if (!profileToggle.contains(e.target) && !profileMenu.contains(e.target)) {
+                    profileMenu.classList.remove('show');
                 }
             });
-
-            profileDropdownMenu.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
         }
 
-        // --- Desktop Sidebar Toggle Button in Header ---
-        const sidebarToggleButton = document.getElementById('sidebarToggle');
-        if (sidebarToggleButton) {
-            sidebarToggleButton.addEventListener('click', function() {
-                document.body.classList.toggle('sidebar-collapsed');
-            });
-        }
+        // Sidebar Toggle Buttons
+        document.getElementById('sidebarToggle')?.addEventListener('click', function() {
+            document.body.classList.toggle('sidebar-collapsed');
+        });
 
-        // --- Mobile Sidebar Toggle Button in Header ---
-        const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
-        if (mobileSidebarToggle) {
-            mobileSidebarToggle.addEventListener('click', function() {
-                document.body.classList.toggle('mobile-sidebar-open');
-            });
-        }
-
-        // Apply saved sidebar state on load
-        // if (localStorage.getItem('sidebarState') === 'collapsed') {
-        //      document.body.classList.add('sidebar-collapsed');
-        // }
+        document.getElementById('mobileSidebarToggle')?.addEventListener('click', function() {
+            document.body.classList.toggle('mobile-sidebar-open');
+        });
     });
+</script>
 
-    // --- General Icon Interactions (Search, Theme, Fullscreen, etc.) ---
+<script>
+    // ✅ Icon Interactions (Search, Theme, Fullscreen)
     function handleIconClick(action) {
         const iconElement = event.currentTarget;
-
         iconElement.style.transform = 'translateY(0) scale(0.95)';
+        
         setTimeout(() => {
             iconElement.style.transform = 'translateY(-2px) scale(1)';
         }, 150);
 
         switch(action) {
             case 'search':
-                console.log('Recherche activée');
+                console.log('🔍 Search activated');
                 break;
             case 'theme':
                 toggleTheme();
@@ -672,71 +637,34 @@
             case 'fullscreen':
                 toggleFullscreen();
                 break;
-            case 'notifications':
-                console.log('Notifications ouvertes');
-                const notificationBadge = iconElement.querySelector('.notification-badge');
-                if (notificationBadge) {
-                    notificationBadge.style.animation = 'none';
-                    setTimeout(() => {
-                        notificationBadge.textContent = '0';
-                        notificationBadge.style.opacity = '0.5';
-                    }, 500);
-                }
-                break;
-            case 'messages':
-                console.log('Messages ouverts');
-                break;
-            case 'settings':
-                console.log('Paramètres ouverts');
-                break;
-            case 'logout':
-                console.log('Déconnexion...');
-                alert('Vous avez été déconnecté.');
-                break;
-            case 'apps':
-                console.log('Menu applications ouvert');
-                break;
             default:
                 console.log(`Action: ${action}`);
         }
     }
 
-    // --- Theme Toggle functionality ---
     let isDarkTheme = false;
     function toggleTheme() {
         const themeIcon = document.querySelector('.theme-toggle i');
-        const themeTooltip = themeIcon.parentElement.querySelector('.tooltip');
         const body = document.body;
-        const header = document.querySelector('.header');
-
+        
         if (!isDarkTheme) {
             themeIcon.className = 'fas fa-sun';
-            if (themeTooltip) themeTooltip.textContent = 'Mode clair';
             body.style.filter = 'invert(1) hue-rotate(180deg)';
-            header.style.filter = 'invert(1) hue-rotate(180deg)';
             isDarkTheme = true;
         } else {
             themeIcon.className = 'fas fa-moon';
-            if (themeTooltip) themeTooltip.textContent = 'Mode sombre';
             body.style.filter = 'none';
-            header.style.filter = 'none';
             isDarkTheme = false;
         }
     }
 
-    // --- Fullscreen Toggle functionality ---
     function toggleFullscreen() {
-        const fullscreenIcon = document.querySelector('.nav-icon [class*="fa-expand"], .nav-icon [class*="fa-compress"]');
-        const fullscreenTooltip = fullscreenIcon.parentElement.querySelector('.tooltip');
-
         if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen();
-            fullscreenIcon.className = 'fas fa-compress';
-            if (fullscreenTooltip) fullscreenTooltip.textContent = 'Quitter plein écran';
+            document.documentElement.requestFullscreen().catch(err => {
+                console.warn('Fullscreen request denied:', err);
+            });
         } else {
             document.exitFullscreen();
-            fullscreenIcon.className = 'fas fa-expand';
-            if (fullscreenTooltip) fullscreenTooltip.textContent = 'Plein écran';
         }
     }
 </script>
