@@ -28,221 +28,224 @@ class CourseController extends Controller
 
 
 public function index(Request $request)
-    {
-        $user = Auth::user();
+{
+    $user = Auth::user();
 
-        // ⚠️ MODIFICATION 1 : Si l'utilisateur est un étudiant, on bloque la navigation vers les semaines futures.
-        $weekOffset = $request->get('week_offset', 0);
-        $viewMode = $request->get('view_mode', 'list');
+    $weekOffset = $request->get('week_offset', 0);
+    $viewMode = $request->get('view_mode', 'list');
 
-        if ($user->hasRole('Etudiant') && $weekOffset > 0) {
-            $weekOffset = 0;
-        }
+    if ($user->hasRole('Etudiant') && $weekOffset > 0) {
+        $weekOffset = 0;
+    }
 
-
-        if ($user->hasRole('Etudiant')) {
-        $viewMode = $request->get('view_mode', 'planning'); // Planning par défaut pour les étudiants
+    if ($user->hasRole('Etudiant')) {
+        $viewMode = $request->get('view_mode', 'planning');
         
-        // Bloquer les semaines futures pour les étudiants
         if ($weekOffset > 0) {
             $weekOffset = 0;
         }
     } else {
-        $viewMode = $request->get('view_mode', 'list'); // Liste par défaut pour les autres rôles
+        $viewMode = $request->get('view_mode', 'list');
     }
 
-        // 🗓️ Calcul de la semaine
-        $weekStart = Carbon::now()->startOfWeek()->addWeeks($weekOffset);
-        $weekEnd = Carbon::now()->startOfWeek()->addWeeks($weekOffset)->endOfWeek();
+    // 🗓️ Calcul de la semaine
+    $weekStart = Carbon::now()->startOfWeek()->addWeeks($weekOffset);
+    $weekEnd = Carbon::now()->startOfWeek()->addWeeks($weekOffset)->endOfWeek();
 
-        // Load relations
-        $query = Course::with(['consultant', 'formation', 'module']);
-
-        // ... (Logique de filtrage par rôle pour la requête principale)
-        if ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance')) {
-            // Admins see all courses
-        } elseif ($user->hasRole('Consultant')) {
-            $query->where('consultant_id', $user->id);
-        } elseif ($user->hasRole('Etudiant')) {
-            $enrolledFormationIds = $user->inscriptions()
-                ->whereIn('status', ['active', 'completed'])
-                ->where('access_restricted', false)
-                ->pluck('formation_id');
-
-            if ($enrolledFormationIds->isEmpty()) {
-                $query->whereRaw('1 = 0');
-            } else {
-                $query->whereIn('formation_id', $enrolledFormationIds);
-            }
+    // 🔥 NOUVEAU: Récupérer les cours reportés pour cette semaine
+    $rescheduledCoursesQuery = \App\Models\CourseReschedule::with(['course.module', 'course.formation'])
+        ->whereBetween('original_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')]);
+    
+    // Filtrer selon le rôle
+    if ($user->hasRole('Etudiant')) {
+        $enrolledFormationIds = $user->inscriptions()
+            ->whereIn('status', ['active', 'completed'])
+            ->where('access_restricted', false)
+            ->pluck('formation_id');
+        
+        if ($enrolledFormationIds->isNotEmpty()) {
+            $rescheduledCoursesQuery->whereHas('course', function($q) use ($enrolledFormationIds) {
+                $q->whereIn('formation_id', $enrolledFormationIds);
+            });
         } else {
+            $rescheduledCoursesQuery->whereRaw('1 = 0');
+        }
+    } elseif ($user->hasRole('Consultant')) {
+        $rescheduledCoursesQuery->whereHas('course', function($q) use ($user) {
+            $q->where('consultant_id', $user->id);
+        });
+    }
+    
+    $rescheduledCourses = $rescheduledCoursesQuery->get();
+    
+    // Grouper les cours reportés par date originale
+    $rescheduledByDate = $rescheduledCourses->groupBy(function($reschedule) {
+        return Carbon::parse($reschedule->original_date)->format('Y-m-d');
+    });
+
+    // Load relations
+    $query = Course::with(['consultant', 'formation', 'module']);
+
+    if ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance')) {
+        // Admins see all courses
+    } elseif ($user->hasRole('Consultant')) {
+        $query->where('consultant_id', $user->id);
+    } elseif ($user->hasRole('Etudiant')) {
+        $enrolledFormationIds = $user->inscriptions()
+            ->whereIn('status', ['active', 'completed'])
+            ->where('access_restricted', false)
+            ->pluck('formation_id');
+
+        if ($enrolledFormationIds->isEmpty()) {
             $query->whereRaw('1 = 0');
+        } else {
+            $query->whereIn('formation_id', $enrolledFormationIds);
         }
-
-        // 🔥 Filtrage par semaine
-       if ($user->hasRole('Etudiant')) {
-    if ($viewMode === 'planning') {
-        // En mode planning, l'étudiant voit uniquement la semaine en cours
-        $query->whereBetween('course_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')]);
     } else {
-        // En mode liste, l'étudiant voit tous les cours jusqu'à la fin de la semaine en cours
-        // (cours passés + cours de la semaine actuelle)
-        $query->where('course_date', '<=', $weekEnd->format('Y-m-d'));
+        $query->whereRaw('1 = 0');
     }
-} elseif ($viewMode === 'planning') {
-    // En mode planning pour les autres rôles, filtrer par semaine
-    $query->whereBetween('course_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')]);
-}
+
+    // 🔥 Filtrage par semaine
+    if ($user->hasRole('Etudiant')) {
+        if ($viewMode === 'planning') {
+            $query->whereBetween('course_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')]);
+        } else {
+            $query->where('course_date', '<=', $weekEnd->format('Y-m-d'));
+        }
+    } elseif ($viewMode === 'planning') {
+        $query->whereBetween('course_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')]);
+    }
+    
+    // Filters based on request parameters
+    if ($request->has('filter_formation_id') && $request->filter_formation_id) {
+        $query->where('formation_id', $request->filter_formation_id);
+    }
+
+    if ($request->has('filter_module_id') && $request->filter_module_id) {
+        $query->where('module_id', $request->filter_module_id);
+    }
+
+    if ($request->has('start_date') && $request->start_date) {
+        $query->where('course_date', '>=', $request->start_date);
+    }
+
+    if ($request->has('search') && $request->search) {
+        $query->where('title', 'like', '%' . $request->search . '%');
+    }
+
+    $query->orderBy('course_date', 'asc')->orderBy('start_time', 'asc');
+
+    if ($viewMode === 'planning') {
+        $courses = $query->get();
         
-        // Filters based on request parameters
-        if ($request->has('filter_formation_id') && $request->filter_formation_id) {
-            $query->where('formation_id', $request->filter_formation_id);
-        }
+        $courses = $courses->unique(function ($course) {
+            return $course->module_id . '-' .
+                $course->course_date . '-' .
+                $course->start_time . '-' .
+                $course->title;
+        });
 
-        // ✅ NOUVEAU FILTRE PAR MODULE
-        if ($request->has('filter_module_id') && $request->filter_module_id) {
-            $query->where('module_id', $request->filter_module_id);
-        }
-        // FIN NOUVEAU FILTRE
-
-        if ($request->has('start_date') && $request->start_date) {
-            $query->where('course_date', '>=', $request->start_date);
-        }
-
-        if ($request->has('search') && $request->search) {
-            $query->where('title', 'like', '%' . $request->search . '%');
-        }
-
-        // ... (Tri et pagination)
-
-        // Tri par date et heure
-        $query->orderBy('course_date', 'asc')->orderBy('start_time', 'asc');
-
-     
-            if ($viewMode === 'planning') {
-                $courses = $query->get();
-                // ... (Logique des coursesByDay)
-                $courses = $courses->unique(function ($course) {
-                    return $course->module_id . '-' .
-                        $course->course_date . '-' .
-                        $course->start_time . '-' .
+        $coursesByDay = $courses->groupBy(function ($course) {
+            return Carbon::parse($course->course_date)->format('Y-m-d');
+        });
+    } else {
+        $allCourses = $query->get();
+        
+        $uniqueCourses = $allCourses->unique(function($course) {
+            return $course->module_id . '-' . 
+                        $course->course_date . '-' . 
+                        $course->start_time . '-' . 
                         $course->title;
-                });
+        });
+        
+        $groupedByModule = $uniqueCourses->groupBy(function ($course) {
+            return optional($course->module)->title ?? 'Module Non Classé';
+        });
+        
+        $perPage = 5;
+        $currentPage = Paginator::resolveCurrentPage();
+        
+        $moduleKeys = $groupedByModule->keys()->toArray();
+        $totalModules = count($moduleKeys);
+        
+        $currentPageModuleKeys = array_slice($moduleKeys, ($currentPage - 1) * $perPage, $perPage);
+        
+        $currentPageModules = collect();
+        foreach ($currentPageModuleKeys as $key) {
+            $currentPageModules->put($key, $groupedByModule->get($key));
+        }
+        
+        $courses = new LengthAwarePaginator(
+            $currentPageModules,
+            $totalModules,
+            $perPage,
+            $currentPage,
+            ['path' => Paginator::resolveCurrentPath()]
+        );
+        
+        $coursesByDay = null;
+    }
 
-                $coursesByDay = $courses->groupBy(function ($course) {
-                    return Carbon::parse($course->course_date)->format('Y-m-d');
-                });
-            
-       } else {
-    // 🔥 Mode Liste: Filtrer les duplicates POUR TOUS (Admin, Consultant, etc.)
-    $allCourses = $query->get();
-    
-    // 🚨 NOUVELLE LOGIQUE: Grouper par module_id + date + time + title
-    // et ne garder qu'un seul représentant par groupe
-    $uniqueCourses = $allCourses->unique(function($course) {
-        return $course->module_id . '-' . 
-                    $course->course_date . '-' . 
-                    $course->start_time . '-' . 
-                    $course->title;
-    });
-    
-    // 📁 Grouper les cours par module AVANT la pagination
-    $groupedByModule = $uniqueCourses->groupBy(function ($course) {
-        return optional($course->module)->title ?? 'Module Non Classé';
-    });
-    
-    // 🔢 Paginer les MODULES (pas les cours)
-    $perPage = 5; // 5 modules par page
-    $currentPage = Paginator::resolveCurrentPage();
-    
-    // Récupérer les clés des modules
-    $moduleKeys = $groupedByModule->keys()->toArray();
-    $totalModules = count($moduleKeys);
-    
-    // Slice les clés des modules pour la page actuelle
-    $currentPageModuleKeys = array_slice($moduleKeys, ($currentPage - 1) * $perPage, $perPage);
-    
-    // Récupérer uniquement les modules de la page actuelle avec leurs cours
-    $currentPageModules = collect();
-    foreach ($currentPageModuleKeys as $key) {
-        $currentPageModules->put($key, $groupedByModule->get($key));
+    $formationsForModals = Formation::where('status', 'published')->get();
+    $formationsForFilter = collect();
+
+    if ($user && ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance'))) {
+        $formationsForFilter = Formation::all();
+    } elseif ($user && $user->hasRole('Etudiant')) {
+        $enrolledFormationIds = $user->inscriptions()
+            ->whereIn('status', ['active', 'completed'])
+            ->where('access_restricted', false)
+            ->pluck('formation_id');
+        if ($enrolledFormationIds->isNotEmpty()) {
+            $formationsForFilter = Formation::whereIn('id', $enrolledFormationIds)->get();
+        }
     }
     
-    // Créer le paginator pour les modules
-    $courses = new LengthAwarePaginator(
-        $currentPageModules,
-        $totalModules, // Total de modules
-        $perPage,
-        $currentPage,
-        ['path' => Paginator::resolveCurrentPath()]
-    );
+    $consultants = User::role('Consultant')->get();
     
-    $coursesByDay = null;
+    $modulesQuery = Module::query();
+    
+    if ($user->hasRole('Etudiant')) {
+        $enrolledFormationIds = $user->inscriptions()
+            ->whereIn('status', ['active', 'completed','pending'])
+            ->where('access_restricted', false)
+            ->pluck('formation_id');
+        
+        if ($enrolledFormationIds->isNotEmpty()) {
+            $modulesQuery->whereHas('formations', function ($q) use ($enrolledFormationIds) {
+                $q->whereIn('formations.id', $enrolledFormationIds);
+            });
+        } else {
+            $modulesQuery->whereRaw('1 = 0');
+        }
+    } elseif ($user->hasRole('Consultant')) {
+        $moduleIds = Course::where('consultant_id', $user->id)
+                            ->pluck('module_id')
+                            ->unique();
+        
+        if ($moduleIds->isNotEmpty()) {
+            $modulesQuery->whereIn('id', $moduleIds);
+        } else {
+             $modulesQuery->whereRaw('1 = 0');
+        }
+    }
+    
+    $modules = $modulesQuery->where('status', 'published')->get();
+
+    return view('courses.index', compact(
+        'courses', 
+        'coursesByDay', 
+        'viewMode', 
+        'weekStart', 
+        'weekEnd', 
+        'weekOffset',
+        'formationsForModals', 
+        'formationsForFilter', 
+        'consultants',
+        'modules',
+        'rescheduledByDate' // 🔥 NOUVEAU: Passer les cours reportés à la vue
+    ));
 }
-
-        // ... (Formations for Modals and Filter - inchangé)
-        $formationsForModals = Formation::where('status', 'published')->get();
-        $formationsForFilter = collect();
-
-        if ($user && ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Finance'))) {
-            $formationsForFilter = Formation::all();
-        } elseif ($user && $user->hasRole('Etudiant')) {
-            $enrolledFormationIds = $user->inscriptions()
-                ->whereIn('status', ['active', 'completed'])
-                ->where('access_restricted', false)
-                ->pluck('formation_id');
-            if ($enrolledFormationIds->isNotEmpty()) {
-                $formationsForFilter = Formation::whereIn('id', $enrolledFormationIds)->get();
-            }
-        }
-        
-        $consultants = User::role('Consultant')->get();
-        
-        // ✅ NOUVEAU FILTRAGE POUR LES MODULES (pour le select/dropdown du filtre)
-        $modulesQuery = Module::query();
-        
-        if ($user->hasRole('Etudiant')) {
-            // L'étudiant voit uniquement les modules des formations auxquelles il est inscrit
-            $enrolledFormationIds = $user->inscriptions()
-                ->whereIn('status', ['active', 'completed','pending'])
-                ->where('access_restricted', false)
-                ->pluck('formation_id');
-            
-            if ($enrolledFormationIds->isNotEmpty()) {
-                $modulesQuery->whereHas('formations', function ($q) use ($enrolledFormationIds) {
-                    $q->whereIn('formations.id', $enrolledFormationIds);
-                });
-            } else {
-                $modulesQuery->whereRaw('1 = 0'); // Aucun module
-            }
-        } elseif ($user->hasRole('Consultant')) {
-            // Le consultant voit uniquement les modules qu'il enseigne (ceux qui sont associés à SES cours)
-            $moduleIds = Course::where('consultant_id', $user->id)
-                                ->pluck('module_id')
-                                ->unique();
-            
-            if ($moduleIds->isNotEmpty()) {
-                $modulesQuery->whereIn('id', $moduleIds);
-            } else {
-                 $modulesQuery->whereRaw('1 = 0'); // Aucun module
-            }
-        }
-        
-        $modules = $modulesQuery->where('status', 'published')->get();
-        // FIN NOUVEAU FILTRAGE
-
-        return view('courses.index', compact(
-            'courses', 
-            'coursesByDay', 
-            'viewMode', 
-            'weekStart', 
-            'weekEnd', 
-            'weekOffset',
-            'formationsForModals', 
-            'formationsForFilter', 
-            'consultants',
-            'modules' // Had l'variable ba9a kima hiya
-        ));
-    }
     /**
      * Show the form for creating a new resource.
      */

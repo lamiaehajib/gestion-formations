@@ -721,6 +721,60 @@
 .course-count{
     background-color: #c53030 !important;
 }
+.rescheduled-course {
+    background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%) !important;
+    border-left: 4px solid #dc3545 !important;
+    cursor: default !important;
+    opacity: 0.95;
+}
+
+.rescheduled-course:hover {
+    transform: none !important;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.15) !important;
+}
+
+.rescheduled-badge {
+    background: #dc3545;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.rescheduled-badge i {
+    font-size: 0.7rem;
+}
+
+.rescheduled-info {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #dc3545;
+    color: #dc3545;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rescheduled-info i {
+    font-size: 0.75rem;
+}
+
+.rescheduled-course .course-time {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.rescheduled-course .course-title-mini {
+    color: #6c757d;
+    text-decoration: line-through;
+}
 </style>
 @endpush
 
@@ -843,45 +897,83 @@
 </div>
 
         @if($viewMode === 'planning')
-            <div class="planning-grid">
-                @foreach(['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] as $index => $dayName)
-                    @php
-        $currentDate = \Carbon\Carbon::parse($weekStart)->addDays($index);
-        $isToday = $currentDate->isToday();
-        $dayCourses = $coursesByDay[$currentDate->format('Y-m-d')] ?? collect();
-                    @endphp
+    <div class="planning-grid">
+        @foreach(['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] as $index => $dayName)
+            @php
+                $currentDate = \Carbon\Carbon::parse($weekStart)->addDays($index);
+                $isToday = $currentDate->isToday();
+                $dayCourses = $coursesByDay[$currentDate->format('Y-m-d')] ?? collect();
+                
+                // 🔥 Récupérer les séances reportées depuis cette date
+                $rescheduledFromThisDay = \App\Models\CourseReschedule::whereHas('course', function($q) use ($currentDate) {
+                    $q->whereDate('course_date', '!=', $currentDate->format('Y-m-d'));
+                })
+                ->whereDate('original_date', $currentDate->format('Y-m-d'))
+                ->with('course')
+                ->get();
+                
+                // 🔥 Filtrer les duplicates des séances reportées
+                $rescheduledFromThisDay = $rescheduledFromThisDay->unique(function ($reschedule) {
+                    $course = $reschedule->course;
+                    return $course->module_id . '-' .
+                           $reschedule->original_date . '-' .
+                           $course->start_time . '-' .
+                           $course->title;
+                });
+            @endphp
 
-                    <div class="day-column">
-                        <div class="day-header {{ $isToday ? 'today' : '' }}">
-                            <div class="day-name">{{ $dayName }}</div>
-                            <div class="day-date">{{ $currentDate->format('d/m/Y') }}</div>
-                        </div>
+            <div class="day-column">
+                <div class="day-header {{ $isToday ? 'today' : '' }}">
+                    <div class="day-name">{{ $dayName }}</div>
+                    <div class="day-date">{{ $currentDate->format('d/m/Y') }}</div>
+                </div>
 
-                         <div class="day-content">
-                            @forelse($dayCourses as $course)
-                                <div class="course-item-mini" onclick="window.location='{{ route('courses.show', $course) }}'">
-                                    <div class="course-time">
-                                        <i class="fas fa-clock"></i>
-                                        {{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }} - 
-                                        {{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}
-                                    </div>
-                                    <div class="course-title-mini">{{ Str::limit($course->title, 40) }}</div>
-                                    
-                                    {{-- 🚨 MODIFICATION ICI: On n'affiche le nom de la formation que si l'utilisateur n'est PAS un Consultant --}}
-                                    @if($course->formation && !auth()->user()->hasRole('Consultant'))
-                                      
-                                    @endif
-                                </div>
-                            @empty
-                                <div class="empty-day">
-                                    <i class="fas fa-coffee d-block mb-2" style="font-size: 2rem;"></i>
-                                    Journée libre
-                                </div>
-                            @endforelse
+                <div class="day-content">
+                    {{-- 🔥 Afficher d'abord les séances reportées --}}
+                    @foreach($rescheduledFromThisDay as $reschedule)
+                        <div class="course-item-mini rescheduled-course">
+                            <div class="rescheduled-badge">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Séance reportée
+                            </div>
+                            <div class="course-time">
+                                <i class="fas fa-clock"></i>
+                                {{ \Carbon\Carbon::parse($reschedule->course->start_time)->format('H:i') }}
+                            </div>
+                            <div class="course-title-mini">{{ Str::limit($reschedule->course->title, 40) }}</div>
+                            <div class="rescheduled-info">
+                                <i class="fas fa-arrow-right"></i>
+                                Reportée au {{ \Carbon\Carbon::parse($reschedule->new_date)->format('d/m/Y') }}
+                            </div>
                         </div>
-                    </div>
-                @endforeach
+                    @endforeach
+
+                    {{-- 🔥 Ensuite afficher les séances normales --}}
+                    @forelse($dayCourses as $course)
+                        <div class="course-item-mini" onclick="window.location='{{ route('courses.show', $course) }}'">
+                            <div class="course-time">
+                                <i class="fas fa-clock"></i>
+                                {{ \Carbon\Carbon::parse($course->start_time)->format('H:i') }} - 
+                                {{ \Carbon\Carbon::parse($course->end_time)->format('H:i') }}
+                            </div>
+                            <div class="course-title-mini">{{ Str::limit($course->title, 40) }}</div>
+                            
+                            @if($course->formation && !auth()->user()->hasRole('Consultant'))
+                                {{-- Affichage formation si nécessaire --}}
+                            @endif
+                        </div>
+                    @empty
+                        @if($rescheduledFromThisDay->isEmpty())
+                            <div class="empty-day">
+                                <i class="fas fa-coffee d-block mb-2" style="font-size: 2rem;"></i>
+                                Journée libre
+                            </div>
+                        @endif
+                    @endforelse
+                </div>
             </div>
+        @endforeach
+    </div>
 @else
     {{-- Grouping courses by Module Title --}}
     <div class="row">
