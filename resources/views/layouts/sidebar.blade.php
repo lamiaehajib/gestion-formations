@@ -20,6 +20,7 @@
             overflow-x: hidden;
         }
 
+        /* SIDEBAR BASE STYLES */
         .sidebar {
             width: 280px;
             background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
@@ -28,15 +29,15 @@
             top: 0;
             left: 0;
             box-shadow: 0 10px 30px rgba(211, 47, 47, 0.1);
-            z-index: 1000;
+            z-index: 1050;
             display: flex;
             flex-direction: column;
             border-right: 1px solid rgba(211, 47, 47, 0.1);
             overflow: hidden;
-            transition: width 0.3s ease, padding 0.3s ease, left 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.3s ease;
         }
 
-        /* Desktop: Collapsed sidebar styles */
+        /* DESKTOP: Collapsed sidebar styles */
         body.sidebar-collapsed .sidebar {
             width: 80px;
             padding: 0;
@@ -52,6 +53,7 @@
             object-fit: contain;
             margin: 0 auto;
         }
+
         body.sidebar-collapsed .sidebar__logo::before {
             display: none;
         }
@@ -123,6 +125,7 @@
             opacity: 0;
         }
 
+        /* CLOSE BUTTON */
         .sidebar-close-btn {
             position: absolute;
             left: 10px;
@@ -132,7 +135,7 @@
             border-radius: 50%;
             width: 40px;
             height: 40px;
-            display: flex;
+            display: none; /* Hidden by default on desktop */
             align-items: center;
             justify-content: center;
             color: #666;
@@ -148,7 +151,8 @@
             transform: rotate(90deg);
         }
 
-       .sidebar__logo {
+        /* LOGO */
+        .sidebar__logo {
             padding: 6px 0 0px 0;
             text-align: center;
             background: #ffffff;
@@ -190,13 +194,13 @@
             transform: scale(1.1) rotate(5deg);
         }
 
+        /* MENU WRAPPER */
         .sidebar-menu-wrapper {
             padding-top: 20px;
             flex-grow: 1;
             overflow-y: auto;
             overflow-x: hidden;
             position: relative;
-            /* Set a max height to ensure scrollbar appears */
             max-height: calc(100vh - 80px);
         }
 
@@ -236,6 +240,7 @@
             }
         }
 
+        /* MENU LINKS */
         .sidebar-menu__link {
             display: flex;
             align-items: center;
@@ -291,8 +296,10 @@
             position: relative;
             z-index: 1;
             white-space: nowrap;
+            font-size: 13.5px;
         }
 
+        /* SECTION TITLE */
         .section-title {
             display: block;
             padding: 15px 20px 10px 20px;
@@ -316,6 +323,7 @@
             border-radius: 1px;
         }
 
+        /* LOGOUT LINK */
         .logout-link {
             color: #D32F2F !important;
         }
@@ -333,6 +341,7 @@
             color: white !important;
         }
 
+        /* CERTIFICATE BANNER */
         .certificate-banner {
             background: linear-gradient(135deg, #D32F2F 0%, #C2185B 50%, #ef4444 100%);
             padding: 25px;
@@ -425,7 +434,7 @@
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
         }
 
-        /* Custom scrollbar styles - Fixed the typo in class name */
+        /* CUSTOM SCROLLBAR */
         .sidebar-menu-wrapper::-webkit-scrollbar {
             width: 8px;
         }
@@ -444,7 +453,7 @@
             background: linear-gradient(135deg, #C2185B, #ef4444);
         }
 
-        /* Active link style */
+        /* ACTIVE LINK */
         .sidebar-menu__link.active {
             background: linear-gradient(135deg, #D32F2F 0%, #C2185B 50%, #ef4444 100%);
             color: white;
@@ -457,30 +466,44 @@
             transform: scale(1.2);
         }
 
-        /* Mobile specific adjustments for sidebar */
+        .sidebar-menu__link.active::before {
+            left: 0;
+        }
+
+        /* ============================================
+           MOBILE RESPONSIVE STYLES - FIXED VERSION
+           ============================================ */
         @media (max-width: 1199.98px) {
             .sidebar {
                 width: 280px;
-                left: -280px;
+                left: -280px; /* Hidden off-screen by default */
                 box-shadow: none;
                 z-index: 1050;
+                transition: left 0.3s ease, box-shadow 0.3s ease;
             }
 
+            /* Show sidebar when mobile-sidebar-open class is added */
             body.mobile-sidebar-open .sidebar {
-                left: 0;
-                box-shadow: 0 10px 30px rgba(211, 47, 47, 0.1);
+                left: 0 !important;
+                box-shadow: 0 10px 30px rgba(211, 47, 47, 0.2);
             }
 
+            /* Show close button on mobile */
+            body.mobile-sidebar-open .sidebar .sidebar-close-btn {
+                display: flex !important;
+            }
+
+            /* Ensure all content is visible when sidebar is open */
             body.mobile-sidebar-open .sidebar .sidebar-menu__link .text,
             body.mobile-sidebar-open .sidebar .section-title,
-            body.mobile-sidebar-open .sidebar .certificate-banner,
-            body.mobile-sidebar-open .sidebar .sidebar-close-btn {
-                display: block;
-                opacity: 1;
+            body.mobile-sidebar-open .sidebar .certificate-banner {
+                display: block !important;
+                opacity: 1 !important;
                 animation: none;
                 transform: translateX(0);
             }
 
+            /* Reset hover effects on mobile */
             .sidebar-menu__link:hover .text {
                 position: static;
                 transform: none;
@@ -493,17 +516,17 @@
                 overflow: visible;
                 text-overflow: clip;
             }
+
             .sidebar-menu__link:hover {
                 transform: none;
                 box-shadow: none;
             }
+
+            /* Prevent body scroll when sidebar is open */
+            body.mobile-sidebar-open {
+                overflow: hidden;
+            }
         }
-        span.text {
-    font-size: 13.5px;
-    width: 1px !important;
-}
-
-
     </style>
 </head>
 <body>
@@ -525,6 +548,7 @@
                             <span class="text">Tableau de bord</span>
                         </a>
                     </li>
+                    
                     @can('inscription-create-own')
                     <li class="sidebar-menu__item">
                         <a href="{{ route('etudiant.choose_formation') }}" class="sidebar-menu__link">
@@ -533,22 +557,25 @@
                         </a>
                     </li>
                     @endcan
-@can('message-view-own')
-                     <li class="sidebar-menu__item">
-    <a href="{{ route('message.index') }}" class="sidebar-menu__link">
-        <span class="icon"><i class="ph ph-chat-circle"></i></span>
-        <span class="text">Mes Messages</span>
-    </a>
-</li>
-@endcan
-@can('message-list-all')
-<li class="sidebar-menu__item">
+
+                    @can('message-view-own')
+                    <li class="sidebar-menu__item">
+                        <a href="{{ route('message.index') }}" class="sidebar-menu__link">
+                            <span class="icon"><i class="ph ph-chat-circle"></i></span>
+                            <span class="text">Mes Messages</span>
+                        </a>
+                    </li>
+                    @endcan
+
+                    @can('message-list-all')
+                    <li class="sidebar-menu__item">
                         <a href="{{ route('messages.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-chat-circle"></i></span>
                             <span class="text">Messages</span>
                         </a>
                     </li>
                     @endcan
+
                     @can('user-list')
                     <li class="sidebar-menu__item">
                         <a href="{{ route('users.index') }}" class="sidebar-menu__link">
@@ -566,6 +593,7 @@
                         </a>
                     </li>
                     @endcan
+
                     @can('formation-list')
                     <li class="sidebar-menu__item">
                         <a href="{{ route('formations.index') }}" class="sidebar-menu__link">
@@ -574,22 +602,23 @@
                         </a>
                     </li>
                     @endcan
-                   @if (Auth::check() && (Auth::user()->hasRole('Etudiant') || Auth::user()->can('inscription-list')))
-    <li class="sidebar-menu__item">
-        <a href="{{ route('inscriptions.index') }}" class="sidebar-menu__link">
-            <span class="icon"><i class="ph ph-list-checks"></i></span>
-            <span class="text">
-                @if (Auth::user()->hasRole('Etudiant'))
-                    Mes Formations
-                @else
-                    Inscriptions
-                @endif
-            </span>
-        </a>
-    </li>
-@endif
 
-                      @can('payment-list')
+                    @if (Auth::check() && (Auth::user()->hasRole('Etudiant') || Auth::user()->can('inscription-list')))
+                    <li class="sidebar-menu__item">
+                        <a href="{{ route('inscriptions.index') }}" class="sidebar-menu__link">
+                            <span class="icon"><i class="ph ph-list-checks"></i></span>
+                            <span class="text">
+                                @if (Auth::user()->hasRole('Etudiant'))
+                                    Mes Formations
+                                @else
+                                    Inscriptions
+                                @endif
+                            </span>
+                        </a>
+                    </li>
+                    @endif
+
+                    @can('payment-list')
                     <li class="sidebar-menu__item">
                         <a href="{{ route('payments.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-wallet"></i></span>
@@ -599,7 +628,7 @@
                     @endcan
 
                     @can('message-list-all')
-<li class="sidebar-menu__item">
+                    <li class="sidebar-menu__item">
                         <a href="{{ route('payment-reminders.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-bell"></i></span>
                             <span class="text">Rappels</span>
@@ -607,17 +636,17 @@
                     </li>
                     @endcan
 
-                @unlessrole('Équipe Technique')
-                <li class="sidebar-menu__item">
-                    <a href="{{ route('modules.index') }}" class="sidebar-menu__link">
-                        <span class="icon"><i class="ph ph-squares-four"></i></span>
-                        <span class="text">modules</span>
-                    </a>
-                </li>
-                @endunlessrole
+                    @unlessrole('Équipe Technique')
+                    <li class="sidebar-menu__item">
+                        <a href="{{ route('modules.index') }}" class="sidebar-menu__link">
+                            <span class="icon"><i class="ph ph-squares-four"></i></span>
+                            <span class="text">Modules</span>
+                        </a>
+                    </li>
+                    @endunlessrole
 
                     @can('documentation-create')
-                      <li class="sidebar-menu__item">
+                    <li class="sidebar-menu__item">
                         <a href="{{ route('consultant.documentations.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-file-text"></i></span>
                             <span class="text">Support de cours</span>
@@ -625,16 +654,15 @@
                     </li>
                     @endcan
 
-
-@can('documentation-list')
-                     <li class="sidebar-menu__item">
+                    @can('documentation-list')
+                    <li class="sidebar-menu__item">
                         <a href="{{ route('documentations.adminIndex') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-file-text"></i></span>
-                            <span class="text"> Support de cours</span>
+                            <span class="text">Support de cours</span>
                         </a>
                     </li>
-
                     @endcan
+
                     @unlessrole('Équipe Technique')
                     <li class="sidebar-menu__item">
                         <a href="{{ route('courses.index') }}" class="sidebar-menu__link">
@@ -645,13 +673,13 @@
                     @endunlessrole
 
                     @if(Auth::check() && Auth::user()->hasRole('Etudiant') && Auth::user()->hasActiveInscriptionInProfessionalFormation())
-    <li class="sidebar-menu__item">
-        <a href="{{ route('student.attestations.index') }}" class="sidebar-menu__link">
-            <span class="icon"><i class="ph ph-certificate"></i></span>
-            <span class="text">Attestations</span>
-        </a>
-    </li>
-@endif
+                    <li class="sidebar-menu__item">
+                        <a href="{{ route('student.attestations.index') }}" class="sidebar-menu__link">
+                            <span class="icon"><i class="ph ph-certificate"></i></span>
+                            <span class="text">Attestations</span>
+                        </a>
+                    </li>
+                    @endif
 
                     @unlessrole('Équipe Technique')
                     <li class="sidebar-menu__item">
@@ -673,21 +701,19 @@
                     <li class="sidebar-menu__item">
                         <a href="{{ route('admin.attestations.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-certificate"></i></span>
-                            <span class="text">attestations</span>
+                            <span class="text">Attestations</span>
                         </a>
                     </li>
                     @endcan
-                
-                     @can('message-view-own')
-                     <li class="sidebar-menu__item">
-    <a href="{{ route('satisfaction.index') }}" class="sidebar-menu__link">
-        <span class="icon"><i class="fas fa-star"></i></span>
-        <span class="text">Évaluations</span>
-    </a>
-</li>
-@endcan
 
-                   
+                    @can('message-view-own')
+                    <li class="sidebar-menu__item">
+                        <a href="{{ route('satisfaction.index') }}" class="sidebar-menu__link">
+                            <span class="icon"><i class="fas fa-star"></i></span>
+                            <span class="text">Évaluations</span>
+                        </a>
+                    </li>
+                    @endcan
 
                     @can('promotions')
                     <li class="sidebar-menu__item">
@@ -699,30 +725,27 @@
                     @endcan
 
                     @can('role-list')
-                     <li class="sidebar-menu__item">
+                    <li class="sidebar-menu__item">
                         <a href="{{ route('roles.index') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-shield"></i></span>
-                            <span class="text">roles</span>
+                            <span class="text">Rôles</span>
                         </a>
                     </li>
                     @endcan
 
-                     @can('role-list')
-                     <li class="sidebar-menu__item">
+                    @can('role-list')
+                    <li class="sidebar-menu__item">
                         <a href="{{ route('download.backup') }}" class="sidebar-menu__link">
                             <span class="icon"><i class="ph ph-shield"></i></span>
-                            <span class="text">backups</span>
+                            <span class="text">Backups</span>
                         </a>
                     </li>
                     @endcan
-
-                 
-                   
 
                     <li class="sidebar-menu__item">
                         <span class="section-title">Paramètres</span>
                     </li>
-                   
+
                     <li class="sidebar-menu__item">
                         <a href="{{ route('logout') }}" class="sidebar-menu__link logout-link" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                             <span class="icon"><i class="ph ph-sign-out"></i></span>
@@ -735,23 +758,26 @@
                 </ul>
             </div>
 
-          <div class="certificate-banner">
-    <div class="certificate-icon">
-        <i class="ph ph-certificate"></i>
-    </div>
-    <h5 class="certificate-title">Découvrez nos exemples de diplômes et d'attestations</h5>
-    <p class="certificate-text">Explorez des exemples d'attestations de formation et de diplômes pour mieux vous projeter dans votre parcours.</p>
-    <a href="{{ route(name: 'exemples') }}" class="subscribe-btn">Découvrez</a>
-</div>
+            <div class="certificate-banner">
+                <div class="certificate-icon">
+                    <i class="ph ph-certificate"></i>
+                </div>
+                <h5 class="certificate-title">Découvrez nos exemples de diplômes et d'attestations</h5>
+                <p class="certificate-text">Explorez des exemples d'attestations de formation et de diplômes pour mieux vous projeter dans votre parcours.</p>
+                <a href="{{ route('exemples') }}" class="subscribe-btn">Découvrez</a>
+            </div>
         </div>
     </aside>
 
     <script>
-
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 Sidebar script initialized');
+
+            // Close button functionality
             const sidebarCloseBtn = document.querySelector('.sidebar-close-btn');
             if (sidebarCloseBtn) {
                 sidebarCloseBtn.addEventListener('click', function() {
+                    console.log('✖️ Close button clicked');
                     document.body.classList.remove('mobile-sidebar-open');
                     this.style.transform = 'rotate(180deg) scale(0.8)';
                     setTimeout(() => {
@@ -760,28 +786,41 @@
                 });
             }
 
+            // Active link management
             document.querySelectorAll('.sidebar-menu__link').forEach(link => {
                 link.addEventListener('click', function(e) {
-                    e.preventDefault();
+                    // Don't prevent default - let the navigation happen
                     document.querySelectorAll('.sidebar-menu__link').forEach(l => l.classList.remove('active'));
                     this.classList.add('active');
+                    
+                    // Animation effect
                     this.style.transform = 'translateX(10px) scale(0.95)';
                     setTimeout(() => {
                         this.style.transform = 'translateX(10px) scale(1.02)';
                     }, 100);
+                    
+                    // Close sidebar on mobile after clicking
                     if (window.innerWidth < 1200) {
-                        document.body.classList.remove('mobile-sidebar-open');
+                        console.log('📱 Menu link clicked on mobile - closing sidebar');
+                        setTimeout(() => {
+                            document.body.classList.remove('mobile-sidebar-open');
+                        }, 300);
                     }
                 });
             });
 
-            document.querySelector('.sidebar__logo img').addEventListener('click', function() {
-                this.style.transform = 'scale(1.2) rotate(360deg)';
-                setTimeout(() => {
-                    this.style.transform = 'scale(1) rotate(0deg)';
-                }, 500);
-            });
+            // Logo animation
+            const logoImg = document.querySelector('.sidebar__logo img');
+            if (logoImg) {
+                logoImg.addEventListener('click', function() {
+                    this.style.transform = 'scale(1.2) rotate(360deg)';
+                    setTimeout(() => {
+                        this.style.transform = 'scale(1) rotate(0deg)';
+                    }, 500);
+                });
+            }
 
+            // Particle effect for certificate banner
             let particleInterval;
             function toggleParticleEffect() {
                 if (!document.body.classList.contains('sidebar-collapsed') && window.innerWidth >= 1200) {
