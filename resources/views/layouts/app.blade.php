@@ -445,53 +445,10 @@
 <!-- From: "Global JavaScript for Loading Overlay, Scroll-to-Top, and Progress Bar" -->
 
 <script>
-    // ✅ DEFINE THESE FUNCTIONS FIRST (they were commented out before)
-    function showGlobalLoadingOverlay() {
-        const overlay = document.getElementById('globalLoadingOverlay');
-        if (overlay) {
-            overlay.classList.add('active');
-        }
-    }
-
-    function hideGlobalLoadingOverlay() {
-        const overlay = document.getElementById('globalLoadingOverlay');
-        if (overlay) {
-            overlay.classList.remove('active');
-        }
-    }
-
-    // Show loading overlay on all form submissions
-    document.addEventListener('submit', function(e) {
-        // Don't show loading for modals or AJAX forms
-        if (!e.target.closest('.modal')) {
-            showGlobalLoadingOverlay();
-        }
-    }, true);
-
-    // Show loading overlay on all anchor tag clicks that lead to a new page
-    document.addEventListener('click', function(e) {
-        const link = e.target.closest('a[href]');
-        if (link && link.hostname === window.location.hostname && 
-            !link.getAttribute('href').startsWith('#') && 
-            !link.hasAttribute('download') &&
-            !link.closest('.modal') &&
-            !link.closest('[data-bs-toggle="modal"]')) {
-            showGlobalLoadingOverlay();
-        }
-    }, true);
+   
 
     // Hide loading overlay when the page finishes loading
-    window.addEventListener('load', function() {
-        hideGlobalLoadingOverlay();
-    });
-
-    // Hide loading overlay on browser back/forward
-    window.addEventListener('pageshow', function(event) {
-        if (event.persisted) {
-            hideGlobalLoadingOverlay();
-        }
-    });
-
+   
     // ✅ Scroll-to-Top Button
     document.addEventListener('DOMContentLoaded', function() {
         const scrollToTopBtn = document.getElementById('scrollToTopBtn');
