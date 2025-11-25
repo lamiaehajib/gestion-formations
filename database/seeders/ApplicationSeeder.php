@@ -40,10 +40,9 @@ class ApplicationSeeder extends Seeder
                 'description' => 'Portail de gestion des formations et des étudiants',
                 'order' => 1,
                 'roles' => [
-                    'Etudiant' => ['etudiant@gmail.com', '12345678'],
-                    'Consultant' => ['consultant@gmail.com', 'password'],
+                    
                     'Admin' => ['admin@gmail.com', 'etudiant@@UITSapp1'],
-                    'Équipe Technique' => ['technique@gmail.com', 'password'],
+                    
                 ]
                 ],
             [
@@ -56,7 +55,7 @@ class ApplicationSeeder extends Seeder
                 'order' => 2,
                 'roles' => [
                     'Admin' => ['admin@gmail.com', 'P@ssw0rdP@ssw0rd'],
-                    'Admin2' => ['admin2@uits-admin.ma', 'MotDePasse2'],
+                    
                 ]
             ],
             [
@@ -69,12 +68,7 @@ class ApplicationSeeder extends Seeder
                 'order' => 3,
                 'roles' => [
                     'Sup_Admin' => ['admin@gmail.com', '123456'],
-                    'USER_TECH' => ['tech@uits-mgmt.ma', 'MotDePasse4'],
-                    'Custom_Admin' => ['custom@uits-mgmt.ma', 'MotDePasse5'],
-                    'Sales_Admin' => ['sales@uits-mgmt.ma', 'MotDePasse6'],
-                    'USER_TRAINING' => ['training@uits-mgmt.ma', 'MotDePasse7'],
-                    'USER_MULTIMEDIA' => ['multimedia@uits-mgmt.ma', 'MotDePasse8'],
-                    'Client' => ['client@uits-mgmt.ma', 'MotDePasse9'],
+                   
                 ]
             ]
             

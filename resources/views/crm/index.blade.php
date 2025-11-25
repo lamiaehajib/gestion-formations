@@ -112,7 +112,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-gray-900 via-[#C2185B] to-[#D32F2F] animate-gradient">
+<body class="min-h-screen bg-gradient-to-br from-gray-900 via-[#D32F2F] to-[#C2185B] animate-gradient">
     
     <div class="container mx-auto px-4 max-w-7xl py-8">
         
