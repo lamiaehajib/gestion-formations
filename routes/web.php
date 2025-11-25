@@ -23,7 +23,8 @@ use App\Http\Controllers\ReclamationController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SatisfactionSurveyController;
 use App\Http\Controllers\UserController;
-
+use App\Http\Controllers\CrmController;
+use App\Http\Controllers\CrmAuthController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -535,7 +536,60 @@ Route::prefix('admin/attestations')->name('admin.attestations.')->group(function
 });
 
 
+Route::prefix('crm')->name('crm.')->group(function () {
 
+    // ========================================
+    // Routes publiques (sans authentification)
+    // ========================================
+    Route::middleware('guest:crm')->group(function () {
+        
+        // Page de connexion
+        Route::get('/', [CrmAuthController::class, 'showLoginForm'])->name('login');
+        Route::get('/login', [CrmAuthController::class, 'showLoginForm']);
+        
+        // Traitement de connexion
+        Route::post('/login', [CrmAuthController::class, 'login'])->name('login.submit');
+    });
+
+    // ========================================
+    // Routes protégées (avec authentification)
+    // ========================================
+    Route::middleware('crm.auth')->group(function () {
+        
+        // Dashboard principal
+        Route::get('/crm', [CrmController::class, 'index'])->name('dashboard');
+        
+        // Déconnexion
+        Route::post('/logout', [CrmAuthController::class, 'logout'])->name('logout');
+
+        // Gestion des comptes
+        Route::prefix('accounts')->name('accounts.')->group(function () {
+            
+            // Ajouter un compte
+            Route::get('/create/{application}', [CrmController::class, 'createAccount'])
+                ->name('create');
+            
+            Route::post('/store/{application}', [CrmController::class, 'storeAccount'])
+                ->name('store');
+            
+            // Mettre à jour
+            Route::put('/{account}', [CrmController::class, 'updateAccount'])
+                ->name('update');
+            
+            // Supprimer
+            Route::delete('/{account}', [CrmController::class, 'deleteAccount'])
+                ->name('delete');
+            
+            // AJAX: Mot de passe
+            Route::get('/{account}/password', [CrmController::class, 'showPassword'])
+                ->name('show-password');
+            
+            // AJAX: Credentials pour connexion rapide
+            Route::get('/{account}/credentials', [CrmController::class, 'getCredentials'])
+                ->name('credentials');
+        });
+    });
+});
 
 
 

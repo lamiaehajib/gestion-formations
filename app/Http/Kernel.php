@@ -73,5 +73,7 @@ class Kernel extends HttpKernel
     'check.access' => \App\Http\Middleware\CheckUserAccess::class, 
     'equipe.technique' => \App\Http\Middleware\EquipeTechniqueMiddleware::class, // Ajouter cette ligne
 
+    'crm.auth' => \App\Http\Middleware\CrmAuth::class,
+
     ];
 }
