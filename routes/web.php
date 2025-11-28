@@ -536,7 +536,7 @@ Route::prefix('admin/attestations')->name('admin.attestations.')->group(function
 });
 
 
-Route::prefix('crm')->name('crm.')->group(function () {
+Route::prefix('erp')->name('crm.')->group(function () {
 
     // ========================================
     // Routes publiques (sans authentification)
@@ -557,7 +557,7 @@ Route::prefix('crm')->name('crm.')->group(function () {
     Route::middleware('crm.auth')->group(function () {
         
         // Dashboard principal
-        Route::get('/crm', [CrmController::class, 'index'])->name('dashboard');
+        Route::get('/erp', [CrmController::class, 'index'])->name('dashboard');
         
         // Déconnexion
         Route::post('/logout', [CrmAuthController::class, 'logout'])->name('logout');

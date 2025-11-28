@@ -32,7 +32,7 @@ class ApplicationSeeder extends Seeder
         // ============================================
         $applications = [
             [
-                'name' => 'UITS Portail',
+                'name' => 'PORTAIL ETUDIANT',
                 'slug' => 'uits-portail',
                 'url' => 'https://uits-portail.ma',
                 'vps_location' => 'VPS 2',
@@ -46,12 +46,12 @@ class ApplicationSeeder extends Seeder
                 ]
                 ],
             [
-                'name' => 'UITS Admin',
+                'name' => 'UITS FACTURATION',
                 'slug' => 'uits-admin',
                 'url' => 'https://uits-admin.ma',
                 'vps_location' => 'VPS 1',
                 'icon' => '🔧',
-                'description' => 'Panneau de contrôle administratif',
+                'description' => 'Portail Accès Stock Facturation',
                 'order' => 2,
                 'roles' => [
                     'Admin' => ['admin@gmail.com', 'P@ssw0rdP@ssw0rd'],
@@ -59,7 +59,7 @@ class ApplicationSeeder extends Seeder
                 ]
             ],
             [
-                'name' => 'UITS Management',
+                'name' => 'UITS MANAGEMENT',
                 'slug' => 'uits-mgmt',
                 'url' => 'https://uits-mgmt.ma',
                 'vps_location' => 'VPS 1',
@@ -67,7 +67,7 @@ class ApplicationSeeder extends Seeder
                 'description' => 'Système de gestion des opérations',
                 'order' => 3,
                 'roles' => [
-                    'Sup_Admin' => ['admin@gmail.com', '123456'],
+                    'Sup_Admin' => ['admin@gmail.com', 'rh@@UITSapp2'],
                    
                 ]
             ]

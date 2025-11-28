@@ -6,6 +6,7 @@
     <title>ERP Digitale | Union IT Services</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+      <link rel="shortcut icon" href="{{ asset('edmate/assets/images/logo/favicon.png') }}">
     <style>
         * { font-family: 'Inter', sans-serif; }
         .gradient-bg {
@@ -75,7 +76,7 @@
             <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tight">
                 ERP <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-purple-700">Digitale</span>
             </h1>
-            <p class="text-red-300 text-lg sm:text-xl md:text-2xl font-bold mt-3">by Union IT Services</p>
+            <p class="text-red-300 text-lg sm:text-xl md:text-2xl font-bold mt-3">Plateforme Digitale by Union IT Services</p>
             <p class="text-gray-300 text-sm sm:text-base mt-2">Connectez-vous pour accéder à votre espace</p>
         </div>
 
