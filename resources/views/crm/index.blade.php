@@ -13,9 +13,25 @@
         }
         
         body {
-            /* NOUVEL ARRIÈRE-PLAN CLAIR */
+            /* Garder le fond clair */
             background: linear-gradient(135deg, #ffffff 0%, #f0f0f5 50%, #e0e0e5 100%);
             min-height: 100vh;
+        }
+        
+        /* NOUVEAU STYLE POUR L'EN-TÊTE FIXE */
+        #app-fixed-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50; /* Doit être au-dessus des autres éléments */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* AJUSTEMENT DU CONTENEUR PRINCIPAL */
+        .content-container {
+            /* Ajouter un padding-top pour éviter que le contenu ne soit caché par l'en-tête fixe */
+            padding-top: 100px; /* Espace de compensation */
         }
         
         @keyframes slideUp {
@@ -34,11 +50,9 @@
         }
         
         .card-modern {
-            /* La carte elle-même doit rester claire pour contraster avec le fond clair */
-            /* J'utilise un blanc léger avec une ombre subtile pour l'effet "flottant" */
             background: #ffffff;
-            border: 1px solid #e0e0e5; /* Bordure très claire */
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); /* Ombre légère */
+            border: 1px solid #e0e0e5; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); 
             backdrop-filter: blur(20px);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -51,12 +65,15 @@
         }
         
         /* Les textes et éléments initialement blancs doivent devenir sombres sur fond clair */
-        h1, h2, code, .text-white, .text-white\/80 {
+        h1, h2, code, .text-white-dark-bg, .text-white\/80-dark-bg {
             color: #1a1a2e !important; /* Couleur sombre pour le texte principal */
+        }
+        /* Exceptions pour le texte dans l'en-tête coloré */
+        #app-fixed-header h1, #app-fixed-header p, #app-fixed-header svg {
+            color: white !important;
         }
 
         .gradient-text {
-            /* Le dégradé reste le même pour l'accentuation */
             background: linear-gradient(135deg, #ef4444 0%, #D32F2F 50%, #C2185B 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -64,37 +81,22 @@
         }
         
         .btn-primary {
-            /* Reste le dégradé du milieu au plus foncé */
             background: linear-gradient(135deg, #D32F2F 0%, #C2185B 100%);
             box-shadow: 0 10px 30px rgba(211, 47, 47, 0.3);
             transition: all 0.3s ease;
-            color: white !important; /* S'assurer que le texte du bouton reste blanc */
+            color: white !important; 
         }
-        
+
         .btn-primary:hover {
             box-shadow: 0 15px 40px rgba(211, 47, 47, 0.4); 
             transform: translateY(-2px);
         }
-        
+
         .stat-card {
-            /* Reste sur un fond d'accentuation très léger */
             background: rgba(239, 68, 68, 0.05);
             border: 1px solid rgba(239, 68, 68, 0.2); 
         }
-        
-        @keyframes pulse-glow {
-            0%, 100% { 
-                box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); 
-            }
-            50% { 
-                box-shadow: 0 0 40px rgba(239, 68, 68, 0.6); 
-            }
-        }
-        
-        .icon-glow {
-            animation: pulse-glow 3s ease-in-out infinite;
-        }
-        
+
         .table-row {
             transition: all 0.3s ease;
         }
@@ -109,32 +111,16 @@
             background: linear-gradient(135deg, #D32F2F 0%, #C2185B 100%);
             box-shadow: 0 4px 15px rgba(211, 47, 47, 0.3); 
         }
-        
-        .input-modern {
-            /* Doit avoir un fond clair pour être visible sur fond de carte claire */
-            background: #f0f0f5; 
-            border: 1px solid #cccccc;
-            color: #1a1a2e; /* Texte sombre */
-            transition: all 0.3s ease;
-        }
-        
-        .input-modern:focus {
-            background: #ffffff;
-            border-color: rgba(211, 47, 47, 0.5); 
-            box-shadow: 0 0 20px rgba(211, 47, 47, 0.2); 
-        }
-        
-        .modal-backdrop {
-            backdrop-filter: blur(10px);
-            background: rgba(0, 0, 0, 0.3); /* Rendre le fond semi-transparent pour l'effet de flou */
+
+        .hover\:bg-red-500\/20:hover {
+            background-color: rgba(211, 47, 47, 0.2); 
         }
         
         .app-header-gradient {
-            /* Garde le dégradé du plus clair au plus foncé */
             background: linear-gradient(135deg, #ef4444 0%, #D32F2F 50%, #C2185B 100%);
             position: relative;
             overflow: hidden;
-            color: white !important; /* Assurer que le texte dans ce header est blanc */
+            color: white !important;
         }
         
         .app-header-gradient::before {
@@ -153,52 +139,73 @@
             100% { transform: translateX(100%); }
         }
         
-        /* Mise à jour des classes Tailwind CSS intégrées (les couleurs d'accentuation restent les vôtres) */
+        .input-modern {
+            background: #f0f0f5; 
+            border: 1px solid #cccccc;
+            color: #1a1a2e; 
+            transition: all 0.3s ease;
+        }
+        
+        .input-modern:focus {
+            background: #ffffff;
+            border-color: rgba(211, 47, 47, 0.5); 
+            box-shadow: 0 0 20px rgba(211, 47, 47, 0.2); 
+        }
+
+        .modal-backdrop {
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.3); 
+        }
+        
         .bg-gradient-to-br.from-red-500.to-red-700 {
              background: linear-gradient(to bottom right, #D32F2F, #C2185B);
         }
-        .text-red-400 {
-            color: #ef4444; 
-        }
-        .border-red-500 {
-            border-color: #D32F2F; 
-        }
-        .text-red-100 {
-            color: #fcebeb; 
-        }
-        .hover\:bg-red-500\/20:hover {
-            background-color: rgba(211, 47, 47, 0.2); 
-        }
-        .hover\:text-red-400:hover {
-            color: #ef4444;
-        }
-        .border-red-500 {
-            border-color: #D32F2F;
-        }
-        .text-gray-400 {
-            color: #6b7280; /* Assurer une bonne lisibilité pour le gris sur fond clair */
-        }
+        /* Ajuster les couleurs spécifiques */
+        .text-red-400 { color: #ef4444; }
+        .text-gray-700 { color: #374151; }
     </style>
 </head>
 <body>
-    
-    <div class="container mx-auto px-4 max-w-7xl py-6">
-            <img src="{{ asset('edmate/assets/images/thumbs/Asset.png') }}" 
-                class="w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 mx-auto mb-6 object-contain drop-shadow-2xl floating" alt="Logo">
-        <div class="card-modern rounded-3xl p-6 mb-6 animate-slide-up">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-                <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center icon-glow">
-                        <svg class="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+
+   <header id="app-fixed-header" class="app-header-gradient px-4 py-3 md:px-8">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <img src="{{ asset('edmate/assets/images/thumbs/Asset.png') }}" 
+                     class="w-10 h-10 object-contain drop-shadow-lg" alt="Logo Union IT">
+                <div class="hidden sm:block">
+                    <h1 class="text-xl font-bold text-white mb-0">Plateforme ERP</h1>
+                    <p class="text-red-100 text-xs">Union IT Services</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <p class="text-white text-sm hidden md:block">
+                    Bienvenue, <span class="font-semibold">{{ Auth::guard('crm')->user()->name }}</span>
+                </p>
+                <form action="{{ route('crm.logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="bg-white/20 hover:bg-white/30 transition-colors px-4 py-2 text-white font-semibold rounded-lg flex items-center gap-2 text-sm">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
                         </svg>
-                    </div>
-                    <div>
-                        <h1 class="text-3xl md:text-4xl font-bold text-white mb-1">
-                            Gestion des <span class="gradient-text">Accès Applications</span>
-                        </h1>
-                        <p class="text-gray-400 text-sm">Bienvenue <span class="text-red-400 font-semibold">{{ Auth::guard('crm')->user()->name }}</span></p>
-                    </div>
+                        Déconnexion
+                    </button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <div class="content-container container mx-auto px-4 max-w-7xl py-6">
+        
+        <div class="card-modern rounded-3xl p-6 mb-6 animate-slide-up">
+             <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-bold text-white-dark-bg mb-1">
+                        Tableau de Bord <span class="gradient-text">Applications</span>
+                    </h1>
+                    <p class="text-gray-400 text-sm">Gérez vos accès rapidement et efficacement.</p>
                 </div>
                 
                 <div class="flex items-center gap-4">
@@ -212,31 +219,19 @@
                             <div class="text-3xl font-bold gradient-text">{{ $stats['active_accounts'] }}</div>
                         </div>
                     </div>
-                    
-                    <form action="{{ route('crm.logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="btn-primary px-5 py-3 text-white font-semibold rounded-xl flex items-center gap-2">
-                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                <polyline points="16 17 21 12 16 7"></polyline>
-                                <line x1="21" y1="12" x2="9" y2="12"></line>
-                            </svg>
-                            Déconnexion
-                        </button>
-                    </form>
                 </div>
             </div>
         </div>
 
         @if(session('success'))
-        <div class="card-modern border-l-4 border-green-500 text-green-400 px-6 py-4 rounded-2xl mb-6 animate-slide-up flex items-center gap-3">
+        <div class="card-modern border-l-4 border-green-500 text-green-500 px-6 py-4 rounded-2xl mb-6 animate-slide-up flex items-center gap-3">
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
             <span class="font-medium">{{ session('success') }}</span>
         </div>
         @endif
-
+        
         @if(session('error'))
         <div class="card-modern border-l-4 border-red-500 text-red-400 px-6 py-4 rounded-2xl mb-6 animate-slide-up flex items-center gap-3">
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -298,7 +293,7 @@
                                     </td>
                                     <td class="py-4 px-4">
                                         <div class="flex items-center gap-2">
-                                            <code class="text-white font-mono text-sm input-modern px-4 py-2 rounded-lg">{{ $account->username }}</code>
+                                            <code class="font-mono text-sm input-modern px-4 py-2 rounded-lg">{{ $account->username }}</code>
                                             <button onclick="copyText('{{ $account->username }}')" class="p-2 hover:bg-red-500/20 rounded-lg transition-all">
                                                 <svg class="w-5 h-5 text-gray-400 hover:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
@@ -309,7 +304,7 @@
                                     </td>
                                     <td class="py-4 px-4">
                                         <div class="flex items-center gap-2">
-                                            <code class="text-white font-mono text-sm input-modern px-4 py-2 rounded-lg" id="pass-{{ $account->id }}">••••••••</code>
+                                            <code class="font-mono text-sm input-modern px-4 py-2 rounded-lg" id="pass-{{ $account->id }}">••••••••</code>
                                             <button onclick="togglePassword({{ $account->id }})" class="p-2 hover:bg-red-500/20 rounded-lg transition-all">
                                                 <svg class="w-5 h-5 text-gray-400 hover:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -348,7 +343,7 @@
 
     <div id="loginModal" class="fixed inset-0 modal-backdrop hidden items-center justify-center z-50">
         <div class="card-modern rounded-3xl p-8 max-w-md w-full mx-4 animate-slide-up">
-            <h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+            <h3 class="text-2xl font-bold text-white-dark-bg mb-6 flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center">
                     <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
@@ -363,7 +358,7 @@
                 <div>
                     <label class="text-gray-400 text-sm font-semibold mb-2 block">URL</label>
                     <div class="flex items-center gap-2">
-                        <input type="text" id="modal-url" readonly class="flex-1 input-modern text-white px-4 py-3 rounded-xl font-mono text-sm">
+                        <input type="text" id="modal-url" readonly class="flex-1 input-modern text-white-dark-bg px-4 py-3 rounded-xl font-mono text-sm">
                         <button onclick="copyField('modal-url')" class="btn-primary px-4 py-3 rounded-xl">
                             <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
@@ -376,7 +371,7 @@
                 <div>
                     <label class="text-gray-400 text-sm font-semibold mb-2 block">Nom d'utilisateur</label>
                     <div class="flex items-center gap-2">
-                        <input type="text" id="modal-username" readonly class="flex-1 input-modern text-white px-4 py-3 rounded-xl font-mono text-sm">
+                        <input type="text" id="modal-username" readonly class="flex-1 input-modern text-white-dark-bg px-4 py-3 rounded-xl font-mono text-sm">
                         <button onclick="copyField('modal-username')" class="btn-primary px-4 py-3 rounded-xl">
                             <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
@@ -389,7 +384,7 @@
                 <div>
                     <label class="text-gray-400 text-sm font-semibold mb-2 block">Mot de passe</label>
                     <div class="flex items-center gap-2">
-                        <input type="password" id="modal-password" readonly class="flex-1 input-modern text-white px-4 py-3 rounded-xl font-mono text-sm">
+                        <input type="password" id="modal-password" readonly class="flex-1 input-modern text-white-dark-bg px-4 py-3 rounded-xl font-mono text-sm">
                         
                         <button type="button" onclick="toggleModalPassword()" class="p-3 hover:bg-red-500/20 rounded-xl transition-all">
                             <svg id="eye-open" class="w-5 h-5 text-gray-400 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -434,13 +429,17 @@
         let currentAppUrl = '';
         let passwordCache = {};
 
+        // Récupère et affiche/cache le mot de passe dans la liste des comptes
         async function togglePassword(accountId) {
             const el = document.getElementById(`pass-${accountId}`);
+            // Remarque : Le mot de passe ici n'est pas chiffré dans le HTML, mais son contenu est remplacé.
+            // En production, l'appel API `/erp/accounts/${accountId}/password` doit être sécurisé.
             if (el.textContent === '••••••••') {
                 if (passwordCache[accountId]) {
                     el.textContent = passwordCache[accountId];
                 } else {
                     try {
+                        // Ceci simule une requête sécurisée pour obtenir le mot de passe
                         const res = await fetch(`/erp/accounts/${accountId}/password`);
                         const data = await res.json();
                         passwordCache[accountId] = data.password;
@@ -454,8 +453,10 @@
             }
         }
 
+        // Affiche la modal de connexion rapide avec les informations du compte
         async function quickLogin(accountId) {
             try {
+                // Ceci simule une requête pour obtenir les credentials du compte
                 const res = await fetch(`/erp/accounts/${accountId}/credentials`);
                 if (!res.ok) throw new Error('Erreur réseau');
                 const data = await res.json();
@@ -481,6 +482,7 @@
             }
         }
 
+        // Bascule entre texte et mot de passe pour le champ dans la modal
         function toggleModalPassword() {
             const input = document.getElementById('modal-password');
             const eyeOpen = document.getElementById('eye-open');
