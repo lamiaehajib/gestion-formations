@@ -548,7 +548,7 @@ Route::prefix('erp')->name('crm.')->group(function () {
         Route::get('/loginn', [CrmAuthController::class, 'showLoginForm']);
         
         // Traitement de connexion
-        Route::post('/loginn', [CrmAuthController::class, 'login'])->name('login.submit');
+        Route::post('/loginn', [CrmAuthController::class, 'login'])->name('loginn.submit');
     });
 
     // ========================================

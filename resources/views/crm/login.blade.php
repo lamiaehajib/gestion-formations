@@ -93,7 +93,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('crm.login.submit') }}" method="POST" class="space-y-6 sm:space-y-8">
+            <form action="{{ route('crm.loginn.submit') }}" method="POST" class="space-y-6 sm:space-y-8">
                 @csrf
 
                 <!-- Email -->

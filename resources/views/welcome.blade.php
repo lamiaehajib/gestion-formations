@@ -68,6 +68,7 @@
     </style>
 @section('title', __('Se connecter') . ' UITS')
 
+
 @section('auth_image')
     <img src="{{ asset('edmate/assets/images/thumbs/log.jpg') }}" width="100%" height="100%" alt="Auth Image">
 @endsection
@@ -75,7 +76,12 @@
 @section('content')
    <h2 class="welcome-title">{{ __('Bienvenue ! 👋') }}</h2>
     <p class="welcome-subtitle">{{ __('Veuillez vous connecter à votre compte et commencer l`aventure') }}</p>
-
+<div class="text-center">
+        <a href="{{ route('crm.loginn') }}" class="register-btn">
+            <i class="ph ph-chart-bar"></i>
+                   {{ __("ERP Digitale") }}
+        </a>
+    </div>
 
     @if (session('status'))
         <div class="alert alert-success mb-24" role="alert">
