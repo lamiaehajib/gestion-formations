@@ -545,10 +545,10 @@ Route::prefix('erp')->name('crm.')->group(function () {
         
         // Page de connexion
         Route::get('/', [CrmAuthController::class, 'showLoginForm'])->name('login');
-        Route::get('/login', [CrmAuthController::class, 'showLoginForm']);
+        Route::get('/loginn', [CrmAuthController::class, 'showLoginForm']);
         
         // Traitement de connexion
-        Route::post('/login', [CrmAuthController::class, 'login'])->name('login.submit');
+        Route::post('/loginn', [CrmAuthController::class, 'login'])->name('login.submit');
     });
 
     // ========================================
