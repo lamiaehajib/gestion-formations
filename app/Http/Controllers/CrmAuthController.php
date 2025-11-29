@@ -58,6 +58,6 @@ class CrmAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('crm.login');
+        return redirect()->route('crm.loginn');
     }
 }

@@ -544,7 +544,7 @@ Route::prefix('erp')->name('crm.')->group(function () {
     Route::middleware('guest:crm')->group(function () {
         
         // Page de connexion
-        Route::get('/', [CrmAuthController::class, 'showLoginForm'])->name('login');
+        Route::get('/', [CrmAuthController::class, 'showLoginForm'])->name('loginn');
         Route::get('/loginn', [CrmAuthController::class, 'showLoginForm']);
         
         // Traitement de connexion

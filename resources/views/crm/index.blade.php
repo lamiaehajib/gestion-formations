@@ -66,7 +66,7 @@
         
         /* Ajustements de Texte */
         h1, h2, code, .text-white-dark-bg, .text-white\/80-dark-bg {
-            color: var(--color-text-dark) !important; 
+            color: var(--color-text-white ) !important; 
         }
 
         /* Exceptions pour le texte dans l'en-tête coloré */

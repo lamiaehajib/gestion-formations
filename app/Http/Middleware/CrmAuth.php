@@ -15,7 +15,7 @@ class CrmAuth
     public function handle(Request $request, Closure $next): Response
     {
         if (!Auth::guard('crm')->check()) {
-            return redirect()->route('crm.login');
+            return redirect()->route('crm.loginn');
         }
 
         return $next($request);
