@@ -659,11 +659,7 @@ a.btn.btn-outline-secondary.btn-modern {
                                    <td>
         <span class="badge bg-danger badge-modern">
             <i class="fas fa-calendar-times me-1"></i>
-            {{ 
-                \Carbon\Carbon::parse($reschedule->course->course_date)
-                    ->setTimeFromTimeString($reschedule->course->start_time)
-                    ->format('d/m/Y H:i') 
-            }}
+           {{ \Carbon\Carbon::parse($reschedule->original_date)->format('d/m/Y H:i') }}
         </span>
     </td>
                                     <td>

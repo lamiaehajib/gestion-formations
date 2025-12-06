@@ -216,32 +216,49 @@ public function store(Request $request)
     DB::beginTransaction();
     
     try {
-        // 🔥 Find ALL duplicate courses (same module, date, time, title)
+        // 🔥 Find ALL duplicate courses
         $duplicateCourses = Course::where('module_id', $course->module_id)
             ->where('course_date', $course->course_date)
             ->where('start_time', $course->start_time)
             ->where('title', $course->title)
             ->get();
 
-        // 🔥 Reschedule EACH duplicate course
+        // 🔥 IMPORTANT: Khdawna la date ORIGINAL qbl ma nupdatiw
+        $originalDate = $course->course_date; // Hadchi 7afadna
+        $newDate = $request->new_date;
+
         foreach ($duplicateCourses as $dupCourse) {
-            // Create reschedule record
-            CourseReschedule::create([
-                'course_id' => $dupCourse->id,
-                'consultant_id' => $consultantToRecordId,
-                'original_date' => $dupCourse->course_date,
-                'new_date' => $request->new_date,
-                'reason' => $request->reason,
-            ]);
+            // 🔥 Check if reschedule already exists
+            $existingReschedule = CourseReschedule::where('course_id', $dupCourse->id)
+                ->where('original_date', $originalDate)
+                ->where('new_date', $newDate)
+                ->first();
+
+            if (!$existingReschedule) {
+                // Create reschedule record with ORIGINAL date
+                CourseReschedule::create([
+                    'course_id' => $dupCourse->id,
+                    'consultant_id' => $consultantToRecordId,
+                    'original_date' => $originalDate, // 🔥 La date vraie khdawha hna
+                    'new_date' => $newDate,
+                    'reason' => $request->reason,
+                ]);
+            }
 
             // Update course date
             $dupCourse->update([
-                'course_date' => $request->new_date,
+                'course_date' => $newDate,
                 'updated_at' => now(),
             ]);
 
-            // Notify students for this specific course
-            $this->notifyStudentsAboutReschedule($dupCourse, CourseReschedule::where('course_id', $dupCourse->id)->latest()->first());
+            // Notify students
+            $this->notifyStudentsAboutReschedule(
+                $dupCourse, 
+                CourseReschedule::where('course_id', $dupCourse->id)
+                    ->where('original_date', $originalDate)
+                    ->where('new_date', $newDate)
+                    ->first()
+            );
         }
 
         DB::commit();
