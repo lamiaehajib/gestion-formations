@@ -577,6 +577,390 @@ span.badge.badge-en_traitement {
     color: black;
     background-color: #d98888;
 }
+
+
+/* Reset de base pour mobile */
+@media (max-width: 768px) {
+  
+  /* Container principal */
+  .page-container {
+    padding: 1rem 0;
+    overflow-x: hidden;
+  }
+
+  /* Carte principale */
+  .main-card {
+    margin: 0.5rem;
+    border-radius: 16px;
+  }
+
+  /* Header Section - Empiler verticalement */
+  .header-section {
+    padding: 1.5rem 1rem;
+  }
+
+  .header-section .flex {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch !important;
+  }
+
+  .header-title {
+    font-size: 1.5rem;
+    text-align: center;
+    word-break: break-word;
+    line-height: 1.3;
+  }
+
+  /* Bouton créer */
+  .create-btn {
+    width: 100%;
+    text-align: center;
+    padding: 0.875rem 1rem;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Section Filtres */
+  .filter-section {
+    padding: 1rem;
+    margin: 1rem 0.5rem;
+    border-radius: 16px;
+  }
+
+  .filter-section form {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem;
+  }
+
+  .filter-section .grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem;
+  }
+
+  .filter-section .form-group {
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  /* Labels et inputs */
+  .form-label {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    display: block;
+    white-space: nowrap;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    box-sizing: border-box;
+  }
+
+  /* Boutons de filtrage */
+  .filter-section .lg\\:col-span-2 {
+    width: 100%;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    text-align: center;
+    font-size: 0.95rem;
+  }
+
+  /* Alert */
+  .alert-warning {
+    margin: 1rem 0.5rem;
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .alert-warning .flex {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .alert-warning .text-4xl {
+    margin: 0 0 1rem 0 !important;
+  }
+
+  /* Table Container - Scroll horizontal */
+  .table-container {
+    margin: 0.5rem;
+    border-radius: 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Table */
+  .enhanced-table {
+    min-width: 800px; /* Force la largeur minimale pour scroll */
+    font-size: 0.85rem;
+  }
+
+  .table-header th {
+    padding: 1rem 0.5rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  .table-cell {
+    padding: 0.875rem 0.5rem;
+    font-size: 0.85rem;
+    vertical-align: middle;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  /* Badges - Plus petits */
+  .badge {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    display: inline-block;
+  }
+
+  /* Boutons d'action - Plus compacts */
+  .action-btn {
+    width: 32px;
+    height: 32px;
+    margin: 0 0.15rem;
+  }
+
+  .action-btn i {
+    font-size: 0.75rem;
+  }
+
+  /* Pagination */
+  .pagination-container {
+    padding: 1rem 0.5rem;
+    overflow-x: auto;
+  }
+
+  .pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+
+  .pagination a,
+  .pagination span {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    min-width: 40px;
+    text-align: center;
+  }
+
+  /* Scroll to top button */
+  .fixed.bottom-8.right-8 {
+    bottom: 1rem !important;
+    right: 1rem !important;
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* ============================================
+   CORRECTIONS TRÈS PETITS ÉCRANS (< 400px)
+   ============================================ */
+@media (max-width: 400px) {
+  
+  .header-title {
+    font-size: 1.25rem;
+  }
+
+  .create-btn {
+    font-size: 0.85rem;
+    padding: 0.75rem 0.875rem;
+  }
+
+  .filter-section {
+    padding: 0.75rem;
+    margin: 0.75rem 0.25rem;
+  }
+
+  .form-label {
+    font-size: 0.8rem;
+  }
+
+  .form-control {
+    padding: 0.625rem;
+    font-size: 0.85rem;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  .table-container {
+    margin: 0.25rem;
+  }
+
+  .enhanced-table {
+    min-width: 700px;
+    font-size: 0.8rem;
+  }
+
+  .table-header th {
+    padding: 0.75rem 0.375rem;
+    font-size: 0.7rem;
+  }
+
+  .table-cell {
+    padding: 0.75rem 0.375rem;
+    font-size: 0.8rem;
+  }
+
+  .badge {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.65rem;
+  }
+
+  .action-btn {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* ============================================
+   AMÉLIORATIONS SUPPLÉMENTAIRES
+   ============================================ */
+
+/* Empêcher le zoom automatique sur les inputs iOS */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px !important; /* iOS ne zoome pas si >= 16px */
+  }
+}
+
+/* Améliorer la lisibilité du texte */
+@media (max-width: 768px) {
+  body {
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+}
+
+/* Corriger l'overflow horizontal */
+@media (max-width: 768px) {
+  body,
+  html {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  * {
+    max-width: 100%;
+  }
+}
+
+/* Optimiser les animations pour mobile */
+@media (max-width: 768px) {
+  .table-row:hover {
+    transform: none !important;
+  }
+
+  .action-btn:hover {
+    transform: scale(1.05) !important;
+  }
+
+  .badge:hover {
+    transform: scale(1.05) !important;
+  }
+}
+
+/* Améliorer le contraste pour petits écrans */
+@media (max-width: 768px) {
+  .table-cell {
+    color: #1f2937;
+  }
+
+  .form-label {
+    color: #B71C1C;
+  }
+}
+
+/* Fix pour le menu déroulant select */
+@media (max-width: 768px) {
+  select.form-control {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23D32F2F' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2.5rem;
+  }
+}
+
+/* Améliorer le touch target (zone tactile) */
+@media (max-width: 768px) {
+  .action-btn,
+  .btn-primary,
+  .btn-secondary,
+  .create-btn {
+    min-height: 44px; /* Recommandation Apple/Google */
+    touch-action: manipulation;
+  }
+}
+
+/* Indicateur de scroll horizontal pour la table */
+@media (max-width: 768px) {
+  .table-container::after {
+    content: '← Faites défiler →';
+    display: block;
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    color: #D32F2F;
+    font-weight: 600;
+    background: linear-gradient(135deg, #FFEBEE 0%, #FCE4EC 100%);
+    border-top: 1px solid rgba(211, 47, 47, 0.2);
+  }
+
+  .table-container::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  .table-container::-webkit-scrollbar-thumb {
+    background: #D32F2F;
+    border-radius: 3px;
+  }
+}
+
+/* Mode paysage mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .header-section {
+    padding: 1rem;
+  }
+
+  .filter-section {
+    padding: 0.75rem;
+  }
+
+  .header-title {
+    font-size: 1.25rem;
+  }
+}
 </style>
 
 <div class="page-container">
