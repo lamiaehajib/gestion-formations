@@ -324,11 +324,8 @@
                         <strong>Date et Heure Initiales :</strong>
                         <span class="badge badge-original badge-date">
                             <i class="fas fa-calendar-times me-1"></i>
-                            {{ 
-            \Carbon\Carbon::parse($reschedule->course->course_date)
-                ->setTimeFromTimeString($reschedule->course->start_time)
-                ->format('d/m/Y H:i') 
-        }}
+                             {{-- 🔥 FIXED: Men reschedule->original_date machi men course --}}
+        {{ \Carbon\Carbon::parse($reschedule->original_date)->format('d/m/Y H:i') }}
                         </span>
                     </div>
                     <div class="detail-item">

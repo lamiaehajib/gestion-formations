@@ -3,7 +3,7 @@
 <style>
     .formations-container {
         min-height: 100vh;
-        padding: 2rem 0;
+        padding: 1rem 0;
     }
     
     .content-wrapper {
@@ -12,12 +12,13 @@
         border-radius: 20px;
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         overflow: hidden;
+        margin: 0 0.5rem;
     }
     
     .header-section {
         background: linear-gradient(45deg, #C2185B, #D32F2F);
         color: white;
-        padding: 2rem;
+        padding: 1.5rem;
         position: relative;
     }
     
@@ -38,22 +39,26 @@
     }
     
     .main-title {
-        font-size: 2.5rem;
+        font-size: 1.5rem;
         font-weight: 700;
-        margin: 0;
+        margin: 0 0 1rem 0;
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
     }
     
     .create-btn {
         background: linear-gradient(45deg, #ef4444, #C2185B);
         border: none;
-        padding: 12px 24px;
+        padding: 10px 20px;
         border-radius: 25px;
         color: white;
         text-decoration: none;
         font-weight: 600;
         transition: all 0.3s ease;
         box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
+        display: inline-block;
+        font-size: 0.9rem;
+        width: 100%;
+        text-align: center;
     }
     
     .create-btn:hover {
@@ -68,20 +73,84 @@
         border: none;
         border-radius: 15px;
         padding: 1rem;
-        margin: 1.5rem;
+        margin: 1rem;
         box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        font-size: 0.9rem;
     }
     
     .table-container {
-        padding: 2rem;
+        padding: 1rem;
         background: white;
     }
     
+    /* Mobile Card View */
+    .mobile-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid #C2185B;
+        transition: all 0.3s ease;
+    }
+    
+    .mobile-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(194, 24, 91, 0.15);
+    }
+    
+    .module-title {
+        font-weight: 600;
+        color: #333;
+        font-size: 1.1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .module-description {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+    }
+    
+    .formations-badge {
+        background: linear-gradient(45deg, #C2185B, #ef4444);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 15px;
+        font-size: 0.85rem;
+        margin: 0.5rem 0;
+        display: inline-block;
+    }
+    
+    .view-btn {
+        background: linear-gradient(45deg, #D32F2F, #ef4444);
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 3px 10px rgba(211, 47, 47, 0.3);
+        display: block;
+        text-align: center;
+        width: 100%;
+        margin-top: 0.75rem;
+    }
+    
+    .view-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(211, 47, 47, 0.5);
+        color: white;
+    }
+    
+    /* Desktop Table View - Hidden on Mobile */
     .table-modern {
         border-radius: 15px;
         overflow: hidden;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         border: none;
+        display: none;
     }
     
     .table-modern thead {
@@ -115,44 +184,78 @@
         border-bottom: 1px solid rgba(194, 24, 91, 0.1);
     }
     
-    .module-title {
-        font-weight: 600;
-        color: #333;
-        font-size: 1.1rem;
+    .mobile-view {
+        display: block;
     }
     
-    .module-description {
-        color: #666;
-        font-size: 0.9rem;
-        margin-top: 0.25rem;
+    /* Tablet and Desktop */
+    @media (min-width: 768px) {
+        .formations-container {
+            padding: 2rem 0;
+        }
+        
+        .content-wrapper {
+            margin: 0;
+        }
+        
+        .header-section {
+            padding: 2rem;
+        }
+        
+        .main-title {
+            font-size: 2.5rem;
+            margin: 0;
+        }
+        
+        .header-content {
+            display: flex !important;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .create-btn {
+            width: auto;
+            padding: 12px 24px;
+        }
+        
+        .success-alert {
+            margin: 1.5rem;
+        }
+        
+        .table-container {
+            padding: 2rem;
+        }
+        
+        .table-modern {
+            display: table;
+        }
+        
+        .mobile-view {
+            display: none;
+        }
+        
+        .view-btn {
+            width: auto;
+            display: inline-block;
+        }
     }
     
-    .formations-badge {
-        background: linear-gradient(45deg, #C2185B, #ef4444);
-        color: white;
-        padding: 6px 12px;
-        border-radius: 15px;
-        font-size: 0.85rem;
-        margin: 2px;
-        display: inline-block;
+    /* Large Desktop */
+    @media (min-width: 1200px) {
+        .content-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
     }
     
-    .view-btn {
-        background: linear-gradient(45deg, #D32F2F, #ef4444);
-        border: none;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 20px;
-        text-decoration: none;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        box-shadow: 0 3px 10px rgba(211, 47, 47, 0.3);
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
     }
     
-    .view-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(211, 47, 47, 0.5);
-        color: white;
+    .empty-state p {
+        color: #999;
+        font-size: 1rem;
     }
 </style>
 
@@ -160,7 +263,7 @@
     <div class="container">
         <div class="content-wrapper">
             <div class="header-section">
-                <div class="header-content d-flex justify-content-between align-items-center">
+                <div class="header-content">
                     <h2 class="main-title">
                         @if(auth()->user()->hasRole('Consultant'))
                             📚 Mes Modules
@@ -183,13 +286,26 @@
             @endif
             
             <div class="table-container">
-                {{-- ✅ Ila kan Consultant: N-afficher les modules uniques --}}
+                {{-- ✅ Consultant: Modules uniques --}}
                 @if(auth()->user()->hasRole('Consultant') && $uniqueModules->count() > 0)
+                    
+                    {{-- Mobile View --}}
+                    <div class="mobile-view">
+                        @foreach($uniqueModules as $module)
+                        <div class="mobile-card">
+                            <div class="module-title">{{ $module->title }}</div>
+                            <a href="{{ route('modules.details', $module->id) }}" class="view-btn">
+                                👁️ Voir Détails
+                            </a>
+                        </div>
+                        @endforeach
+                    </div>
+                    
+                    {{-- Desktop Table --}}
                     <table class="table table-modern">
                         <thead>
                             <tr>
                                 <th>Titre du Module</th>
-                                
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -199,7 +315,6 @@
                                 <td>
                                     <div class="module-title">{{ $module->title }}</div>
                                 </td>
-                                
                                 <td>
                                     <a href="{{ route('modules.details', $module->id) }}" class="view-btn">
                                         👁️ Voir Détails
@@ -210,8 +325,23 @@
                         </tbody>
                     </table>
                 
-                {{-- ✅ Sinon: Affichage normal dyal Formations --}}
+                {{-- ✅ Formations normales --}}
                 @elseif($formations->count() > 0)
+                    
+                    {{-- Mobile View --}}
+                    <div class="mobile-view">
+                        @foreach($formations as $formation)
+                        <div class="mobile-card">
+                            <div class="module-title">{{ $formation->title }}</div>
+                            <span class="formations-badge">{{ $formation->modules_count }} Modules</span>
+                            <a href="{{ route('modules.show', ['formation' => $formation->id]) }}" class="view-btn">
+                                Voir les Modules
+                            </a>
+                        </div>
+                        @endforeach
+                    </div>
+                    
+                    {{-- Desktop Table --}}
                     <table class="table table-modern">
                         <thead>
                             <tr>
@@ -239,8 +369,8 @@
                         </tbody>
                     </table>
                 @else
-                    <div class="text-center py-5">
-                        <p class="text-muted">Aucun module disponible</p>
+                    <div class="empty-state">
+                        <p>Aucun module disponible</p>
                     </div>
                 @endif
             </div>
