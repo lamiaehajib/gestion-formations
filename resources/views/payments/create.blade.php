@@ -587,6 +587,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const remaining = currentInscriptionData.remainingAmount;
         const installmentAmount = currentInscriptionData.amountPerInstallment;
 
+        
+ addRadioButton('custom_amount', 'Payer un montant personnalisé', ''); // no amount needed here
+
+        paymentChoicesRadios.querySelectorAll('input[name="payment_choice"]').forEach(radio => {
+            radio.removeEventListener('change', updateAmountField);
+            radio.addEventListener('change', updateAmountField);
+        });
+
+        const firstRadio = paymentChoicesRadios.querySelector('input[type="radio"]');
+        if (firstRadio) {
+            firstRadio.checked = true;
+            updateAmountField();
+        } else {
+            amountToPayInput.value = '';
+            paymentHint.textContent = '';
+            submitBtn.disabled = true;
+        }
 
         // Option: Payer le prochain versement
         if (currentInscriptionData.chosenInstallments > 1 && remaining > epsilon) {
@@ -606,22 +623,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         
         // Nouvelle option: Montant personnalisé
-        addRadioButton('custom_amount', 'Payer un montant personnalisé', ''); // no amount needed here
-
-        paymentChoicesRadios.querySelectorAll('input[name="payment_choice"]').forEach(radio => {
-            radio.removeEventListener('change', updateAmountField);
-            radio.addEventListener('change', updateAmountField);
-        });
-
-        const firstRadio = paymentChoicesRadios.querySelector('input[type="radio"]');
-        if (firstRadio) {
-            firstRadio.checked = true;
-            updateAmountField();
-        } else {
-            amountToPayInput.value = '';
-            paymentHint.textContent = '';
-            submitBtn.disabled = true;
-        }
+       
     }
 
     function addRadioButton(value, text, amount) {
