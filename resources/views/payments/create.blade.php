@@ -587,10 +587,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const remaining = currentInscriptionData.remainingAmount;
         const installmentAmount = currentInscriptionData.amountPerInstallment;
 
-        // Option: Payer le reste total
-        if (remaining > epsilon) {
-            addRadioButton('full_remaining', `Payer le reste total (${remaining.toFixed(2)} DH)`, remaining.toFixed(2));
-        }
 
         // Option: Payer le prochain versement
         if (currentInscriptionData.chosenInstallments > 1 && remaining > epsilon) {
@@ -602,6 +598,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 addRadioButton('next_installment', `Payer le prochain versement (${nextInstallmentValue.toFixed(2)} DH)`, nextInstallmentValue.toFixed(2));
             }
         }
+        // Option: Payer le reste total
+        if (remaining > epsilon) {
+            addRadioButton('full_remaining', `Payer le reste total (${remaining.toFixed(2)} DH)`, remaining.toFixed(2));
+        }
+
+        
         
         // Nouvelle option: Montant personnalisé
         addRadioButton('custom_amount', 'Payer un montant personnalisé', ''); // no amount needed here
