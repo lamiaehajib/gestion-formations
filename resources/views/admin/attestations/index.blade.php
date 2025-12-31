@@ -708,6 +708,12 @@
                                             </button>
                                         </div>
                                     </form>
+
+                                    <a href="{{ route('admin.attestations.download-for-processing', $attestation) }}" 
+                                           class="btn btn-primary" 
+                                           title="Télécharger et commencer le traitement">
+                                            <i class="fas fa-download me-1"></i>
+                                        </a>
                                 </div>
                             </div>
                         </div>
