@@ -649,6 +649,12 @@
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
+
+                                    <a href="{{ route('admin.attestations.download', $attestation) }}" 
+                                           class="btn btn-info" 
+                                           title="Télécharger l'attestation signée">
+                                            <i class="fas fa-download me-1"></i>Télécharger
+                                        </a>
                                 </div>
                             </td>
                         </tr>

@@ -137,7 +137,7 @@
                             @error('user_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 
-                        {{-- L'HAQL JDEED LLI BAGHI: Multi-Select dial les Formations --}}
+                        {{-- L'HAQL JDEED LLI BAGHI:ne Multis-Select dial les Formations --}}
                        <div class="mb-4 p-3 bg-red-50 rounded-3" style="border: 1px dashed #D32F2F;">
     <label class="form-label fw-bold fs-5 text-danger">
         <i class="fas fa-graduation-cap me-2 text-danger"></i>Select Formations:
