@@ -110,7 +110,7 @@ public function showChooseFormationForm(Request $request)
             'formation_id' => 'required|exists:formations,id',
             'selected_payment_option' => 'required|integer|min:1',
             'initial_paid_amount' => 'required|numeric|min:0.01', 
-            'proof_of_payment' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'proof_of_payment' => 'required|file|mimes:jpg,jpeg,png,pdf|max:9048',
             'payment_method' => 'required|string|in:cash,bank_transfer',
             'notes' => 'nullable|string',
         ]);
