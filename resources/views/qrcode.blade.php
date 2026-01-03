@@ -251,21 +251,144 @@
             }
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
             .container {
                 padding: 30px 20px;
+                border-radius: 16px;
+                max-width: 100%;
+            }
+
+            .logo-container img {
+                max-width: 150px;
             }
             
             h1 {
                 font-size: 24px;
             }
+
+            .subtitle {
+                font-size: 14px;
+            }
+
+            .url {
+                font-size: 18px;
+                margin-bottom: 25px;
+            }
+
+            .qr-wrapper {
+                padding: 20px;
+                border-width: 2px;
+            }
+
+            #qrcode {
+                padding: 10px;
+            }
             
             .button-group {
                 flex-direction: column;
+                gap: 12px;
             }
             
             .download-btn, .print-btn {
                 width: 100%;
+                padding: 16px 24px;
+                font-size: 15px;
+            }
+
+            .info {
+                font-size: 14px;
+                padding: 16px;
+                margin-top: 25px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+
+            .container {
+                padding: 25px 15px;
+            }
+
+            .logo-container {
+                margin-bottom: 20px;
+            }
+
+            .logo-container img {
+                max-width: 130px;
+            }
+
+            h1 {
+                font-size: 20px;
+                margin-bottom: 6px;
+            }
+
+            .subtitle {
+                font-size: 13px;
+                margin-bottom: 20px;
+            }
+
+            .url {
+                font-size: 16px;
+                margin-bottom: 20px;
+            }
+
+            .qr-wrapper {
+                padding: 15px;
+                margin: 15px 0;
+            }
+
+            #qrcode canvas {
+                max-width: 100% !important;
+                height: auto !important;
+            }
+
+            .button-group {
+                margin-top: 20px;
+                gap: 10px;
+            }
+
+            .download-btn, .print-btn {
+                padding: 14px 20px;
+                font-size: 14px;
+            }
+
+            .info {
+                font-size: 13px;
+                padding: 14px;
+                margin-top: 20px;
+            }
+
+            body::before,
+            body::after {
+                display: none;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .container {
+                padding: 20px 12px;
+            }
+
+            h1 {
+                font-size: 18px;
+            }
+
+            .logo-container img {
+                max-width: 110px;
+            }
+
+            .url {
+                font-size: 15px;
+            }
+
+            .qr-wrapper {
+                padding: 12px;
             }
         }
     </style>
@@ -302,10 +425,18 @@
 
     <script>
         // Génération du QR Code avec les couleurs Union IT Services
+        // Ajuster la taille selon l'écran
+        let qrSize = 280;
+        if (window.innerWidth < 480) {
+            qrSize = Math.min(window.innerWidth - 100, 220);
+        } else if (window.innerWidth < 768) {
+            qrSize = 240;
+        }
+
         const qrcode = new QRCode(document.getElementById("qrcode"), {
             text: "https://uits-portail.ma",
-            width: 280,
-            height: 280,
+            width: qrSize,
+            height: qrSize,
             colorDark: "#1a1a1a",
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.H
