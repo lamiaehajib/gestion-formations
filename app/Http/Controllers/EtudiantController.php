@@ -120,21 +120,22 @@ $formations = $formations->filter(function($formation) use ($restrictedCategorie
 
         $formation = Formation::with('category')->findOrFail($request->formation_id);
         
-        // ✨ NOUVELLE VÉRIFICATION: Bloquer l'inscription si start_date est dépassée pour certaines catégories
-       $restrictedCategories = ['LICENCE PROFESSIONNELLE RECONNU', 'FORMATIONS','All in One'];
-$categoryName = $formation->category->name ?? '';
+        // ✨ VÉRIFICATION: Bloquer l'inscription si end_date est dépassée
+        $restrictedCategories = ['LICENCE PROFESSIONNELLE RECONNU', 'FORMATIONS','All in One'];
+        $categoryName = $formation->category->name ?? '';
 
-if (in_array($categoryName, $restrictedCategories)) {
-    $today = Carbon::today();
-    $startDate = Carbon::parse($formation->start_date);
-    $endDate = Carbon::parse($formation->end_date);
-    
-    // ✅ Bloquer si end_date est passée (formation terminée)
-    if ($endDate->lessThan($today)) {
-        return redirect()->back()
-            ->with('error', 'Les inscriptions pour cette formation sont closes. La formation est déjà terminée. 🎓✅')
-            ->withInput();
-    }
+        if (in_array($categoryName, $restrictedCategories)) {
+            $today = Carbon::today();
+            $startDate = Carbon::parse($formation->start_date);
+            $endDate = Carbon::parse($formation->end_date);
+            
+            // ✅ Bloquer si end_date est passée (formation terminée)
+            if ($endDate->lessThan($today)) {
+                return redirect()->back()
+                    ->with('error', 'Les inscriptions pour cette formation sont closes. La formation est déjà terminée. 🎓✅')
+                    ->withInput();
+            }
+        } // ⚠️ هنا كان ناقص الـ closing brace
         // ✨ FIN DE LA VÉRIFICATION
 
         $existingActiveInscription = Inscription::where('user_id', $user->id)
