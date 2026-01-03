@@ -73,23 +73,26 @@ public function showChooseFormationForm(Request $request)
     
     $formations = $query->with('category')->get();
 
-    // ✨ FILTRER LES FORMATIONS AVEC start_date DÉPASSÉE POUR LES CATÉGORIES RESTREINTES
     $restrictedCategories = ['LICENCE PROFESSIONNELLE RECONNU', 'FORMATIONS','All in One'];
-    $today = Carbon::today();
+$today = Carbon::today();
+
+$formations = $formations->filter(function($formation) use ($restrictedCategories, $today) {
+    $categoryName = $formation->category->name ?? '';
     
-    $formations = $formations->filter(function($formation) use ($restrictedCategories, $today) {
-        $categoryName = $formation->category->name ?? '';
+    // Si la formation appartient à une catégorie restreinte
+    if (in_array($categoryName, $restrictedCategories)) {
+        $startDate = Carbon::parse($formation->start_date);
+        $endDate = Carbon::parse($formation->end_date);
         
-        // Si la formation appartient à une catégorie restreinte
-        if (in_array($categoryName, $restrictedCategories)) {
-            $startDate = Carbon::parse($formation->start_date);
-            // Garder seulement si start_date >= aujourd'hui
-            return $startDate->greaterThanOrEqualTo($today);
-        }
-        
-        // Pour les autres catégories, garder toutes les formations
-        return true;
-    });
+        // ✅ Garder SEULEMENT si:
+        // - start_date >= aujourd'hui (pas encore commencée ou commence aujourd'hui)
+        // - OU end_date >= aujourd'hui (en cours, pas encore terminée)
+        return $endDate->greaterThanOrEqualTo($today);
+    }
+    
+    // Pour les autres catégories, garder toutes les formations
+    return true;
+});
     // ✨ FIN DU FILTRAGE
 
     $selectedCategoryId = $request->get('category_id');
@@ -118,17 +121,20 @@ public function showChooseFormationForm(Request $request)
         $formation = Formation::with('category')->findOrFail($request->formation_id);
         
         // ✨ NOUVELLE VÉRIFICATION: Bloquer l'inscription si start_date est dépassée pour certaines catégories
-        $restrictedCategories = ['LICENCE PROFESSIONNELLE RECONNU', 'FORMATIONS','All in One'];
-        $categoryName = $formation->category->name ?? '';
-        
-        if (in_array($categoryName, $restrictedCategories)) {
-            $today = Carbon::today();
-            $startDate = Carbon::parse($formation->start_date);
-            
-            if ($startDate->lessThan($today)) {
-                return redirect()->back()->with('error', 'Les inscriptions pour cette formation sont closes. La date de début est déjà passée. 📅❌')->withInput();
-            }
-        }
+       $restrictedCategories = ['LICENCE PROFESSIONNELLE RECONNU', 'FORMATIONS','All in One'];
+$categoryName = $formation->category->name ?? '';
+
+if (in_array($categoryName, $restrictedCategories)) {
+    $today = Carbon::today();
+    $startDate = Carbon::parse($formation->start_date);
+    $endDate = Carbon::parse($formation->end_date);
+    
+    // ✅ Bloquer si end_date est passée (formation terminée)
+    if ($endDate->lessThan($today)) {
+        return redirect()->back()
+            ->with('error', 'Les inscriptions pour cette formation sont closes. La formation est déjà terminée. 🎓✅')
+            ->withInput();
+    }
         // ✨ FIN DE LA VÉRIFICATION
 
         $existingActiveInscription = Inscription::where('user_id', $user->id)
