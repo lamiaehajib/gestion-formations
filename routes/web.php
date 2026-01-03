@@ -592,5 +592,10 @@ Route::prefix('erp')->name('crm.')->group(function () {
 });
 
 
+Route::get('/qr-code', function () {
+    return view('qrcode');
+})->name('qrcode');
+
+
 
 require __DIR__.'/auth.php';

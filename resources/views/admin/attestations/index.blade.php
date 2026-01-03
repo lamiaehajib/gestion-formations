@@ -35,7 +35,7 @@
     /* Header Section */
     .page-header {
         background: linear-gradient(135deg, var(--primary-pink) 0%, var(--primary-red) 100%);
-        padding: 2rem 1.5rem;
+        padding: 2.5rem 2rem;
         border-radius: 20px;
         color: white;
         box-shadow: var(--shadow-lg);
@@ -62,7 +62,7 @@
     }
 
     .page-header h1 {
-        font-size: 2rem;
+        font-size: 2.5rem;
         font-weight: 800;
         margin: 0;
         position: relative;
@@ -205,18 +205,14 @@
         letter-spacing: 0.3px;
     }
 
-    /* Table Styles avec scroll horizontal */
+    /* Table Styles */
     .table-responsive {
         border-radius: 12px;
-        overflow-x: auto;
-        overflow-y: visible;
-        -webkit-overflow-scrolling: touch;
-        margin: 0;
+        overflow: hidden;
     }
 
     .table {
         margin-bottom: 0;
-        min-width: 1200px; /* Force le tableau à avoir une largeur minimale */
     }
 
     .table thead th {
@@ -228,7 +224,6 @@
         letter-spacing: 0.5px;
         padding: 1rem;
         border: none;
-        white-space: nowrap;
     }
 
     .table tbody tr {
@@ -238,6 +233,8 @@
 
     .table tbody tr:hover {
         background: linear-gradient(135deg, rgba(194, 24, 91, 0.03) 0%, rgba(211, 47, 47, 0.03) 100%);
+        transform: scale(1.01);
+        box-shadow: 0 2px 8px rgba(194, 24, 91, 0.08);
     }
 
     .table tbody td {
@@ -245,7 +242,6 @@
         vertical-align: middle;
         color: var(--text-dark);
         border: none;
-        white-space: nowrap;
     }
 
     /* Badge Styles */
@@ -287,7 +283,6 @@
         border: none;
         position: relative;
         overflow: hidden;
-        white-space: nowrap;
     }
 
     .btn::before {
@@ -353,7 +348,7 @@
     }
 
     .btn-group-sm > .btn {
-        font-size: 0.75rem;
+        font-size: 0.8rem;
         padding: 0.4rem 0.8rem;
     }
 
@@ -415,7 +410,6 @@
     /* Pagination */
     .pagination {
         gap: 0.5rem;
-        flex-wrap: wrap;
     }
 
     .page-link {
@@ -456,7 +450,6 @@
         color: white;
         font-weight: 700;
         font-size: 1rem;
-        flex-shrink: 0;
     }
 
     /* Scrollbar */
@@ -477,147 +470,6 @@
 
     ::-webkit-scrollbar-thumb:hover {
         background: linear-gradient(135deg, var(--primary-red) 0%, var(--accent-red) 100%);
-    }
-
-    /* Responsive Design */
-    @media (max-width: 1200px) {
-        .stats-value {
-            font-size: 2rem;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .container-fluid {
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
-        }
-
-        .page-header {
-            padding: 1.5rem 1rem;
-            border-radius: 15px;
-        }
-
-        .page-header h1 {
-            font-size: 1.5rem;
-        }
-
-        .page-header h1 i {
-            display: none;
-        }
-
-        .stats-card {
-            padding: 1rem;
-        }
-
-        .stats-icon {
-            width: 50px;
-            height: 50px;
-            font-size: 1.5rem;
-        }
-
-        .stats-value {
-            font-size: 1.8rem;
-        }
-
-        .stats-label {
-            font-size: 0.7rem;
-        }
-
-        .main-card .card-header {
-            padding: 1rem 1.5rem;
-        }
-
-        .main-card .card-header h6 {
-            font-size: 1rem;
-        }
-
-        .table thead th {
-            font-size: 0.7rem;
-            padding: 0.75rem;
-        }
-
-        .table tbody td {
-            padding: 0.75rem;
-            font-size: 0.85rem;
-        }
-
-        .btn-group {
-            display: flex;
-            flex-wrap: nowrap;
-            gap: 0.25rem;
-        }
-
-        .btn-group-sm > .btn {
-            font-size: 0.7rem;
-            padding: 0.35rem 0.6rem;
-        }
-
-        .btn-group-sm > .btn i {
-            font-size: 0.8rem;
-        }
-
-        .user-info {
-            gap: 0.5rem;
-        }
-
-        .user-avatar {
-            width: 35px;
-            height: 35px;
-            font-size: 0.9rem;
-        }
-
-        .badge {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.65rem;
-        }
-
-        .modal-dialog {
-            margin: 0.5rem;
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
-        .empty-state {
-            padding: 3rem 1rem;
-        }
-
-        .empty-state i {
-            font-size: 3rem;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .page-header h1 {
-            font-size: 1.25rem;
-        }
-
-        .stats-value {
-            font-size: 1.5rem;
-        }
-
-        .stats-icon {
-            width: 45px;
-            height: 45px;
-            font-size: 1.3rem;
-        }
-
-        .col-xl-3, .col-md-6 {
-            margin-bottom: 1rem !important;
-        }
-
-        .table {
-            min-width: 1000px;
-        }
-
-        .pagination {
-            font-size: 0.85rem;
-        }
-
-        .page-link {
-            padding: 0.4rem 0.8rem;
-        }
     }
 </style>
 
@@ -798,11 +650,7 @@
                                         </button>
                                     </form>
 
-                                    <a href="{{ route('admin.attestations.download', $attestation) }}" 
-                                           class="btn btn-info" 
-                                           title="Télécharger l'attestation signée">
-                                            <i class="fas fa-download me-1"></i>Télécharger
-                                        </a>
+                                   
                                 </div>
                             </td>
                         </tr>
@@ -860,7 +708,7 @@
                                     <a href="{{ route('admin.attestations.download-for-processing', $attestation) }}" 
                                            class="btn btn-primary" 
                                            title="Télécharger et commencer le traitement">
-                                            <i class="fas fa-download me-1"></i>
+                                            <i class="fas fa-download me-1"></i>Télécharger
                                         </a>
                                 </div>
                             </div>
