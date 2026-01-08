@@ -176,12 +176,13 @@ public function index(Request $request)
         }
         
         $courses = new LengthAwarePaginator(
-            $currentPageModules,
-            $totalModules,
-            $perPage,
-            $currentPage,
-            ['path' => Paginator::resolveCurrentPath()]
-        );
+    $currentPageModules,
+    $totalModules,
+    $perPage,
+    $currentPage,
+    ['path' => Paginator::resolveCurrentPath()]
+);
+$courses->appends($request->except('page'));
         
         $coursesByDay = null;
     }
