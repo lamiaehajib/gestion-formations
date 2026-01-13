@@ -115,7 +115,7 @@
             color: #1f2937;
         }
 
-        /* Tableau des étudiants - Ultra compact */
+        /* Tableau des étudiants - Ultra compact avec CIN et Téléphone */
         .table-container {
             flex: 1;
             overflow: hidden;
@@ -125,7 +125,7 @@
             width: 100%;
             border-collapse: collapse;
             background-color: white;
-            font-size: 0.65rem;
+            font-size: 0.6rem;
         }
 
         .students-table thead {
@@ -133,9 +133,9 @@
         }
 
         .students-table th {
-            padding: 2mm 3mm;
+            padding: 1.5mm 2mm;
             text-align: left;
-            font-size: 0.55rem;
+            font-size: 0.5rem;
             font-weight: 600;
             color: #475569;
             text-transform: uppercase;
@@ -143,8 +143,8 @@
         }
 
         .students-table td {
-            padding: 2mm 3mm;
-            font-size: 0.6rem;
+            padding: 1.5mm 2mm;
+            font-size: 0.55rem;
             border-bottom: 1px solid #f1f5f9;
             vertical-align: top;
         }
@@ -155,18 +155,28 @@
 
         .student-name {
             font-weight: 600;
-            margin-bottom: 0.5mm;
+            margin-bottom: 0.3mm;
+            font-size: 0.6rem;
         }
 
         .student-email {
             color: #6b7280;
+            font-size: 0.5rem;
+        }
+
+        .contact-info {
+            line-height: 1.2;
+        }
+
+        .contact-item {
+            margin-bottom: 0.3mm;
             font-size: 0.55rem;
         }
 
         .status-badge {
-            padding: 1mm 2mm;
+            padding: 0.8mm 1.5mm;
             border-radius: 3px;
-            font-size: 0.5rem;
+            font-size: 0.45rem;
             font-weight: 600;
             text-transform: uppercase;
             display: inline-block;
@@ -184,7 +194,7 @@
 
         /* Force single page */
         @page {
-            size: A4;
+            size: A4 landscape;
             margin: 8mm;
         }
 
@@ -259,11 +269,13 @@
             <table class="students-table">
                 <thead>
                     <tr>
-                        <th style="width: 35%;">Étudiant</th>
-                        <th style="width: 15%;">État</th>
-                        <th style="width: 15%;">Payé</th>
-                        <th style="width: 15%;">Reste</th>
-                        <th style="width: 20%;">Type</th>
+                        <th style="width: 22%;">Étudiant</th>
+                        <th style="width: 13%;">CIN</th>
+                        <th style="width: 13%;">Téléphone</th>
+                        <th style="width: 12%;">État</th>
+                        <th style="width: 13%;">Payé</th>
+                        <th style="width: 13%;">Reste</th>
+                        <th style="width: 14%;">Type</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -273,6 +285,16 @@
                             <div class="student-info">
                                 <div class="student-name">{{ $student['name'] }}</div>
                                 <div class="student-email">{{ $student['email'] }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="contact-info">
+                                <div class="contact-item">{{ $student['cin'] ?? 'N/A' }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="contact-info">
+                                <div class="contact-item">{{ $student['phone'] ?? 'N/A' }}</div>
                             </div>
                         </td>
                         <td>
@@ -293,7 +315,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" style="text-align:center; padding: 10px;">Aucun étudiant</td>
+                        <td colspan="7" style="text-align:center; padding: 10px;">Aucun étudiant</td>
                     </tr>
                     @endforelse
                 </tbody>
