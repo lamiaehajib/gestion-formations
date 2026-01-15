@@ -95,6 +95,7 @@ class PromotionController extends Controller
 
     /**
      * Display the specified promotion with student payment details.
+     * ✅ MODIFIÉ: Exclure les étudiants avec access_restricted = true
      */
     public function show(Promotion $promotion)
     {
@@ -102,10 +103,14 @@ class PromotionController extends Controller
             'formation.category',
             'users' => function ($query) use ($promotion) {
                 $query->with(['inscriptions' => function ($q) use ($promotion) {
-                    $q->where('formation_id', $promotion->formation_id)->with('payments');
+                    // ✅ FILTRE PRINCIPAL: exclure les inscriptions avec access_restricted = true
+                    $q->where('formation_id', $promotion->formation_id)
+                      ->where('access_restricted', false) // ← Hna l modification
+                      ->with('payments');
                 }])
                 ->join('inscriptions', 'users.id', '=', 'inscriptions.user_id')
                 ->where('inscriptions.formation_id', $promotion->formation_id)
+                ->where('inscriptions.access_restricted', false) // ← O hna zedna filter f join
                 ->orderBy('inscriptions.inscription_date', 'asc')
                 ->select('users.*');
             },
@@ -118,7 +123,9 @@ class PromotionController extends Controller
 
         foreach ($promotion->users as $user) {
             $inscription = $user->inscriptions->first();
-            if ($inscription) {
+            
+            // ✅ Double-check: si inscription existe O access_restricted = false
+            if ($inscription && !$inscription->access_restricted) {
                 $studentData = [
                     'user' => $user,
                     'inscription' => $inscription,
@@ -161,133 +168,136 @@ class PromotionController extends Controller
 
     /**
      * Generate promotion report with detailed payment information.
+     * ✅ MODIFIÉ: Exclure les étudiants avec access_restricted = true
      */
-   /**
- * Generate promotion report with detailed payment information.
- */
-public function generateReport(Promotion $promotion, Request $request)
-{
-    $promotion->load([
-        'formation.category',
-        'users' => function ($query) use ($promotion) {
-            $query->with([
-                'inscriptions' => function ($q) use ($promotion) {
-                    $q->where('formation_id', $promotion->formation_id)->with('payments');
+    public function generateReport(Promotion $promotion, Request $request)
+    {
+        $promotion->load([
+            'formation.category',
+            'users' => function ($query) use ($promotion) {
+                $query->with([
+                    'inscriptions' => function ($q) use ($promotion) {
+                        // ✅ Exclure access_restricted dans le rapport aussi
+                        $q->where('formation_id', $promotion->formation_id)
+                          ->where('access_restricted', false)
+                          ->with('payments');
+                    }
+                ]);
+            },
+        ]);
+
+        $reportData = [
+            'promotion' => $promotion,
+            'generation_date' => now(),
+            'students' => [],
+            'summary' => [
+                'total_students' => 0,
+                'total_revenue' => 0,
+                'total_paid' => 0,
+                'total_remaining' => 0,
+                'fully_paid_count' => 0,
+                'partially_paid_count' => 0,
+                'unpaid_count' => 0,
+            ]
+        ];
+
+        foreach ($promotion->users as $user) {
+            $inscription = $user->inscriptions->first();
+            
+            // ✅ Double-check pour le rapport
+            if ($inscription && !$inscription->access_restricted) {
+                $studentInfo = [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'cin' => $user->cin,
+                    'inscription_date' => $inscription->inscription_date,
+                    'total_amount' => $inscription->total_amount,
+                    'paid_amount' => $inscription->paid_amount,
+                    'remaining_amount' => $inscription->remaining_amount,
+                    'payment_type' => $inscription->payment_type,
+                    'payment_status' => $inscription->payment_status_label,
+                    'payments' => $inscription->payments->map(function ($payment) {
+                        return [
+                            'amount' => $payment->amount,
+                            'paid_date' => $payment->paid_date,
+                            'payment_method' => $payment->payment_method,
+                            'reference' => $payment->reference,
+                        ];
+                    })->toArray()
+                ];
+                
+                $reportData['students'][] = $studentInfo;
+                $reportData['summary']['total_students']++;
+                $reportData['summary']['total_revenue'] += $inscription->total_amount;
+                $reportData['summary']['total_paid'] += $inscription->paid_amount;
+                $reportData['summary']['total_remaining'] += $inscription->remaining_amount;
+
+                if ($inscription->remaining_amount <= 0.01) {
+                    $reportData['summary']['fully_paid_count']++;
+                } elseif ($inscription->paid_amount > 0) {
+                    $reportData['summary']['partially_paid_count']++;
+                } else {
+                    $reportData['summary']['unpaid_count']++;
                 }
-            ]);
-        },
-    ]);
-
-    $reportData = [
-        'promotion' => $promotion,
-        'generation_date' => now(),
-        'students' => [],
-        'summary' => [
-            'total_students' => 0,
-            'total_revenue' => 0,
-            'total_paid' => 0,
-            'total_remaining' => 0,
-            'fully_paid_count' => 0,
-            'partially_paid_count' => 0,
-            'unpaid_count' => 0,
-        ]
-    ];
-
-    foreach ($promotion->users as $user) {
-        $inscription = $user->inscriptions->first();
-        if ($inscription) {
-            $studentInfo = [
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'cin' => $user->cin, // ✅ CIN ajouté
-                'inscription_date' => $inscription->inscription_date,
-                'total_amount' => $inscription->total_amount,
-                'paid_amount' => $inscription->paid_amount,
-                'remaining_amount' => $inscription->remaining_amount,
-                'payment_type' => $inscription->payment_type,
-                'payment_status' => $inscription->payment_status_label,
-                'payments' => $inscription->payments->map(function ($payment) {
-                    return [
-                        'amount' => $payment->amount,
-                        'paid_date' => $payment->paid_date,
-                        'payment_method' => $payment->payment_method,
-                        'reference' => $payment->reference,
-                    ];
-                })->toArray()
-            ];
-            $reportData['students'][] = $studentInfo;
-            $reportData['summary']['total_students']++;
-            $reportData['summary']['total_revenue'] += $inscription->total_amount;
-            $reportData['summary']['total_paid'] += $inscription->paid_amount;
-            $reportData['summary']['total_remaining'] += $inscription->remaining_amount;
-
-            if ($inscription->remaining_amount <= 0.01) {
-                $reportData['summary']['fully_paid_count']++;
-            } elseif ($inscription->paid_amount > 0) {
-                $reportData['summary']['partially_paid_count']++;
-            } else {
-                $reportData['summary']['unpaid_count']++;
             }
         }
-    }
 
-    $format = $request->input('format', 'html');
+        $format = $request->input('format', 'html');
 
-    if ($format === 'pdf') {
-        $pdf = PDF::loadView('promotions.report', compact('reportData'));
-        return $pdf->download('rapport-' . $promotion->name . '.pdf');
-    } elseif ($format === 'excel') {
-        $output = fopen('php://temp', 'r+');
-        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+        if ($format === 'pdf') {
+            $pdf = PDF::loadView('promotions.report', compact('reportData'));
+            return $pdf->download('rapport-' . $promotion->name . '.pdf');
+        } elseif ($format === 'excel') {
+            $output = fopen('php://temp', 'r+');
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-        // ✅ En-têtes Excel mis à jour avec CIN
-        $headers_excel = [
-            'Nom Étudiant',
-            'Email',
-            'Téléphone',
-            'CIN', // ✅ Nouvelle colonne
-            'Montant Total',
-            'Montant Payé',
-            'Reste à Payer',
-            'Type de Paiement',
-            'Statut Paiement'
-        ];
-        fputcsv($output, $headers_excel, ';');
+            $headers_excel = [
+                'Nom Étudiant',
+                'Email',
+                'Téléphone',
+                'CIN',
+                'Montant Total',
+                'Montant Payé',
+                'Reste à Payer',
+                'Type de Paiement',
+                'Statut Paiement'
+            ];
+            fputcsv($output, $headers_excel, ';');
 
-        foreach ($reportData['students'] as $student) {
-            $name = str_replace(';', ',', $student['name']);
-            $email = str_replace(';', ',', $student['email']);
-            $phone = str_replace(';', ',', $student['phone'] ?? 'N/A');
-            $cin = str_replace(';', ',', $student['cin'] ?? 'N/A'); // ✅ CIN avec valeur par défaut
+            foreach ($reportData['students'] as $student) {
+                $name = str_replace(';', ',', $student['name']);
+                $email = str_replace(';', ',', $student['email']);
+                $phone = str_replace(';', ',', $student['phone'] ?? 'N/A');
+                $cin = str_replace(';', ',', $student['cin'] ?? 'N/A');
 
-            fputcsv($output, [
-                $name,
-                $email,
-                $phone,
-                $cin, // ✅ CIN ajouté
-                number_format($student['total_amount'], 2, '.', ''),
-                number_format($student['paid_amount'], 2, '.', ''),
-                number_format($student['remaining_amount'], 2, '.', ''),
-                $student['payment_type'],
-                $student['payment_status'],
-            ], ';');
+                fputcsv($output, [
+                    $name,
+                    $email,
+                    $phone,
+                    $cin,
+                    number_format($student['total_amount'], 2, '.', ''),
+                    number_format($student['paid_amount'], 2, '.', ''),
+                    number_format($student['remaining_amount'], 2, '.', ''),
+                    $student['payment_type'],
+                    $student['payment_status'],
+                ], ';');
+            }
+
+            rewind($output);
+            $csv = stream_get_contents($output);
+            fclose($output);
+
+            $headers = [
+                'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+                'Content-Disposition' => 'attachment; filename="rapport-' . $promotion->name . '_' . date('Ymd') . '.csv"',
+            ];
+
+            return response($csv, 200, $headers);
+        } else {
+            return view('promotions.report', compact('reportData'));
         }
-
-        rewind($output);
-        $csv = stream_get_contents($output);
-        fclose($output);
-
-        $headers = [
-            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="rapport-' . $promotion->name . '_' . date('Ymd') . '.csv"',
-        ];
-
-        return response($csv, 200, $headers);
-    } else {
-        return view('promotions.report', compact('reportData'));
     }
-}
 
     /**
      * Store a new promotion in bulk from the modal form.
@@ -381,11 +391,13 @@ public function generateReport(Promotion $promotion, Request $request)
     
     /**
      * Automatically populate promotion with students from inscriptions.
+     * ✅ MODIFIÉ: Exclure les inscriptions avec access_restricted = true
      */
     private function populatePromotionWithStudents(Promotion $promotion)
     {
         $inscriptions = Inscription::where('formation_id', $promotion->formation->id)
             ->where('status', '!=', 'cancelled')
+            ->where('access_restricted', false) // ✅ Filtre ajouté ici
             ->with('user')
             ->get();
 
@@ -404,25 +416,24 @@ public function generateReport(Promotion $promotion, Request $request)
     }
     
     /**
-     * 🎯 NEW METHOD: Auto-assign student to promotion when inscription is created
-     * This is called from InscriptionObserver or InscriptionController
+     * Auto-assign student to promotion when inscription is created
+     * ✅ MODIFIÉ: Ne pas assigner si access_restricted = true
      */
     public static function autoAssignStudentToPromotion(Inscription $inscription)
     {
-        // Skip if inscription is cancelled or user doesn't exist
-        if (!$inscription->user || $inscription->status === 'cancelled') {
+        // ✅ Skip si cancelled OU access_restricted = true
+        if (!$inscription->user || 
+            $inscription->status === 'cancelled' || 
+            $inscription->access_restricted) {
             return false;
         }
 
-        // Get year from inscription date
         $year = date('Y', strtotime($inscription->inscription_date ?? now()));
 
-        // Find or create promotion for this formation and year
         $promotion = Promotion::where('formation_id', $inscription->formation_id)
             ->where('year', $year)
             ->first();
 
-        // If no promotion exists, create one automatically
         if (!$promotion) {
             try {
                 $formation = Formation::find($inscription->formation_id);
@@ -441,7 +452,6 @@ public function generateReport(Promotion $promotion, Request $request)
             }
         }
 
-        // Assign student to promotion if not already assigned
         $user = $inscription->user;
         
         if ($user->promotion_id !== $promotion->id) {
@@ -454,16 +464,16 @@ public function generateReport(Promotion $promotion, Request $request)
     }
 
     /**
-     * 🎯 NEW METHOD: Remove student from promotion if inscription is cancelled/deleted
+     * Remove student from promotion if inscription is cancelled/deleted
      */
     public static function autoRemoveStudentFromPromotion(User $user)
     {
-        // Check if user has any other active inscriptions
+        // ✅ Check si user 3ando chi inscription active O access_restricted = false
         $activeInscriptions = Inscription::where('user_id', $user->id)
             ->where('status', '!=', 'cancelled')
+            ->where('access_restricted', false) // ✅ Ajouté ici
             ->exists();
 
-        // Only remove from promotion if no active inscriptions remain
         if (!$activeInscriptions && $user->promotion_id) {
             $oldPromotionId = $user->promotion_id;
             $user->update(['promotion_id' => null]);
@@ -499,11 +509,13 @@ public function generateReport(Promotion $promotion, Request $request)
     
     /**
      * Display the payment history for a specific student within a formation.
+     * ✅ MODIFIÉ: Vérifier access_restricted
      */
     public function showStudentPayments(Promotion $promotion, User $user)
     {
         $inscription = Inscription::where('user_id', $user->id)
             ->where('formation_id', $promotion->formation_id)
+            ->where('access_restricted', false) // ✅ Filtre ajouté
             ->with('payments')
             ->firstOrFail();
 
