@@ -28,8 +28,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
         return response()->json(['error' => 'Unauthenticated'], 401);
     }
 
-    return Payment::where('status', 'paid')
-        ->selectRaw('SUM(amount) as total, MONTH(paid_date) as month, YEAR(paid_date) as year')
-        ->groupBy('year', 'month')
-        ->get();
+    // On calcule la somme totale directement ici
+    $total = Payment::where('status', 'paid')
+        ->whereBetween('paid_date', [$request->query('date_from'), $request->query('date_to')])
+        ->sum('amount');
+
+    return response()->json(['total_sum' => $total]);
 });
