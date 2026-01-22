@@ -667,64 +667,82 @@ public function store(Request $request)
     // Private helper methods
 
     private function getPaymentStats($request = null)
-    {
-        // ✅ Ila l'utilisateur ma3taach des dates spécifiques, 
-        // kan7sabo KOLCHI (tous les paiements) au lieu de 30 jours
-        $dateFrom = $request && $request->filled('date_from') ? $request->date_from : null;
-        $dateTo = $request && $request->filled('date_to') ? $request->date_to : null;
+{
+    $dateFrom = $request && $request->filled('date_from') ? $request->date_from : null;
+    $dateTo = $request && $request->filled('date_to') ? $request->date_to : null;
 
-        $baseQuery = Payment::query();
+    $baseQuery = Payment::query();
 
-        // Apply student specific filter to stats as well
-        if (Auth::user() && Auth::user()->hasRole('Etudiant')) {
-            $userId = Auth::id();
-            $baseQuery->whereHas('inscription', function ($q) use ($userId) {
-                $q->where('user_id', $userId);
-            });
-        }
-
-        // ✅ KanAppliquer les filtres de dates GHIR ila kanw spécifiés
-        $totalPaymentsQuery = (clone $baseQuery);
-        $totalAmountQuery = (clone $baseQuery);
-        $paidAmountQuery = (clone $baseQuery)->where('status', 'paid');
-        $pendingAmountQuery = (clone $baseQuery)->where('status', 'pending');
-        $lateAmountQuery = (clone $baseQuery)->where('status', 'late');
-        $paymentMethodsQuery = (clone $baseQuery);
-        $monthlyRevenueQuery = (clone $baseQuery)->where('status', 'paid');
-        $statusBreakdownQuery = (clone $baseQuery);
-
-        // Application des filtres de dates seulement si définis
-        if ($dateFrom && $dateTo) {
-            $totalPaymentsQuery->whereBetween('created_at', [$dateFrom, $dateTo]);
-            $totalAmountQuery->whereBetween('created_at', [$dateFrom, $dateTo]);
-            $paidAmountQuery->whereBetween('paid_date', [$dateFrom, $dateTo]);
-            $pendingAmountQuery->whereBetween('due_date', [$dateFrom, $dateTo]);
-            $lateAmountQuery->whereBetween('due_date', [$dateFrom, $dateTo]);
-            $paymentMethodsQuery->whereBetween('created_at', [$dateFrom, $dateTo]);
-            $monthlyRevenueQuery->whereBetween('paid_date', [$dateFrom, $dateTo]);
-            $statusBreakdownQuery->whereBetween('created_at', [$dateFrom, $dateTo]);
-        }
-
-        return [
-            'total_payments' => $totalPaymentsQuery->count(),
-            'total_amount' => $totalAmountQuery->sum('amount'),
-            'paid_amount' => $paidAmountQuery->sum('amount'),
-            'pending_amount' => $pendingAmountQuery->sum('amount'),
-            'late_amount' => $lateAmountQuery->sum('amount'),
-            'payment_methods' => $paymentMethodsQuery
-                ->groupBy('payment_method')
-                ->selectRaw('payment_method, count(*) as count, sum(amount) as total')
-                ->get(),
-            'monthly_revenue' => $monthlyRevenueQuery
-                ->groupByRaw('MONTH(paid_date)')
-                ->selectRaw('MONTH(paid_date) as month, sum(amount) as total')
-                ->get(),
-            'status_breakdown' => $statusBreakdownQuery
-                ->groupBy('status')
-                ->selectRaw('status, count(*) as count, sum(amount) as total')
-                ->get()
-        ];
+    // Apply student specific filter
+    if (Auth::user() && Auth::user()->hasRole('Etudiant')) {
+        $userId = Auth::id();
+        $baseQuery->whereHas('inscription', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        });
     }
+
+    // ✅ استعمل نفس التاريخ لكل الحسابات
+    $totalPaymentsQuery = (clone $baseQuery);
+    $totalAmountQuery = (clone $baseQuery);
+    $paidAmountQuery = (clone $baseQuery)->where('status', 'paid');
+    $pendingAmountQuery = (clone $baseQuery)->where('status', 'pending');
+    $lateAmountQuery = (clone $baseQuery)->where('status', 'late');
+    $paymentMethodsQuery = (clone $baseQuery);
+    $monthlyRevenueQuery = (clone $baseQuery)->where('status', 'paid');
+    $statusBreakdownQuery = (clone $baseQuery);
+
+    // ✅ طبق نفس الفلترة على كلشي
+    if ($dateFrom && $dateTo) {
+        // استعمل paid_date للـ payments لي paid
+        // و created_at للـ payments لي pending/late
+        
+        $totalPaymentsQuery->where(function($q) use ($dateFrom, $dateTo) {
+            $q->whereBetween('paid_date', [$dateFrom, $dateTo])
+              ->orWhereBetween('created_at', [$dateFrom, $dateTo]);
+        });
+        
+        $totalAmountQuery->where(function($q) use ($dateFrom, $dateTo) {
+            $q->whereBetween('paid_date', [$dateFrom, $dateTo])
+              ->orWhereBetween('created_at', [$dateFrom, $dateTo]);
+        });
+        
+        $paidAmountQuery->whereBetween('paid_date', [$dateFrom, $dateTo]);
+        $pendingAmountQuery->whereBetween('created_at', [$dateFrom, $dateTo]);
+        $lateAmountQuery->whereBetween('created_at', [$dateFrom, $dateTo]);
+        
+        $paymentMethodsQuery->where(function($q) use ($dateFrom, $dateTo) {
+            $q->whereBetween('paid_date', [$dateFrom, $dateTo])
+              ->orWhereBetween('created_at', [$dateFrom, $dateTo]);
+        });
+        
+        $monthlyRevenueQuery->whereBetween('paid_date', [$dateFrom, $dateTo]);
+        
+        $statusBreakdownQuery->where(function($q) use ($dateFrom, $dateTo) {
+            $q->whereBetween('paid_date', [$dateFrom, $dateTo])
+              ->orWhereBetween('created_at', [$dateFrom, $dateTo]);
+        });
+    }
+
+    return [
+        'total_payments' => $totalPaymentsQuery->count(),
+        'total_amount' => $totalAmountQuery->sum('amount'),
+        'paid_amount' => $paidAmountQuery->sum('amount'),
+        'pending_amount' => $pendingAmountQuery->sum('amount'),
+        'late_amount' => $lateAmountQuery->sum('amount'),
+        'payment_methods' => $paymentMethodsQuery
+            ->groupBy('payment_method')
+            ->selectRaw('payment_method, count(*) as count, sum(amount) as total')
+            ->get(),
+        'monthly_revenue' => $monthlyRevenueQuery
+            ->groupByRaw('MONTH(paid_date)')
+            ->selectRaw('MONTH(paid_date) as month, sum(amount) as total')
+            ->get(),
+        'status_breakdown' => $statusBreakdownQuery
+            ->groupBy('status')
+            ->selectRaw('status, count(*) as count, sum(amount) as total')
+            ->get()
+    ];
+}
 
     private function createPaymentNotification($payment)
     {
