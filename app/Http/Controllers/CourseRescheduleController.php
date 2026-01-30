@@ -42,7 +42,7 @@ class CourseRescheduleController extends Controller
         });
     } elseif ($user->hasRole('Etudiant')) {
         $enrolledFormationIds = $user->inscriptions()
-                                    ->where('status', 'active')
+                                    ->where('status', 'active', 'completed')
                                     ->pluck('formation_id');
 
         $query->whereHas('course', function ($q) use ($enrolledFormationIds) {

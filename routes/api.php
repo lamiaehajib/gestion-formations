@@ -35,3 +35,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
     return response()->json(['total_sum' => $total]);
 });
+
+
+
