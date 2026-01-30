@@ -94,7 +94,7 @@ class CourseRescheduleController extends Controller
     $courses = collect();
     if ($user->hasRole('Etudiant')) {
         $enrolledFormationIds = $user->inscriptions()
-                                    ->where('status', 'active')
+                                    ->where('status', 'active', 'completed')
                                     ->pluck('formation_id');
                                     
         $courses = Course::whereIn('formation_id', $enrolledFormationIds)
@@ -153,7 +153,7 @@ public function create(Request $request)
     } elseif ($user->hasRole('Etudiant')) {
         // Student: enrolled courses from today onwards
         $coursesQuery->whereHas('formation.inscriptions', function ($query) use ($user) {
-            $query->where('user_id', $user->id)->where('status', 'active');
+            $query->where('user_id', $user->id)->where('status', 'active', 'completed');
         })
         ->whereDate('course_date', '>=', $todayStart);
     }
@@ -291,7 +291,7 @@ public function store(Request $request)
         }
 
         if (Auth::user()->hasRole('Etudiant')) {
-            $isEnrolled = $reschedule->course->formation->inscriptions->where('user_id', Auth::id())->where('status', 'active')->isNotEmpty();
+            $isEnrolled = $reschedule->course->formation->inscriptions->where('user_id', Auth::id())->where('status', 'active', 'completed')->isNotEmpty();
             if (!$isEnrolled) {
                 abort(403, 'Unauthorized to view this reschedule.');
             }
@@ -376,7 +376,7 @@ public function store(Request $request)
         }
 
         if (Auth::user()->hasRole('Etudiant')) {
-            $isEnrolled = $course->formation->inscriptions->where('user_id', Auth::id())->where('status', 'active')->isNotEmpty();
+            $isEnrolled = $course->formation->inscriptions->where('user_id', Auth::id())->where('status', 'active', 'completed')->isNotEmpty();
             if (!$isEnrolled) {
                 abort(403, 'Unauthorized.');
             }
@@ -546,7 +546,7 @@ public function getCoursesByConsultant(Request $request)
 private function notifyStudentsAboutReschedule($course, $reschedule)
 {
     $students = $course->formation->inscriptions()
-        ->where('status', 'active')
+        ->where('status', 'active', 'completed')
         ->with('user')
         ->get()
         ->pluck('user');
