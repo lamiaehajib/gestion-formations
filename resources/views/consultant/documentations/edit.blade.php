@@ -154,7 +154,9 @@
                                    name="documentation_file"
                                    id="documentation_file"
                                    class="form-control form-control-lg @error('documentation_file') is-invalid @enderror">
-                            <small class="text-muted">Formats acceptés: **PDF, DOC, DOCX, ZIP**. Taille max: 10 MB. Laissez vide pour garder l'actuel.</small>
+                          <small class="text-muted">
+    Formats acceptés: **PDF, DOC, DOCX, ZIP**. Taille max: 100 MB. Laissez vide pour garder l'actuel.
+</small>
                             @error('documentation_file')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -168,7 +170,9 @@
                                    id="documentation_files"
                                    class="form-control form-control-lg @error('documentation_files.*') is-invalid @enderror"
                                    multiple>
-                            <small class="text-muted">Formats acceptés: **PDF, DOC, DOCX, ZIP, JPG, PNG**. Taille max: 10 MB par fichier. Laissez vide pour garder les actuels.</small>
+                            <small class="text-muted">
+    Formats acceptés: **PDF, DOC, DOCX, ZIP, JPG, PNG**. Taille max: 100 MB par fichier. Laissez vide pour garder les actuels.
+</small>
                             @error('documentation_files.*')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror

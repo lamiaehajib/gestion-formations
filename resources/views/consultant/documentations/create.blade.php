@@ -155,11 +155,11 @@
                                     <span>Cliquez ou glissez votre fichier ici</span>
                                 </label>
                             </div>
-                            <small class="form-hint">
-                                <i class="fas fa-info-circle"></i> 
-                                <strong>Formats:</strong> PDF, DOC, DOCX, ZIP | 
-                                <strong>Taille max:</strong> 10 MB
-                            </small>
+                           <small class="form-hint">
+    <i class="fas fa-info-circle"></i> 
+    <strong>Formats:</strong> PDF, DOC, DOCX, ZIP | 
+    <strong>Taille max:</strong> 100 MB
+</small>
                             @error('documentation_file')
                                 <div class="invalid-feedback d-block">
                                     <i class="fas fa-exclamation-circle"></i> {{ $message }}
@@ -186,10 +186,10 @@
                                 </label>
                             </div>
                             <small class="form-hint">
-                                <i class="fas fa-info-circle"></i> 
-                                <strong>Formats:</strong> PDF, DOC, DOCX, ZIP, JPG, PNG | 
-                                <strong>Taille max:</strong> 10 MB par fichier
-                            </small>
+    <i class="fas fa-info-circle"></i> 
+    <strong>Formats:</strong> PDF, DOC, DOCX, ZIP, JPG, PNG | 
+    <strong>Taille max:</strong> 100 MB par fichier
+</small>
                             @error('documentation_files.*')
                                 <div class="invalid-feedback d-block">
                                     <i class="fas fa-exclamation-circle"></i> {{ $message }}

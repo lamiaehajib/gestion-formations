@@ -105,12 +105,13 @@ class DocumentationController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'module_id' => 'required|exists:modules,id',
-            'description' => 'required|string|min:20',
-            'documentation_file' => 'nullable|file|mimes:pdf,doc,docx,zip|max:10240',
-            'documentation_files.*' => 'nullable|file|mimes:pdf,doc,docx,zip,jpg,jpeg,png|max:10240',
-        ]);
+       // Dans la méthode store()
+$request->validate([
+    'module_id' => 'required|exists:modules,id',
+    'description' => 'required|string|min:20',
+    'documentation_file' => 'nullable|file|mimes:pdf,doc,docx,zip|max:102400', // 100 MB
+    'documentation_files.*' => 'nullable|file|mimes:pdf,doc,docx,zip,jpg,jpeg,png|max:102400', // 100 MB
+]);
 
         $consultant = Auth::user();
         
@@ -235,11 +236,11 @@ class DocumentationController extends Controller
                 ->with('error', 'Impossible de modifier une documentation déjà vérifiée.');
         }
 
-        $request->validate([
-            'description' => 'required|string|min:20',
-            'documentation_file' => 'nullable|file|mimes:pdf,doc,docx,zip|max:10240',
-            'documentation_files.*' => 'nullable|file|mimes:pdf,doc,docx,zip,jpg,jpeg,png|max:10240',
-        ]);
+      $request->validate([
+    'description' => 'required|string|min:20',
+    'documentation_file' => 'nullable|file|mimes:pdf,doc,docx,zip|max:102400', // 100 MB
+    'documentation_files.*' => 'nullable|file|mimes:pdf,doc,docx,zip,jpg,jpeg,png|max:102400', // 100 MB
+]);
 
         $data = [
             'description' => $request->description,
