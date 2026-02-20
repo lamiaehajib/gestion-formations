@@ -615,6 +615,37 @@
                     </a>
                 </li>
                 @endunlessrole
+              @can('exam-list')
+<li class="sidebar-menu__item">
+    <a href="{{ route('exams.index') }}" class="sidebar-menu__link">
+    <span class="icon"><i class="fas fa-clipboard-list"></i></span>
+     <span class="text">Exams Management</span>
+    </a>
+</li>
+@endcan
+
+@can('exam-take')
+    @php
+        $isProfessionalStudent = \App\Models\Inscription::where('user_id', auth()->id())
+            ->where('status', 'active')
+            ->whereHas('formation.category', function($query) {
+                $query->whereIn('name', [
+                    'Licence Professionnelle',
+                    'Master Professionnelle',
+                    'LICENCE PROFESSIONNELLE RECONNU'
+                ]);
+            })->exists();
+    @endphp
+
+    @if($isProfessionalStudent)
+        <li class="sidebar-menu__item">
+            <a href="{{ route('exams.available') }}" class="sidebar-menu__link">
+                <span class="icon"><i class="fas fa-clipboard-list"></i></span>
+                <span class="text">Available Exams</span>
+            </a>
+        </li>
+    @endif
+@endcan
 
                     @can('documentation-create')
                       <li class="sidebar-menu__item">

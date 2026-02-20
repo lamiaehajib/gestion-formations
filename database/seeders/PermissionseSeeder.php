@@ -139,6 +139,17 @@ class PermissionseSeeder extends Seeder
 'documentation-view-stats',        // Voir les statistiques (Admin)
 'documentation-pending-count',     // Voir le nombre de documentations en attente (Admin)
 
+
+
+// Admin/Consultant permissions
+            'exam-list',
+            'exam-create',
+            'exam-edit',
+            'exam-delete',
+            
+            // Student permissions
+            'exam-take',
+            'exam-view-results'
         ];
 
         foreach ($permissions as $permission) {

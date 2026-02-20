@@ -651,4 +651,33 @@ public function forceDelete($id)
 
     return redirect()->route('users.corbeille')->with('success', 'Utilisateur supprimé définitivement!');
 }
+
+
+public function search(Request $request)
+    {
+        $query = $request->get('q', '');
+        $role = $request->get('role', null);
+
+        if (strlen($query) < 2) {
+            return response()->json(['users' => []]);
+        }
+
+        $usersQuery = \App\Models\User::query()
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('email', 'like', "%{$query}%");
+            })
+            ->limit(10);
+
+        if ($role) {
+            $usersQuery->whereHas('roles', function ($q) use ($role) {
+                $q->where('name', $role);
+            });
+        }
+
+        $users = $usersQuery->get(['id', 'name', 'email']);
+
+        return response()->json(['users' => $users]);
+    }
+
 }

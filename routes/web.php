@@ -9,6 +9,8 @@ use App\Http\Controllers\CourseRescheduleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentationController;
 use App\Http\Controllers\EtudiantController; // تأكد من استيراد EtudiantController
+use App\Http\Controllers\ExamController;
+use App\Http\Controllers\ExamRattrapageController;
 use App\Http\Controllers\FormationController;
 use App\Http\Controllers\FormationMessageController;
 use App\Http\Controllers\InscriptionController;
@@ -533,6 +535,115 @@ Route::prefix('admin/attestations')->name('admin.attestations.')->group(function
         ->name('payment-reminders.destroy');
 
 
+
+Route::resource('exams', ExamController::class);
+    
+    // Question Management (AJAX)
+    Route::post('exams/{exam}/questions', [ExamController::class, 'addQuestion'])->name('exams.questions.add');
+    Route::put('exam-questions/{question}', [ExamController::class, 'updateQuestion'])->name('exams.questions.update');
+    Route::delete('exam-questions/{question}', [ExamController::class, 'deleteQuestion'])->name('exams.questions.delete');
+    Route::post('exams/{exam}/questions/reorder', [ExamController::class, 'reorderQuestions'])->name('exams.questions.reorder');
+    
+    // Exam Attempts Management
+    Route::get('exams/{exam}/attempts', [ExamController::class, 'examAttempts'])->name('exams.attempts');
+    Route::get('exam-attempts/{attempt}/details', [ExamController::class, 'attemptDetails'])->name('exams.attempt-details');
+    
+    // Manual Grading
+    Route::post('exam-attempts/{attempt}/grade', [ExamController::class, 'gradeAttempt'])->name('exams.attempts.grade');
+
+    Route::get('/exam-questions/{question}', [ExamController::class, 'getQuestion'])
+    ->name('exam-questions.get')->middleware(['auth', 'permission:exam-edit']);
+
+
+    
+// Student outes
+Route::middleware(['auth', 'role:Etudiant'])->group(function () {
+    // Available exams
+    Route::get('my-exams', [ExamController::class, 'availableExams'])->name('exams.available');
+    
+    // Start attempt
+    Route::post('exams/{exam}/start', [ExamController::class, 'startAttempt'])->name('exams.start');
+    
+    // Take exam
+    Route::get('exam-attempts/{attempt}/take', [ExamController::class, 'takeExam'])->name('exams.take');
+    Route::post('exam-attempts/{attempt}/save-answer', [ExamController::class, 'saveAnswer'])->name('exams.save-answer');
+    Route::post('exam-attempts/{attempt}/submit', [ExamController::class, 'submitExam'])->name('exams.submit');
+    
+    // Results
+    Route::get('exam-attempts/{attempt}/result', [ExamController::class, 'viewResult'])->name('exams.result');
+    Route::get('my-exam-attempts', [ExamController::class, 'myAttempts'])->name('exams.my-attempts');
+    
+});
+
+
+
+Route::get('exams/{exam}/rattrapages',
+        [ExamRattrapageController::class, 'index'])
+        ->name('exams.rattrapages.index');
+
+    Route::get('exams/{exam}/rattrapages/create',
+        [ExamRattrapageController::class, 'create'])
+        ->name('exams.rattrapages.create');
+
+    Route::post('exams/{exam}/rattrapages',
+        [ExamRattrapageController::class, 'store'])
+        ->name('exams.rattrapages.store');
+
+    Route::get('exams/{exam}/rattrapages/{rattrapage}',
+        [ExamRattrapageController::class, 'show'])
+        ->name('exams.rattrapages.show');
+
+    Route::delete('exams/{exam}/rattrapages/{rattrapage}',
+        [ExamRattrapageController::class, 'destroy'])
+        ->name('exams.rattrapages.destroy');
+
+    // AJAX: live preview of eligible students
+    Route::get('exams/{exam}/rattrapages/preview-eligible',
+        [ExamRattrapageController::class, 'previewEligible'])
+        ->name('exams.rattrapages.preview-eligible');
+
+    // Student management within a rattrapage
+    Route::post('exams/{exam}/rattrapages/{rattrapage}/students',
+        [ExamRattrapageController::class, 'addStudent'])
+        ->name('exams.rattrapages.students.add');
+
+    Route::delete('exams/{exam}/rattrapages/{rattrapage}/students/{userId}',
+        [ExamRattrapageController::class, 'removeStudent'])
+        ->name('exams.rattrapages.students.remove');
+
+
+
+        
+Route::get('/api/users/search', [UserController::class, 'search']);
+
+
+Route::post('/api/exam-security-log', function (\Illuminate\Http\Request $request) {
+    if (!Auth::check()) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    try {
+        DB::table('exam_security_logs')->insert([
+            'exam_attempt_id'    => $request->input('attempt_id'),      // ← input() بدل ->
+            'user_id'            => Auth::id(),
+            'activity_type'      => $request->input('activity_type'),   // ← input() بدل ->
+            'tab_switch_count'   => $request->input('tab_switch_count', 0),
+            'activity_timestamp' => now(),
+            'ip_address'         => $request->ip(),
+            'user_agent'         => $request->userAgent(),
+            'created_at'         => now(),
+            'updated_at'         => now(),
+        ]);
+
+        return response()->json(['success' => true]);
+    } catch (\Exception $e) {
+        Log::error('Security log failed: ' . $e->getMessage());
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+})->middleware('auth');
+
+Route::get('exam-attempts/{attempt}/security-logs', [ExamController::class, 'viewSecurityLogs'])
+    ->name('exams.security-logs');
 });
 
 
@@ -589,6 +700,11 @@ Route::prefix('erp')->name('crm.')->group(function () {
                 ->name('credentials');
         });
     });
+
+
+
+
+    
     
 });
 

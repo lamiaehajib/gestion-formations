@@ -348,6 +348,8 @@
     --bs-table-bg-type: var(--bs-table-striped-bg);
     color: black;
 }
+
+
     </style>
 
     
