@@ -5,14 +5,12 @@
 @push('styles')
 <style>
     /* ══════════════════════════════════════════════════════════
-       EXAM MODE - إخفاء كل شي ما عدا الـ exam
+       EXAM MODE
     ══════════════════════════════════════════════════════════ */
     body.exam-active-mode {
         overflow: hidden;
         background: #f0f2f5 !important;
     }
-
-    /* إخفاء navbar وكل عناصر الـ layout */
     body.exam-active-mode nav,
     body.exam-active-mode header,
     body.exam-active-mode .navbar,
@@ -26,63 +24,32 @@
     body.exam-active-mode [class*="header"]:not(#examHeader) {
         display: none !important;
     }
-
-    /* إظهار الـ exam wrapper بشكل كامل فوق كل شي */
     body.exam-active-mode #examWrapper {
         position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
+        top: 0 !important; left: 0 !important;
+        right: 0 !important; bottom: 0 !important;
         z-index: 9999 !important;
         background: #f0f2f5 !important;
         overflow-y: auto !important;
         padding: 1rem !important;
     }
 
-    /* ══════════════════════════════════════════════════════════
-       FIX: SweetAlert2 فوق كل شي حتى في fullscreen
-    ══════════════════════════════════════════════════════════ */
-    .swal2-container {
-        z-index: 999999999 !important;
-    }
+    .swal2-container { z-index: 999999999 !important; }
 
-    /* ══════════════════════════════════════════════════════════
-       FULLSCREEN EXIT OVERLAY
-    ══════════════════════════════════════════════════════════ */
     #fsOverlay {
         display: none;
-        position: fixed;
-        inset: 0;
+        position: fixed; inset: 0;
         background: #C62828;
         z-index: 99999999;
         flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        text-align: center;
+        align-items: center; justify-content: center;
+        color: white; text-align: center;
     }
     #fsOverlay.show { display: flex; }
-
-    /* ══════════════════════════════════════════════════════════
-       SECURITY MODAL - دايما فوق كل شي
-    ══════════════════════════════════════════════════════════ */
     #securityWarningModal { z-index: 99999 !important; }
 
-    /* ══════════════════════════════════════════════════════════
-       EXAM UI
-    ══════════════════════════════════════════════════════════ */
-    .no-select {
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        user-select: none;
-    }
-    img {
-        pointer-events: none;
-        -webkit-user-drag: none;
-    }
-    .cursor-pointer { cursor: pointer; }
-    .cursor-move    { cursor: move; }
+    .no-select { -webkit-user-select: none; -moz-user-select: none; user-select: none; }
+    img { pointer-events: none; -webkit-user-drag: none; }
 
     .list-group-item:hover {
         background-color: rgba(211,47,47,.05);
@@ -94,41 +61,59 @@
         border-color: #D32F2F;
         color: #D32F2F !important;
     }
-  
+    #reenterFsBtn:hover {
+        background: white !important;
+        color: #b71c1c !important;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(255,255,255,0.3);
+    }
+    .question-navigator { display: block !important; }
+    .question-nav-btn {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    .question-nav-btn.answered .answer-indicator { color: #28a745 !important; }
 
+    /* ══════════════════════════════════════════════════════════
+       CUSTOM CURSOR
+    ══════════════════════════════════════════════════════════ */
+    #examCursor {
+        width: 18px;
+        height: 18px;
+        background: #D32F2F;
+        border: 2.5px solid #fff;
+        border-radius: 50%;
+        position: fixed;
+        pointer-events: none;
+        z-index: 2147483647;
+        transform: translate(-50%, -50%);
+        display: none;
+        box-shadow: 0 0 0 2px rgba(211,47,47,0.4), 0 2px 8px rgba(0,0,0,0.5);
+    }
 
-
-
-
-
-#reenterFsBtn:hover {
-    background: white !important;
-    color: #b71c1c !important; /* L-alwan kyetqalbo bach t-ban s3iba */
-    transform: translateY(-3px); /* Kayt-hze chwiya l-foq */
-    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
-}
-
-
-.question-navigator {
-    display: block !important;
-}
-
-.question-nav-btn {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-.question-nav-btn.answered .answer-indicator {
-    color: #28a745 !important; /* Vert */
-}
+    /* ══════════════════════════════════════════════════════════
+       CURSOR FIX - swal-open class يغلب على cursor:none
+    ══════════════════════════════════════════════════════════ */
+    html.swal-open,
+    html.swal-open body,
+    html.swal-open body * {
+        cursor: auto !important;
+    }
+    html.swal-open .swal2-confirm,
+    html.swal-open .swal2-cancel,
+    html.swal-open .swal2-deny {
+        cursor: pointer !important;
+    }
 </style>
 @endpush
 
 @section('content')
 
-{{-- ══════════════════════════════════════════════
-     SECURITY MODAL
-══════════════════════════════════════════════ --}}
+{{-- Custom Cursor --}}
+<div id="examCursor"></div>
+
+{{-- SECURITY MODAL --}}
 <div class="modal fade" id="securityWarningModal"
      data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -145,15 +130,16 @@
                 </div>
                 <h6 class="fw-bold mb-3">Restrictions appliquées :</h6>
                 <ul class="mb-3">
-                    <li class="mb-2">🔒 <strong>Mode plein écran obligatoire</strong> - Ne quittez pas le mode plein écran</li>
-                    <li class="mb-2">🚫 <strong>Copier-coller désactivé</strong> - Impossible de copier le contenu</li>
-                    <li class="mb-2">👁️ <strong>Changements d'onglet détectés</strong> - Toute sortie sera enregistrée</li>
+                    <li class="mb-2">🔒 <strong>Mode plein écran obligatoire</strong></li>
+                    <li class="mb-2">🚫 <strong>Copier-coller désactivé</strong></li>
+                    <li class="mb-2">👁️ <strong>Changements d'onglet détectés</strong></li>
                     <li class="mb-2">⏰ <strong>Temps limité</strong> - Le chronomètre ne s'arrête pas</li>
-                    <li class="mb-2">📵 <strong>F12/Console bloqués</strong> - Outils de développement désactivés</li>
+                    <li class="mb-2">📵 <strong>F12/Console bloqués</strong></li>
+                    <li class="mb-2">🖱️ <strong>Curseur verrouillé</strong> - La souris reste dans cette fenêtre</li>
                 </ul>
                 <div class="alert alert-danger mb-0">
                     <i class="fas fa-ban me-2"></i>
-                    <strong>Avertissement :</strong> Toute tentative de triche sera enregistrée et peut entraîner l'annulation de votre examen.
+                    <strong>Avertissement :</strong> Toute tentative de triche sera enregistrée.
                 </div>
             </div>
             <div class="modal-footer border-0">
@@ -165,9 +151,7 @@
     </div>
 </div>
 
-{{-- ══════════════════════════════════════════════
-     FULLSCREEN EXIT OVERLAY
-══════════════════════════════════════════════ --}}
+{{-- FULLSCREEN EXIT OVERLAY --}}
 <div id="fsOverlay">
     <i class="fas fa-expand-arrows-alt fa-5x mb-4" style="opacity:.8;"></i>
     <h2 class="fw-bold mb-3">Mode plein écran requis !</h2>
@@ -177,12 +161,9 @@
     </button>
 </div>
 
-{{-- ══════════════════════════════════════════════
-     EXAM WRAPPER
-══════════════════════════════════════════════ --}}
+{{-- EXAM WRAPPER --}}
 <div id="examWrapper">
 
-    {{-- Header / Timer --}}
     <div id="examHeader" class="card border-0 rounded-4 shadow-sm mb-4 position-sticky top-0"
          style="z-index:100; background:white;">
         <div class="card-body p-3">
@@ -211,8 +192,6 @@
     </div>
 
     <div class="row g-4">
-
-        {{-- Questions --}}
         <div class="col-lg-9">
             <div class="card border-0 rounded-4 shadow-sm">
                 <div class="card-body p-4 no-select">
@@ -252,7 +231,7 @@
                             @if($question->type == 'qcm')
                                 <div class="list-group">
                                     @foreach($question->formatted_options as $option)
-                                    <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 p-3 border rounded-3 mb-2 cursor-pointer">
+                                    <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 p-3 border rounded-3 mb-2">
                                         <input type="radio" name="question_{{ $question->id }}"
                                                value="{{ $option['text'] }}"
                                                class="form-check-input flex-shrink-0"
@@ -268,7 +247,7 @@
                                 </div>
                                 <div class="list-group">
                                     @foreach($question->formatted_options as $option)
-                                    <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 p-3 border rounded-3 mb-2 cursor-pointer">
+                                    <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 p-3 border rounded-3 mb-2">
                                         <input type="checkbox" name="question_{{ $question->id }}[]"
                                                value="{{ $option['text'] }}"
                                                class="form-check-input flex-shrink-0"
@@ -280,7 +259,7 @@
 
                             @elseif($question->type == 'true_false')
                                 <div class="list-group">
-                                    <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 p-3 border rounded-3 mb-2 cursor-pointer">
+                                    <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 p-3 border rounded-3 mb-2">
                                         <input type="radio" name="question_{{ $question->id }}"
                                                value="true" class="form-check-input flex-shrink-0"
                                                data-question-id="{{ $question->id }}">
@@ -288,7 +267,7 @@
                                             <i class="fas fa-check-circle text-success me-2"></i>Vrai
                                         </span>
                                     </label>
-                                    <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 p-3 border rounded-3 mb-2 cursor-pointer">
+                                    <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 p-3 border rounded-3 mb-2">
                                         <input type="radio" name="question_{{ $question->id }}"
                                                value="false" class="form-check-input flex-shrink-0"
                                                data-question-id="{{ $question->id }}">
@@ -400,16 +379,17 @@
                                 @endphp
                                 <div class="alert alert-info mb-3">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    Glissez-déposez les éléments pour les mettre dans le bon ordre
+                                    Cliquez sur un élément pour le <strong>sélectionner</strong>, puis cliquez sur un autre pour les <strong>échanger</strong>
                                 </div>
                                 <div class="ordering-container"
                                      id="ordering_{{ $question->id }}"
                                      data-question-id="{{ $question->id }}">
                                     @foreach($shuffledItems as $si => $item)
-                                    <div class="ordering-item p-3 mb-2 bg-light border rounded-3 cursor-move"
-                                         data-item="{{ $item }}" draggable="true">
+                                    <div class="ordering-item p-3 mb-2 bg-light border rounded-3"
+                                         style="cursor:pointer; transition: background 0.15s, border-color 0.15s;"
+                                         data-item="{{ $item }}">
                                         <div class="d-flex align-items-center gap-3">
-                                            <i class="fas fa-grip-vertical text-muted"></i>
+                                            <i class="fas fa-arrows-alt-v text-muted"></i>
                                             <span class="order-number badge bg-danger rounded-circle me-2"
                                                   style="width:30px;height:30px;line-height:20px;">{{ $si+1 }}</span>
                                             <span class="flex-grow-1">{{ $item }}</span>
@@ -418,8 +398,8 @@
                                     @endforeach
                                 </div>
                                 <small class="text-muted">
-                                    <i class="fas fa-hand-pointer me-1"></i>
-                                    Utilisez la souris pour glisser-déposer les éléments
+                                    <i class="fas fa-mouse-pointer me-1"></i>
+                                    Cliquez pour sélectionner (bleu), puis cliquez sur la position cible pour échanger
                                 </small>
 
                             @elseif($question->type == 'essay')
@@ -433,7 +413,7 @@
                                 </small>
                             @endif
 
-                        </div>{{-- /answer-area --}}
+                        </div>
 
                         <div class="d-flex justify-content-between pt-4 border-top">
                             <button type="button"
@@ -452,14 +432,13 @@
                             @endif
                         </div>
 
-                    </div>{{-- /question-container --}}
+                    </div>
                     @endforeach
 
                 </div>
             </div>
         </div>
 
-        {{-- Sidebar --}}
         <div class="col-lg-3">
             <div class="card border-0 rounded-4 shadow-sm position-sticky" style="top:100px;">
                 <div class="card-body p-3">
@@ -496,8 +475,8 @@
             </div>
         </div>
 
-    </div>{{-- /row --}}
-</div>{{-- /examWrapper --}}
+    </div>
+</div>
 
 <form id="submitExamForm" action="{{ route('exams.submit', $attempt) }}" method="POST" style="display:none;">
     @csrf
@@ -519,28 +498,112 @@ document.addEventListener('DOMContentLoaded', function () {
     const csrfToken = () => document.querySelector('meta[name="csrf-token"]').content;
 
     // ════════════════════════════════════════════════════════════════════════
+    // CUSTOM CURSOR
+    // ════════════════════════════════════════════════════════════════════════
+    const examCursor = document.getElementById('examCursor');
+    let cx = window.innerWidth  / 2;
+    let cy = window.innerHeight / 2;
+    let useFreeMouse = false;
+
+    // Style tag ديناميكي للـ cursor:none
+    const cursorHideStyle = document.createElement('style');
+    cursorHideStyle.id = 'cursorHideStyle';
+    cursorHideStyle.textContent = 'body, body * { cursor: none !important; }';
+
+    function hideCursorForExam() {
+        // نشيلو swal-open class
+        document.documentElement.classList.remove('swal-open');
+        // نضيفو cursor:none style
+        if (!document.getElementById('cursorHideStyle')) {
+            document.head.appendChild(cursorHideStyle);
+        }
+    }
+
+    function showRealCursor() {
+        // نشيلو cursor:none style
+        const s = document.getElementById('cursorHideStyle');
+        if (s) s.remove();
+        // نضيفو swal-open class على html - يغلب على كل شيء بـ specificity عالي
+        document.documentElement.classList.add('swal-open');
+    }
+
+    document.addEventListener('mousemove', function (e) {
+        if (!isExamStarted) return;
+
+        if (!useFreeMouse && document.pointerLockElement) {
+            cx += e.movementX;
+            cy += e.movementY;
+            cx = Math.max(1, Math.min(window.innerWidth  - 1, cx));
+            cy = Math.max(1, Math.min(window.innerHeight - 1, cy));
+        } else {
+            cx = e.clientX;
+            cy = e.clientY;
+        }
+
+        examCursor.style.left = cx + 'px';
+        examCursor.style.top  = cy + 'px';
+    });
+
+    // ════════════════════════════════════════════════════════════════════════
+    // CLICK FORWARDING مع Pointer Lock
+    // ════════════════════════════════════════════════════════════════════════
+    document.addEventListener('mousedown', function (e) {
+        if (!isExamStarted || !document.pointerLockElement) return;
+
+        examCursor.style.display = 'none';
+        const el = document.elementFromPoint(cx, cy);
+        examCursor.style.display = 'block';
+
+        if (!el) return;
+
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') {
+            el.focus();
+        }
+
+        const clickTarget = el.closest('label') || el.closest('button') || el;
+
+        if (clickTarget !== document.documentElement && clickTarget !== document.body) {
+            const syntheticClick = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                view: window,
+                clientX: cx,
+                clientY: cy
+            });
+            clickTarget.dispatchEvent(syntheticClick);
+        }
+    });
+
+    // ════════════════════════════════════════════════════════════════════════
     // 1. SECURITY MODAL
     // ════════════════════════════════════════════════════════════════════════
     const securityModal = new bootstrap.Modal(document.getElementById('securityWarningModal'));
     securityModal.show();
 
     document.getElementById('acceptSecurityBtn').addEventListener('click', async function () {
-
-        // STEP 1: إخفاء الـ navbar والـ layout فوراً بالـ CSS class
         document.body.classList.add('exam-active-mode');
-
-        // STEP 2: طلب fullscreen (خاصو يكون داخل user click)
-        try {
-            await document.documentElement.requestFullscreen();
-        } catch (e) {
-            console.warn('Fullscreen not supported or denied:', e);
-            // مكاينش مشكل - الـ CSS خبا الـ navbar بأي حال
-        }
-
-        // STEP 3: غلق الـ modal وبداية الـ exam
+        try { await document.documentElement.requestFullscreen(); }
+        catch (e) { console.warn('Fullscreen:', e); }
+        await activatePointerLock();
+        examCursor.style.display = 'block';
+        examCursor.style.left = cx + 'px';
+        examCursor.style.top  = cy + 'px';
+        hideCursorForExam();
         securityModal.hide();
         isExamStarted = true;
     });
+
+    // ════════════════════════════════════════════════════════════════════════
+    // POINTER LOCK
+    // ════════════════════════════════════════════════════════════════════════
+    async function activatePointerLock() {
+        try {
+            await document.documentElement.requestPointerLock({ unadjustedMovement: true });
+        } catch (e1) {
+            try { await document.documentElement.requestPointerLock(); }
+            catch (e2) { console.warn('Pointer lock not available:', e2); }
+        }
+    }
 
     // ════════════════════════════════════════════════════════════════════════
     // 2. FULLSCREEN MONITOR
@@ -549,14 +612,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const reenterFsBtn = document.getElementById('reenterFsBtn');
 
     function isInFullscreen() {
-        return !!(document.fullscreenElement       ||
-                  document.webkitFullscreenElement ||
-                  document.mozFullScreenElement    ||
-                  document.msFullscreenElement);
-    }
-
-    async function goFullscreen() {
-        try { await document.documentElement.requestFullscreen(); } catch(e) {}
+        return !!(document.fullscreenElement || document.webkitFullscreenElement ||
+                  document.mozFullScreenElement || document.msFullscreenElement);
     }
 
     ['fullscreenchange','webkitfullscreenchange','mozfullscreenchange','MSFullscreenChange']
@@ -571,17 +628,36 @@ document.addEventListener('DOMContentLoaded', function () {
         }));
 
     reenterFsBtn.addEventListener('click', async function () {
-        await goFullscreen();
+        try { await document.documentElement.requestFullscreen(); } catch(e) {}
         fsOverlay.classList.remove('show');
+        setTimeout(() => activatePointerLock(), 300);
     });
+
+    // ════════════════════════════════════════════════════════════════════════
+    // 2.5. POINTER LOCK MONITOR
+    // ════════════════════════════════════════════════════════════════════════
+    document.addEventListener('pointerlockchange', function () {
+        if (!isExamStarted) return;
+        if (!document.pointerLockElement) {
+            recordActivity('pointer_lock_exit');
+            // ما نرجعوش Pointer Lock إلا كان Swal مفتوح
+            if (isInFullscreen() && !fsOverlay.classList.contains('show') && !document.documentElement.classList.contains('swal-open')) {
+                setTimeout(async () => {
+                    if (isExamStarted && !document.pointerLockElement && !document.documentElement.classList.contains('swal-open')) {
+                        await activatePointerLock();
+                    }
+                }, 300);
+            }
+        }
+    });
+
+    document.addEventListener('pointerlockerror', () => console.warn('[Security] Pointer lock error'));
 
     // ════════════════════════════════════════════════════════════════════════
     // 3. COPY / PASTE / RIGHT-CLICK
     // ════════════════════════════════════════════════════════════════════════
     document.addEventListener('copy', e => {
-        e.preventDefault();
-        toast('Copie désactivée pendant l\'examen!');
-        recordActivity('copy_attempt');
+        e.preventDefault(); toast('Copie désactivée!'); recordActivity('copy_attempt');
     });
     document.addEventListener('cut', e => e.preventDefault());
     document.addEventListener('paste', e => {
@@ -590,9 +666,7 @@ document.addEventListener('DOMContentLoaded', function () {
         e.preventDefault();
     });
     document.addEventListener('contextmenu', e => {
-        e.preventDefault();
-        toast('Clic droit désactivé!');
-        recordActivity('right_click');
+        e.preventDefault(); toast('Clic droit désactivé!'); recordActivity('right_click');
     });
 
     // ════════════════════════════════════════════════════════════════════════
@@ -632,11 +706,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let dtOpen = false;
     setInterval(() => {
-        const open = (window.outerWidth  - window.innerWidth  > 160) ||
+        const open = (window.outerWidth - window.innerWidth > 160) ||
                      (window.outerHeight - window.innerHeight > 160);
         if (open && !dtOpen && isExamStarted) {
-            recordActivity('devtools_detected');
-            toast('Outils de développeur détectés!', 'error');
+            recordActivity('devtools_detected'); toast('Outils détectés!', 'error');
         }
         dtOpen = open;
     }, 500);
@@ -655,20 +728,14 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/api/exam-security-log', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken() },
-            body: JSON.stringify({
-                attempt_id: attemptId,
-                activity_type: type,
-                tab_switch_count: tabSwitchCount
-            })
-        }).then(r => r.json())
-          .then(d => console.log('[Security]', type, d))
-          .catch(err => console.error('[Security] FAILED:', err));
+            body: JSON.stringify({ attempt_id: attemptId, activity_type: type, tab_switch_count: tabSwitchCount })
+        }).catch(err => console.error('[Security] FAILED:', err));
     }
 
     // ════════════════════════════════════════════════════════════════════════
     // 7. TIMER
     // ════════════════════════════════════════════════════════════════════════
-    let timeLeft       = remainingTime;
+    let timeLeft = remainingTime;
     const timerText    = document.getElementById('timerText');
     const timerDisplay = document.getElementById('timerDisplay');
 
@@ -677,8 +744,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const h = Math.floor(timeLeft / 3600);
         const m = Math.floor((timeLeft % 3600) / 60);
         const s = timeLeft % 60;
-        timerText.textContent =
-            `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        timerText.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         timerDisplay.classList.remove('warning','danger');
         if      (timeLeft < 300) timerDisplay.classList.add('danger');
         else if (timeLeft < 600) timerDisplay.classList.add('warning');
@@ -688,6 +754,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const timerInterval = setInterval(updateTimer, 1000);
 
     function autoSubmit() {
+        showRealCursor();
+        examCursor.style.display = 'none';
+        if (document.pointerLockElement) document.exitPointerLock();
         Swal.fire({
             title:'Temps Écoulé!', text:'Soumission automatique en cours...',
             icon:'warning', timer:3000, timerProgressBar:true, showConfirmButton:false
@@ -756,7 +825,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.querySelectorAll('.blank-input').forEach(inp =>
         inp.addEventListener('change', function () {
-            const qid     = this.dataset.questionId;
+            const qid = this.dataset.questionId;
             const answers = Array.from(
                 this.closest('.blanks-container').querySelectorAll('.blank-input')
             ).map(b => b.value);
@@ -766,7 +835,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.querySelectorAll('.matching-select').forEach(sel =>
         sel.addEventListener('change', function () {
-            const qid   = this.dataset.questionId;
+            const qid = this.dataset.questionId;
             const pairs = [];
             this.closest('.matching-container').querySelectorAll('.matching-select').forEach(s => {
                 if (s.value) pairs.push({ left: s.dataset.leftItem, right: s.value });
@@ -775,36 +844,49 @@ document.addEventListener('DOMContentLoaded', function () {
         })
     );
 
+    // ════════════════════════════════════════════════════════════════════════
+    // ORDERING - Click to Swap
+    // ════════════════════════════════════════════════════════════════════════
     document.querySelectorAll('.ordering-container').forEach(container => {
         const qid = container.dataset.questionId;
+        let selectedItem = null;
+
         container.querySelectorAll('.ordering-item').forEach(item => {
-            item.addEventListener('dragstart', function(e) {
-                this.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-            });
-            item.addEventListener('dragend',  function() { this.classList.remove('dragging'); });
-            item.addEventListener('dragover',  function(e) {
-                e.preventDefault();
-                const d = container.querySelector('.dragging');
-                if (d !== this) this.classList.add('drag-over');
-            });
-            item.addEventListener('dragleave', function() { this.classList.remove('drag-over'); });
-            item.addEventListener('drop', function(e) {
-                e.preventDefault();
-                this.classList.remove('drag-over');
-                const d = container.querySelector('.dragging');
-                if (d && d !== this) {
-                    const all = [...container.querySelectorAll('.ordering-item')];
-                    if (all.indexOf(d) < all.indexOf(this)) container.insertBefore(d, this.nextSibling);
-                    else container.insertBefore(d, this);
-                    container.querySelectorAll('.ordering-item').forEach((it, i) => {
-                        const b = it.querySelector('.order-number');
-                        if (b) b.textContent = i + 1;
-                    });
-                    saveAnswer(qid, Array.from(
-                        container.querySelectorAll('.ordering-item')
-                    ).map(i => i.dataset.item));
+            item.addEventListener('click', function () {
+                if (!selectedItem) {
+                    selectedItem = this;
+                    this.style.background = '#cfe2ff';
+                    this.style.borderColor = '#0d6efd';
+                    this.style.boxShadow = '0 0 0 3px rgba(13,110,253,0.25)';
+                    return;
                 }
+
+                if (selectedItem === this) {
+                    selectedItem.style.background = '';
+                    selectedItem.style.borderColor = '';
+                    selectedItem.style.boxShadow = '';
+                    selectedItem = null;
+                    return;
+                }
+
+                const tmpItem = selectedItem.dataset.item;
+                const tmpText = selectedItem.querySelector('.flex-grow-1').textContent;
+                selectedItem.dataset.item = this.dataset.item;
+                selectedItem.querySelector('.flex-grow-1').textContent = this.querySelector('.flex-grow-1').textContent;
+                this.dataset.item = tmpItem;
+                this.querySelector('.flex-grow-1').textContent = tmpText;
+
+                selectedItem.style.background = '';
+                selectedItem.style.borderColor = '';
+                selectedItem.style.boxShadow = '';
+                selectedItem = null;
+
+                container.querySelectorAll('.ordering-item').forEach((it, i) => {
+                    const b = it.querySelector('.order-number');
+                    if (b) b.textContent = i + 1;
+                });
+
+                saveAnswer(qid, [...container.querySelectorAll('.ordering-item')].map(i => i.dataset.item));
             });
         });
     });
@@ -813,31 +895,79 @@ document.addEventListener('DOMContentLoaded', function () {
     // 10. SUBMIT
     // ════════════════════════════════════════════════════════════════════════
     function submitExam() {
-        Swal.fire({
-            title: 'Soumettre l\'Examen?',
-            html: `<p>Êtes-vous sûr de vouloir soumettre?${
-                tabSwitchCount > 0
-                ? `<br><br>⚠️ ${tabSwitchCount} changement(s) d'onglet détecté(s)`
-                : ''
-            }</p>
-            <div class="alert alert-warning mt-3">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <strong>Attention:</strong> Cette action est irréversible!
-            </div>`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#D32F2F',
-            cancelButtonColor:  '#6c757d',
-            confirmButtonText:  'Oui, soumettre!',
-            cancelButtonText:   'Annuler'
-        }).then(r => {
-            if (r.isConfirmed) {
-                clearInterval(timerInterval);
-                const ov = document.getElementById('globalLoadingOverlay');
-                if (ov) ov.classList.add('active');
-                document.getElementById('submitExamForm').submit();
-            }
-        });
+        // ═══ 1. خروج من Pointer Lock + إظهار cursor الأصلي ═══
+        useFreeMouse = true;
+        examCursor.style.display = 'none';
+        showRealCursor(); // نشيلو cursor:none ونضيفو swal-open class
+
+        const doShowSwal = () => {
+            // نتأكدو مرة أخرى cursor مخبي والـ class موجود
+            examCursor.style.display = 'none';
+            showRealCursor();
+
+            Swal.fire({
+                title: 'Soumettre l\'Examen?',
+                html: `<p>Êtes-vous sûr de vouloir soumettre?${
+                    tabSwitchCount > 0 ? `<br><br>⚠️ ${tabSwitchCount} changement(s) d'onglet détecté(s)` : ''
+                }</p>
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Attention:</strong> Cette action est irréversible!
+                </div>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#D32F2F',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Oui, soumettre!',
+                cancelButtonText: 'Annuler',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    // ضمان إضافي - cursor مخبي + swal-open class موجود
+                    examCursor.style.display = 'none';
+                    showRealCursor();
+                },
+                willClose: () => {
+                    examCursor.style.display = 'none';
+                }
+            }).then(r => {
+                if (r.isConfirmed) {
+                    // ═══ سوبميت ═══
+                    clearInterval(timerInterval);
+                    isExamStarted = false;
+                    examCursor.style.display = 'none';
+                    document.documentElement.classList.remove('swal-open');
+                    const ov = document.getElementById('globalLoadingOverlay');
+                    if (ov) ov.classList.add('active');
+                    document.getElementById('submitExamForm').submit();
+                } else {
+                    // ═══ Annuler: نرجعو exam cursor mode ═══
+                    document.documentElement.classList.remove('swal-open');
+                    setTimeout(() => {
+                        hideCursorForExam();   // cursor:none + نشيلو swal-open
+                        useFreeMouse = false;
+                        activatePointerLock().then(() => {
+                            // بعد Pointer Lock - نظهرو النقطة الحمراء
+                            examCursor.style.left = cx + 'px';
+                            examCursor.style.top  = cy + 'px';
+                            examCursor.style.display = 'block';
+                        }).catch(() => {
+                            // إلا Pointer Lock ما خدمش - نظهرو على أي حال
+                            examCursor.style.left = cx + 'px';
+                            examCursor.style.top  = cy + 'px';
+                            examCursor.style.display = 'block';
+                        });
+                    }, 150);
+                }
+            });
+        };
+
+        // ═══ نخرجو من Pointer Lock ونستناو 200ms ═══
+        if (document.pointerLockElement) {
+            document.exitPointerLock();
+            setTimeout(doShowSwal, 200);
+        } else {
+            doShowSwal();
+        }
     }
 
     document.getElementById('submitExamBtn').addEventListener('click', submitExam);

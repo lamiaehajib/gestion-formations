@@ -37,7 +37,7 @@ class ExamController extends Controller
 {
     $user = Auth::user();
     $query = Exam::with(['module', 'creator', 'questions'])
-        ->whereDoesntHave('rattrapageOf');  // ← Exclude rattrapages from main list
+        ->whereDoesntHave('rattrapageOf');  //  Exclude rattrapages from main list
 
     // Ila consultant, ghir exams dyalo
     if ($user->hasRole('Consultant')) {

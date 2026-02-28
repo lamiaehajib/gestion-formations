@@ -381,9 +381,9 @@
 @auth
     @include('components.payment-reminder-modal')
 @endauth
-@auth
+{{-- @auth
     @include('components.satisfaction-survey-modal')
-@endauth
+@endauth --}}
     
             @include('layouts.sidebar')
      
