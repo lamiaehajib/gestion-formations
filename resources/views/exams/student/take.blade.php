@@ -373,34 +373,41 @@
                                 @endif
 
                             @elseif($question->type == 'ordering')
-                                @php
-                                    $orderingData  = $question->getOrderingData();
-                                    $shuffledItems = $orderingData['shuffled_items'];
-                                @endphp
-                                <div class="alert alert-info mb-3">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    Cliquez sur un élément pour le <strong>sélectionner</strong>, puis cliquez sur un autre pour les <strong>échanger</strong>
-                                </div>
-                                <div class="ordering-container"
-                                     id="ordering_{{ $question->id }}"
-                                     data-question-id="{{ $question->id }}">
-                                    @foreach($shuffledItems as $si => $item)
-                                    <div class="ordering-item p-3 mb-2 bg-light border rounded-3"
-                                         style="cursor:pointer; transition: background 0.15s, border-color 0.15s;"
-                                         data-item="{{ $item }}">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <i class="fas fa-arrows-alt-v text-muted"></i>
-                                            <span class="order-number badge bg-danger rounded-circle me-2"
-                                                  style="width:30px;height:30px;line-height:20px;">{{ $si+1 }}</span>
-                                            <span class="flex-grow-1">{{ $item }}</span>
-                                        </div>
-                                    </div>
-                                    @endforeach
-                                </div>
-                                <small class="text-muted">
-                                    <i class="fas fa-mouse-pointer me-1"></i>
-                                    Cliquez pour sélectionner (bleu), puis cliquez sur la position cible pour échanger
-                                </small>
+    @php
+        $orderingData  = $question->getOrderingData();
+        $shuffledItems = $orderingData['shuffled_items'] ?? [];
+    @endphp
+    @if(!empty($shuffledItems))
+        <div class="alert alert-info mb-3">
+            <i class="fas fa-info-circle me-2"></i>
+            Cliquez sur un élément pour le <strong>sélectionner</strong>, puis cliquez sur un autre pour les <strong>échanger</strong>
+        </div>
+        <div class="ordering-container"
+             id="ordering_{{ $question->id }}"
+             data-question-id="{{ $question->id }}">
+            @foreach($shuffledItems as $si => $item)
+            <div class="ordering-item p-3 mb-2 bg-light border rounded-3"
+                 style="cursor:pointer; transition: background 0.15s, border-color 0.15s;"
+                 data-item="{{ $item }}">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="fas fa-arrows-alt-v text-muted"></i>
+                    <span class="order-number badge bg-danger rounded-circle me-2"
+                          style="width:30px;height:30px;line-height:20px;">{{ $si+1 }}</span>
+                    <span class="flex-grow-1">{{ $item }}</span>
+                </div>
+            </div>
+            @endforeach
+        </div>
+        <small class="text-muted">
+            <i class="fas fa-mouse-pointer me-1"></i>
+            Cliquez pour sélectionner (bleu), puis cliquez sur la position cible pour échanger
+        </small>
+    @else
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Erreur: Données de tri manquantes
+        </div>
+    @endif
 
                             @elseif($question->type == 'essay')
                                 <textarea name="question_{{ $question->id }}" rows="8"
@@ -511,19 +518,15 @@ document.addEventListener('DOMContentLoaded', function () {
     cursorHideStyle.textContent = 'body, body * { cursor: none !important; }';
 
     function hideCursorForExam() {
-        // نشيلو swal-open class
         document.documentElement.classList.remove('swal-open');
-        // نضيفو cursor:none style
         if (!document.getElementById('cursorHideStyle')) {
             document.head.appendChild(cursorHideStyle);
         }
     }
 
     function showRealCursor() {
-        // نشيلو cursor:none style
         const s = document.getElementById('cursorHideStyle');
         if (s) s.remove();
-        // نضيفو swal-open class على html - يغلب على كل شيء بـ specificity عالي
         document.documentElement.classList.add('swal-open');
     }
 
@@ -556,7 +559,55 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (!el) return;
 
-        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') {
+        // ══ SELECT FIX: khrej mn pointer lock bach dropdown ixdem ══
+        const selectEl = el.closest('select') || (el.tagName === 'SELECT' ? el : null);
+        if (selectEl) {
+            // khrej mn pointer lock w walli cursor 3adi
+            document.exitPointerLock();
+            useFreeMouse = true;
+            examCursor.style.display = 'none';
+            showRealCursor();
+
+            setTimeout(() => {
+                selectEl.focus();
+                selectEl.click();
+
+                // b3d ma ybdl user l-valeur → rj3 l pointer lock
+                selectEl.addEventListener('change', function restoreLock() {
+                    selectEl.removeEventListener('change', restoreLock);
+                    setTimeout(() => {
+                        hideCursorForExam();
+                        useFreeMouse = false;
+                        activatePointerLock().then(() => {
+                            examCursor.style.left = cx + 'px';
+                            examCursor.style.top  = cy + 'px';
+                            examCursor.style.display = 'block';
+                        }).catch(() => {
+                            examCursor.style.left = cx + 'px';
+                            examCursor.style.top  = cy + 'px';
+                            examCursor.style.display = 'block';
+                        });
+                    }, 300);
+                }, { once: true });
+
+                // Fallback: ila ma badlch walu b3d 8 tawani, rj3 pointer lock
+                setTimeout(() => {
+                    if (!document.pointerLockElement && useFreeMouse) {
+                        hideCursorForExam();
+                        useFreeMouse = false;
+                        activatePointerLock().then(() => {
+                            examCursor.style.left = cx + 'px';
+                            examCursor.style.top  = cy + 'px';
+                            examCursor.style.display = 'block';
+                        });
+                    }
+                }, 8000);
+            }, 50);
+            return;
+        }
+
+        // ══ INPUT / TEXTAREA ══
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
             el.focus();
         }
 
@@ -640,10 +691,14 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!isExamStarted) return;
         if (!document.pointerLockElement) {
             recordActivity('pointer_lock_exit');
-            // ما نرجعوش Pointer Lock إلا كان Swal مفتوح
-            if (isInFullscreen() && !fsOverlay.classList.contains('show') && !document.documentElement.classList.contains('swal-open')) {
+            // ma nrj3ouch pointer lock ila kayn select mftouh aw swal
+            if (isInFullscreen() && !fsOverlay.classList.contains('show')
+                && !document.documentElement.classList.contains('swal-open')
+                && !useFreeMouse) {
                 setTimeout(async () => {
-                    if (isExamStarted && !document.pointerLockElement && !document.documentElement.classList.contains('swal-open')) {
+                    if (isExamStarted && !document.pointerLockElement
+                        && !document.documentElement.classList.contains('swal-open')
+                        && !useFreeMouse) {
                         await activatePointerLock();
                     }
                 }, 300);
@@ -895,13 +950,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // 10. SUBMIT
     // ════════════════════════════════════════════════════════════════════════
     function submitExam() {
-        // ═══ 1. خروج من Pointer Lock + إظهار cursor الأصلي ═══
         useFreeMouse = true;
         examCursor.style.display = 'none';
-        showRealCursor(); // نشيلو cursor:none ونضيفو swal-open class
+        showRealCursor();
 
         const doShowSwal = () => {
-            // نتأكدو مرة أخرى cursor مخبي والـ class موجود
             examCursor.style.display = 'none';
             showRealCursor();
 
@@ -922,7 +975,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 cancelButtonText: 'Annuler',
                 allowOutsideClick: false,
                 didOpen: () => {
-                    // ضمان إضافي - cursor مخبي + swal-open class موجود
                     examCursor.style.display = 'none';
                     showRealCursor();
                 },
@@ -931,7 +983,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }).then(r => {
                 if (r.isConfirmed) {
-                    // ═══ سوبميت ═══
                     clearInterval(timerInterval);
                     isExamStarted = false;
                     examCursor.style.display = 'none';
@@ -940,18 +991,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (ov) ov.classList.add('active');
                     document.getElementById('submitExamForm').submit();
                 } else {
-                    // ═══ Annuler: نرجعو exam cursor mode ═══
                     document.documentElement.classList.remove('swal-open');
                     setTimeout(() => {
-                        hideCursorForExam();   // cursor:none + نشيلو swal-open
+                        hideCursorForExam();
                         useFreeMouse = false;
                         activatePointerLock().then(() => {
-                            // بعد Pointer Lock - نظهرو النقطة الحمراء
                             examCursor.style.left = cx + 'px';
                             examCursor.style.top  = cy + 'px';
                             examCursor.style.display = 'block';
                         }).catch(() => {
-                            // إلا Pointer Lock ما خدمش - نظهرو على أي حال
                             examCursor.style.left = cx + 'px';
                             examCursor.style.top  = cy + 'px';
                             examCursor.style.display = 'block';
@@ -961,7 +1009,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         };
 
-        // ═══ نخرجو من Pointer Lock ونستناو 200ms ═══
         if (document.pointerLockElement) {
             document.exitPointerLock();
             setTimeout(doShowSwal, 200);
