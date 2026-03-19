@@ -407,6 +407,233 @@
     <div id="scrollToTopBtn">
         <i class="fas fa-arrow-up"></i>
     </div>
+
+    {{-- ═══════════════════════════════════════════════════════════
+     POPUP EXAMEN - LICENCE & MASTER PROFESSIONNELLE
+     Affiché une seule fois par étudiant (localStorage)
+═══════════════════════════════════════════════════════════ --}}
+@auth
+@php
+    $user = Auth::user();
+
+    $isLicence = $user->hasRole('Etudiant') &&
+        \App\Models\Inscription::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->whereHas('formation.category', function ($q) {
+                $q->where('name', 'Licence Professionnelle');
+            })->exists();
+
+    $isMaster = $user->hasRole('Etudiant') &&
+        \App\Models\Inscription::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->whereHas('formation.category', function ($q) {
+                $q->where('name', 'Master Professionnelle');
+            })->exists();
+@endphp
+
+@if($isLicence || $isMaster)
+
+{{-- ── POPUP LICENCE ──────────────────────────────────────── --}}
+@if($isLicence)
+<div id="popupLicence"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65);
+            z-index:99999; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:16px; max-width:460px; width:90%;
+                overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.3);
+                animation:popupIn 0.4s ease;">
+        {{-- Header --}}
+        <div style="background:linear-gradient(135deg,#C2185B,#D32F2F);
+                    padding:22px 28px; color:#fff; display:flex; align-items:center; gap:14px;">
+            <div style="background:rgba(255,255,255,0.2); border-radius:50%; width:48px; height:48px;
+                        display:flex; align-items:center; justify-content:center; font-size:22px;">📋</div>
+            <div>
+                <p style="margin:0; font-size:11px; opacity:.8; text-transform:uppercase; letter-spacing:1px;">
+                    Annonce Importante
+                </p>
+                <h2 style="margin:4px 0 0; font-size:19px; font-weight:700;">
+                    Examen — Licence Professionnelle
+                </h2>
+            </div>
+        </div>
+        {{-- Body --}}
+        <div style="padding:26px;">
+            <p style="margin:0 0 18px; color:#444; font-size:14.5px; line-height:1.6;">
+                Un examen est programmé pour votre formation. Veuillez vous préparer et respecter l'horaire.
+            </p>
+            <div style="background:#fff0f3; border-left:4px solid #C2185B;
+                        border-radius:8px; padding:16px 20px; margin-bottom:16px;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                    <span style="font-size:18px;">📅</span>
+                    <div>
+                        <p style="margin:0; font-size:11px; color:#888; text-transform:uppercase; letter-spacing:.8px;">Date</p>
+                        <p style="margin:0; font-size:16px; font-weight:700; color:#C2185B;">Dimanche 22 Mars 2026</p>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:18px;">🕐</span>
+                    <div>
+                        <p style="margin:0; font-size:11px; color:#888; text-transform:uppercase; letter-spacing:.8px;">Horaire</p>
+                        <p style="margin:0; font-size:16px; font-weight:700; color:#C2185B;">
+                            11:00 → 14:00
+                            <span style="font-size:13px; font-weight:400; color:#666;">(3 heures)</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div style="background:#fff8e1; border:1px solid #ffc107; border-radius:8px;
+                        padding:12px 16px; margin-bottom:22px; display:flex; gap:10px;">
+                <span style="font-size:18px; flex-shrink:0;">⚠️</span>
+                <p style="margin:0; font-size:13px; color:#7a5c00; line-height:1.5;">
+                    Soyez connecté <strong>10 minutes avant</strong> le début. Aucun accès ne sera accordé après le démarrage.
+                </p>
+            </div>
+            <button onclick="closePopup('popupLicence','exam_licence_22032026_{{ $user->id }}')"
+                    style="width:100%; background:linear-gradient(135deg,#C2185B,#D32F2F);
+                           color:#fff; border:none; border-radius:10px; padding:13px;
+                           font-size:15px; font-weight:600; cursor:pointer;"
+                    onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                ✅ J'ai compris
+            </button>
+        </div>
+    </div>
+</div>
+@endif
+
+{{-- ── POPUP MASTER ────────────────────────────────────────── --}}
+@if($isMaster)
+<div id="popupMaster"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65);
+            z-index:99998; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:16px; max-width:460px; width:90%;
+                overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.3);
+                animation:popupIn 0.4s ease;">
+        {{-- Header --}}
+        <div style="background:linear-gradient(135deg,#1565C0,#1976D2);
+                    padding:22px 28px; color:#fff; display:flex; align-items:center; gap:14px;">
+            <div style="background:rgba(255,255,255,0.2); border-radius:50%; width:48px; height:48px;
+                        display:flex; align-items:center; justify-content:center; font-size:22px;">📋</div>
+            <div>
+                <p style="margin:0; font-size:11px; opacity:.8; text-transform:uppercase; letter-spacing:1px;">
+                    Annonce Importante
+                </p>
+                <h2 style="margin:4px 0 0; font-size:19px; font-weight:700;">
+                    Examen — Master Professionnelle
+                </h2>
+            </div>
+        </div>
+        {{-- Body --}}
+        <div style="padding:26px;">
+            <p style="margin:0 0 18px; color:#444; font-size:14.5px; line-height:1.6;">
+                Un examen est programmé pour votre formation. Veuillez vous préparer et respecter l'horaire.
+            </p>
+            <div style="background:#e8f0fe; border-left:4px solid #1565C0;
+                        border-radius:8px; padding:16px 20px; margin-bottom:16px;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                    <span style="font-size:18px;">📅</span>
+                    <div>
+                        <p style="margin:0; font-size:11px; color:#888; text-transform:uppercase; letter-spacing:.8px;">Date</p>
+                        <p style="margin:0; font-size:16px; font-weight:700; color:#1565C0;">Dimanche 22 Mars 2026</p>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:18px;">🕐</span>
+                    <div>
+                        <p style="margin:0; font-size:11px; color:#888; text-transform:uppercase; letter-spacing:.8px;">Horaire</p>
+                        <p style="margin:0; font-size:16px; font-weight:700; color:#1565C0;">
+                            12:00 → 15:00
+                            <span style="font-size:13px; font-weight:400; color:#666;">(3 heures)</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div style="background:#fff8e1; border:1px solid #ffc107; border-radius:8px;
+                        padding:12px 16px; margin-bottom:22px; display:flex; gap:10px;">
+                <span style="font-size:18px; flex-shrink:0;">⚠️</span>
+                <p style="margin:0; font-size:13px; color:#7a5c00; line-height:1.5;">
+                    Soyez connecté <strong>10 minutes avant</strong> le début. Aucun accès ne sera accordé après le démarrage.
+                </p>
+            </div>
+            <button onclick="closePopup('popupMaster','exam_master_22032026_{{ $user->id }}')"
+                    style="width:100%; background:linear-gradient(135deg,#1565C0,#1976D2);
+                           color:#fff; border:none; border-radius:10px; padding:13px;
+                           font-size:15px; font-weight:600; cursor:pointer;"
+                    onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                ✅ J'ai compris
+            </button>
+        </div>
+    </div>
+</div>
+@endif
+
+<style>
+@keyframes popupIn {
+    from { transform:scale(0.85); opacity:0; }
+    to   { transform:scale(1);    opacity:1; }
+}
+</style>
+
+<script>
+(function () {
+    // Fermer un popup + sauvegarder dans localStorage
+    window.closePopup = function(popupId, storageKey) {
+        localStorage.setItem(storageKey, '1');
+        var el = document.getElementById(popupId);
+        if (el) el.style.display = 'none';
+
+        // Si Licence était visible → afficher Master après
+        @if($isLicence && $isMaster)
+        if (popupId === 'popupLicence') {
+            var masterKey = 'exam_master_22032026_{{ $user->id }}';
+            if (!localStorage.getItem(masterKey)) {
+                var master = document.getElementById('popupMaster');
+                if (master) master.style.display = 'flex';
+            }
+        }
+        @endif
+    };
+
+    // Fermer en cliquant sur l'overlay
+    ['popupLicence','popupMaster'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('click', function(e) {
+            if (e.target === this) {
+                var key = id === 'popupLicence'
+                    ? 'exam_licence_22032026_{{ $user->id }}'
+                    : 'exam_master_22032026_{{ $user->id }}';
+                closePopup(id, key);
+            }
+        });
+    });
+
+    // Logique d'affichage au chargement
+    var licenceKey = 'exam_licence_22032026_{{ $user->id }}';
+    var masterKey  = 'exam_master_22032026_{{ $user->id }}';
+
+    @if($isLicence && $isMaster)
+        // Les deux → afficher Licence en premier, Master après fermeture
+        if (!localStorage.getItem(licenceKey)) {
+            document.getElementById('popupLicence').style.display = 'flex';
+        } else if (!localStorage.getItem(masterKey)) {
+            document.getElementById('popupMaster').style.display = 'flex';
+        }
+
+    @elseif($isLicence)
+        if (!localStorage.getItem(licenceKey)) {
+            document.getElementById('popupLicence').style.display = 'flex';
+        }
+
+    @elseif($isMaster)
+        if (!localStorage.getItem(masterKey)) {
+            document.getElementById('popupMaster').style.display = 'flex';
+        }
+    @endif
+
+})();
+</script>
+
+@endif
+@endauth
 {{-- BASE JS FILES FROM YOUR TEMPLATE (jQuery and Bootstrap first) --}}
 <script src="{{ asset('edmate/assets/js/jquery-3.7.1.min.js') }}"></script>
 
