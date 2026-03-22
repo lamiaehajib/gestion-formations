@@ -721,8 +721,14 @@
                                         <i class="fas fa-check-circle"></i> Réponse correcte
                                     </div>
                                     <div class="answer-content">
-                                        @if(in_array($question->type, ['qcm', 'true_false', 'text']))
-                                            {{ $question->correct_answer }}
+                                        @if($question->type == 'qcm')
+    @php
+        $correctOpt = collect($question->options)->firstWhere('is_correct', true);
+    @endphp
+    {{ $correctOpt['text'] ?? '—' }}
+
+@elseif(in_array($question->type, ['true_false', 'text']))
+    {{ $question->correct_answer }}
 
                                         @elseif($question->type == 'checkbox')
                                             <ul>
