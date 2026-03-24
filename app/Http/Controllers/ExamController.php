@@ -922,20 +922,131 @@ class ExamController extends Controller
     /**
      * Exam attempts list (Admin/Consultant)
      */
-    public function examAttempts(Exam $exam)
+     public function examAttempts(Request $request, Exam $exam)
     {
         $user = Auth::user();
-
+ 
         if ($user->hasRole('Consultant') && $exam->created_by !== $user->id) {
             abort(403, 'Action non autorisée.');
         }
-
-        $attempts = $exam->attempts()
-            ->with(['user', 'inscription'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-
-        return view('exams.attempts', compact('exam', 'attempts'));
+ 
+        // ── Toutes les inscriptions actives pour ce module (via formation) ──
+        $inscriptions = Inscription::where('status', 'active')
+            ->whereHas('formation.modules', fn($q) => $q->where('modules.id', $exam->module_id))
+            ->with(['user', 'formation.category'])
+            ->get();
+ 
+        // Grouper par formation
+        $formationGroups = $inscriptions->groupBy('formation_id')->map(function ($group) {
+            return [
+                'formation' => $group->first()->formation,
+                'inscriptions' => $group,
+            ];
+        })->values();
+ 
+        // ── Filtre par formation_id (bouton "Voir") ──
+        $selectedFormationId = $request->filled('formation_id')
+            ? (int) $request->formation_id
+            : null;
+ 
+        // ── Requête de base des tentatives ──
+        $query = ExamAttempt::where('exam_id', $exam->id)
+            ->with(['user', 'inscription.formation']);
+ 
+        // Filtre formation
+        if ($selectedFormationId) {
+            $query->whereHas('inscription', fn($q) => $q->where('formation_id', $selectedFormationId));
+        }
+ 
+        // Filtre recherche par nom / email
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+ 
+        // Filtre score
+        if ($request->filled('score_filter')) {
+            $threshold = (int) $request->get('score_threshold', $exam->passing_score);
+            if ($request->score_filter === 'below') {
+                $query->whereIn('status', ['submitted', 'graded'])
+                      ->where('score', '<', $threshold);
+            } elseif ($request->score_filter === 'passed') {
+                $query->where('passed', true);
+            } elseif ($request->score_filter === 'failed') {
+                $query->whereIn('status', ['submitted', 'graded'])->where('passed', false);
+            }
+        }
+ 
+        $attempts = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
+ 
+        // ── Étudiants absents (inscrits mais 0 tentative) ──
+        // On calcule ça par formation sélectionnée ou toutes formations
+        $absentStudents = collect();
+ 
+        if ($request->filled('score_filter') && $request->score_filter === 'absent') {
+            $inscriptionsScope = $selectedFormationId
+                ? $inscriptions->where('formation_id', $selectedFormationId)
+                : $inscriptions;
+ 
+            $attemptedUserIds = ExamAttempt::where('exam_id', $exam->id)
+                ->pluck('user_id')
+                ->unique();
+ 
+            $absentStudents = $inscriptionsScope->filter(
+                fn($ins) => !$attemptedUserIds->contains($ins->user_id)
+            )->values();
+ 
+            // Override: on affiche les absents, pas les attempts
+            $attempts = new \Illuminate\Pagination\LengthAwarePaginator(
+                collect(), 0, 20
+            );
+        }
+ 
+        // ── Stats par formation (pour les cartes du haut) ──
+        $formationStats = $formationGroups->map(function ($group) use ($exam) {
+            $formation      = $group['formation'];
+            $inscriptions   = $group['inscriptions'];
+            $studentIds     = $inscriptions->pluck('user_id');
+            $inscriptionIds = $inscriptions->pluck('id');
+ 
+            $attemptCount = ExamAttempt::where('exam_id', $exam->id)
+                ->whereIn('inscription_id', $inscriptionIds)
+                ->whereIn('status', ['submitted', 'graded', 'timed_out'])
+                ->distinct('user_id')
+                ->count('user_id');
+ 
+            $passedCount = ExamAttempt::where('exam_id', $exam->id)
+                ->whereIn('inscription_id', $inscriptionIds)
+                ->where('passed', true)
+                ->distinct('user_id')
+                ->count('user_id');
+ 
+            $avgScore = ExamAttempt::where('exam_id', $exam->id)
+                ->whereIn('inscription_id', $inscriptionIds)
+                ->whereIn('status', ['submitted', 'graded'])
+                ->avg('score');
+ 
+            return [
+                'formation'      => $formation,
+                'total_students' => $studentIds->count(),
+                'attempted'      => $attemptCount,
+                'absent'         => $studentIds->count() - $attemptCount,
+                'passed'         => $passedCount,
+                'avg_score'      => round($avgScore ?? 0, 1),
+            ];
+        });
+ 
+        return view('exams.attempts', compact(
+            'exam',
+            'attempts',
+            'formationGroups',
+            'formationStats',
+            'selectedFormationId',
+            'absentStudents'
+        ));
     }
 
     /**
