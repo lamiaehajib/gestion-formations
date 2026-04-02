@@ -9,8 +9,8 @@ class InfoVerificationController extends Controller
     public function submit(Request $request)
 {
     $request->validate([
-        'nom'            => 'required|string|max:100', // Jdid
-        'prenom'         => 'required|string|max:100', // Jdid
+        'nom'            => 'required|string|max:100', 
+        'prenom'         => 'required|string|max:100',
         'cin'            => 'required|string|max:20',
         'birth_date'     => 'required|date',
         'lieu_naissance' => 'required|string|max:100',

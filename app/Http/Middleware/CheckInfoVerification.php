@@ -11,7 +11,7 @@ class CheckInfoVerification
         $user = Auth::user();
         
         if ($user && $user->hasRole('Etudiant') && $user->needsInfoVerification()) {
-            // Passer un flag à la vue pour afficher le pop-up
+           
             view()->share('showInfoVerificationModal', true);
             view()->share('missingFields', $this->getMissingFields($user));
         }
