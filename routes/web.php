@@ -13,6 +13,7 @@ use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamRattrapageController;
 use App\Http\Controllers\FormationController;
 use App\Http\Controllers\FormationMessageController;
+use App\Http\Controllers\InfoVerificationController;
 use App\Http\Controllers\InscriptionController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationBannerController;
@@ -63,6 +64,19 @@ Route::middleware('auth')->group(function () {
 
 Route::resource('roles', RoleController::class);
 
+
+
+Route::post('/info-verification/submit', [InfoVerificationController::class, 'submit'])
+    ->name('info.verification.submit');
+
+// Page admin
+Route::get('/admin/info-verification', [InfoVerificationController::class, 'adminIndex'])
+    ->name('admin.info.verification')
+
+
+
+
+    ->middleware(['auth', 'permission:user-list']);
 Route::get('/users/corbeille', [UserController::class, 'corbeille'])
       ->name('users.corbeille');
 
@@ -703,6 +717,7 @@ Route::prefix('erp')->name('crm.')->group(function () {
 
 
 
+// Route pour soumettre les infos (étudiant)
 
     
     

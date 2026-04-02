@@ -379,6 +379,9 @@
 @endauth
 
 @auth
+    @include('components.info-verification-modal')
+@endauth
+@auth
     @include('components.payment-reminder-modal')
 @endauth
 {{-- @auth

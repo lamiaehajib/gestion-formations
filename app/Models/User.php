@@ -21,6 +21,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'nom', 'prenom',
         'email',
         'password',
         'phone',
@@ -33,6 +34,7 @@ class User extends Authenticatable
         'promotion_id',
         'last_login_at', // Add last_login_at to fillable
         'login_count',   // Add login_count to fillable
+        'info_verified_at', 'lieu_naissance', 'nationalite', // Zid hado hna
     ];
 
     /**
@@ -55,6 +57,7 @@ class User extends Authenticatable
         'birth_date' => 'date',
         'documents' => 'array',
         'last_login_at' => 'datetime', // Cast last_login_at to a datetime object
+        'info_verified_at' => 'datetime',
     ];
 
     /**
@@ -79,6 +82,19 @@ class User extends Authenticatable
      *
      * @return void
      */
+
+    public function hasVerifiedInfo(): bool
+{
+    return !is_null($this->info_verified_at);
+}
+
+// Helper: est-ce que le pop-up doit s'afficher?
+public function needsInfoVerification(): bool
+{
+    if ($this->hasVerifiedInfo()) return false;
+    
+    return $this->hasActiveInscriptionInProfessionalFormation();
+}
     public function recordLogin()
     {
         $this->last_login_at = now();
