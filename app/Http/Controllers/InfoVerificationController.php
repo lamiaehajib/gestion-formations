@@ -22,8 +22,8 @@ class InfoVerificationController extends Controller
     $user = Auth::user();
 
     $user->update([
-        'nom'             => $request->nom, // Jdid
-        'prenom'          => $request->prenom, // Jdid
+        'nom'             => $request->nom, 
+        'prenom'          => $request->prenom, 
         'cin'             => $request->cin,
         'birth_date'      => $request->birth_date,
         'lieu_naissance'  => $request->lieu_naissance,
