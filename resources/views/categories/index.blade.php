@@ -11,7 +11,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <h3 class="card-title mb-0 d-flex align-items-center">
                             <i class="fas fa-layer-group me-3 floating-icon"></i>
-                            Gestion des Catégies
+                            Gestion des Catégories
                         </h3>
                         <div class="d-flex gap-3">
                             {{-- Button to open the Create Category Modal --}}
